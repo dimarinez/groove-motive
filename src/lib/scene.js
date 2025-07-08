@@ -268,16 +268,53 @@ function addOrientationButton() {
     cursor: pointer;
   `;
   
-  testButton.onclick = (e) => {
+  testButton.onclick = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('🚀 Enabling touch rotation instead of orientation');
+    console.log('🚀 Trying enhanced orientation detection');
     
-    // Enable touch rotation for mobile
-    enableTouchRotation();
-    testButton.textContent = '✅ Touch Rotation Enabled';
-    testButton.style.background = '#34C759';
+    // First try the library approach
+    testButton.textContent = '⏳ Trying Library...';
+    testButton.style.background = '#FF9500';
+    
+    // Request permissions first
+    let permissionGranted = false;
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        const permission = await DeviceOrientationEvent.requestPermission();
+        permissionGranted = permission === 'granted';
+        console.log('🚀 Permission result:', permission);
+      } catch (error) {
+        console.warn('Permission error:', error);
+      }
+    } else {
+      permissionGranted = true; // No permission needed
+    }
+    
+    if (permissionGranted) {
+      // Try the enhanced library approach
+      const libraryWorking = enableDeviceOrientationLibrary();
+      
+      // Test for 3 seconds
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      if (deviceOrientation.alpha !== null && deviceOrientation.alpha !== 0) {
+        testButton.textContent = '✅ Orientation Working';
+        testButton.style.background = '#34C759';
+      } else {
+        // Fallback to touch rotation
+        console.log('🚀 Falling back to touch rotation');
+        enableTouchRotation();
+        testButton.textContent = '✅ Touch Rotation';
+        testButton.style.background = '#34C759';
+      }
+    } else {
+      // No permission, use touch rotation
+      enableTouchRotation();
+      testButton.textContent = '✅ Touch Rotation';
+      testButton.style.background = '#34C759';
+    }
     
     // Hide button after 2 seconds
     setTimeout(() => {
@@ -355,6 +392,72 @@ if (isMobile) {
       }
     }, 100);
   }, 1000);
+}
+
+// Device orientation using a more reliable approach
+function enableDeviceOrientationLibrary() {
+  console.log('📱 Setting up device orientation with library approach');
+  
+  // Use a more robust orientation detection
+  const orientationHandler = (event) => {
+    // Try multiple event sources
+    const alpha = event.alpha || event.webkitCompassHeading || 0;
+    const beta = event.beta || 0;
+    const gamma = event.gamma || 0;
+    
+    if (alpha !== 0 || beta !== 0 || gamma !== 0) {
+      deviceOrientation = { alpha, beta, gamma };
+      
+      if (!initialOrientation) {
+        initialOrientation = { ...deviceOrientation };
+        console.log('📍 Library orientation set:', initialOrientation);
+      }
+      
+      console.log('📱 Library orientation:', deviceOrientation);
+      return true;
+    }
+    return false;
+  };
+  
+  // Try multiple event registration methods
+  const events = ['deviceorientation', 'deviceorientationabsolute', 'compassneedscalibration'];
+  let successCount = 0;
+  
+  events.forEach(eventName => {
+    try {
+      window.addEventListener(eventName, orientationHandler);
+      document.addEventListener(eventName, orientationHandler);
+      successCount++;
+      console.log(`✅ Added ${eventName} listener`);
+    } catch (error) {
+      console.warn(`❌ Failed to add ${eventName}:`, error);
+    }
+  });
+  
+  // Fallback to gyroscope if available
+  if ('Gyroscope' in window) {
+    try {
+      const gyroscope = new Gyroscope({ frequency: 30 });
+      gyroscope.addEventListener('reading', () => {
+        deviceOrientation = {
+          alpha: gyroscope.z * 57.2958, // Convert rad/s to degrees
+          beta: gyroscope.x * 57.2958,
+          gamma: gyroscope.y * 57.2958
+        };
+        
+        if (!initialOrientation) {
+          initialOrientation = { ...deviceOrientation };
+          console.log('📍 Gyroscope orientation set:', initialOrientation);
+        }
+      });
+      gyroscope.start();
+      console.log('✅ Gyroscope API enabled');
+    } catch (error) {
+      console.warn('❌ Gyroscope API failed:', error);
+    }
+  }
+  
+  return successCount > 0;
 }
 
 // Touch rotation system for mobile (fallback when orientation doesn't work)
