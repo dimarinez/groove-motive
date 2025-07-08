@@ -12,7 +12,10 @@ function App() {
 
   const handleEnterGallery = () => {
     enterGallery();
-    animate();
+    // Small delay to ensure canvas is properly attached before starting animation
+    setTimeout(() => {
+      animate();
+    }, 50);
     setShowHamburgerMenu(true);
   };
 

@@ -27,6 +27,8 @@ let deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
 let initialOrientation = null;
 let clickToLockHandler = null;
 let previewInstruction = null;
+let previewAnimationId = null;
+let mainAnimationId = null;
 
 export function initScene() {
   // Check if we're in a browser environment
@@ -404,8 +406,21 @@ function resetToInitialState() {
     resetToInitialState();
   });
   
+  // Stop main animation
+  if (mainAnimationId) {
+    cancelAnimationFrame(mainAnimationId);
+    mainAnimationId = null;
+  }
+  
   // Force render and restart preview animation
   renderer.render(scene, camera);
+  
+  // Restart preview animation
+  setTimeout(() => {
+    if (!controls.isLocked) {
+      animatePreview();
+    }
+  }, 100);
   
   // Trigger resize to ensure proper canvas dimensions
   setTimeout(() => {
@@ -416,6 +431,12 @@ function resetToInitialState() {
 export function enterGallery() {
   const container = document.getElementById('container');
   if (container) container.style.display = 'none';
+  
+  // Stop preview animation
+  if (previewAnimationId) {
+    cancelAnimationFrame(previewAnimationId);
+    previewAnimationId = null;
+  }
   
   // Move instructions to body for fullscreen overlay
   const instructionsGroup = document.getElementById('instructions-group');
@@ -467,6 +488,9 @@ export function enterGallery() {
     }
   };
   document.addEventListener('click', clickToLockHandler);
+
+  // Force a render to ensure the canvas is properly initialized
+  renderer.render(scene, camera);
 
   // Initial lock with error handling
   setTimeout(() => {
@@ -715,12 +739,12 @@ export function animatePreview() {
     camera.position.z = -5 + Math.cos(time * 0.2) * 3;
     camera.lookAt(0, 1.6, -6);
     renderer.render(scene, camera);
+    previewAnimationId = requestAnimationFrame(animatePreview);
   }
-  requestAnimationFrame(animatePreview);
 }
 
 export function animate() {
-  requestAnimationFrame(animate);
+  mainAnimationId = requestAnimationFrame(animate);
   const delta = clock.getDelta();
   if (mixer) mixer.update(delta);
 

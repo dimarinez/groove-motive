@@ -492,13 +492,13 @@ body {
   
   #left-panel .left-panel-logo {
     max-width: 180px;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
   }
   
   #left-panel .left-panel-description {
     font-size: 1.1rem;
     line-height: 1.5;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     margin-top: 0;
   }
   
@@ -506,7 +506,7 @@ body {
   #left-panel .left-panel-description-3 {
     font-size: 1rem;
     line-height: 1.6;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     text-indent: 0;
   }
   
