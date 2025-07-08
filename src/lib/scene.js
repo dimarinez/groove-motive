@@ -184,26 +184,29 @@ export function initScene() {
           window.addEventListener('deviceorientation', (event) => {
             if (!initialOrientation && event.alpha !== null && event.beta !== null && event.gamma !== null) {
               initialOrientation = {
-                alpha: event.alpha,
-                beta: event.beta,
-                gamma: event.gamma,
+                alpha: event.alpha || 0,
+                beta: event.beta || 0,
+                gamma: event.gamma || 0,
               };
               console.log('Initial orientation set:', initialOrientation);
             }
-            deviceOrientation.alpha = event.alpha;
-            deviceOrientation.beta = event.beta;
-            deviceOrientation.gamma = event.gamma;
             
-            // Debug logging
-            if (controls.isLocked && initialOrientation) {
-              console.log('Device orientation values:', { 
-                alpha: event.alpha, 
-                beta: event.beta, 
-                gamma: event.gamma,
-                deltaAlpha: event.alpha - initialOrientation.alpha,
-                deltaBeta: event.beta - initialOrientation.beta,
-                deltaGamma: event.gamma - initialOrientation.gamma
-              });
+            if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
+              deviceOrientation.alpha = event.alpha || 0;
+              deviceOrientation.beta = event.beta || 0;
+              deviceOrientation.gamma = event.gamma || 0;
+              
+              // Debug logging
+              if (controls.isLocked && initialOrientation) {
+                console.log('Device orientation values:', { 
+                  alpha: event.alpha, 
+                  beta: event.beta, 
+                  gamma: event.gamma,
+                  deltaAlpha: (event.alpha || 0) - initialOrientation.alpha,
+                  deltaBeta: (event.beta || 0) - initialOrientation.beta,
+                  deltaGamma: (event.gamma || 0) - initialOrientation.gamma
+                });
+              }
             }
           });
         };
@@ -213,6 +216,12 @@ export function initScene() {
 
         // Also try to add listener immediately (will work on Android and older iOS)
         addDeviceOrientationListener();
+
+        // For iOS, request permission when entering gallery
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          // We'll request permission when the user enters the gallery
+          console.log('iOS device detected, permission will be requested on gallery entry');
+        }
       }
     } catch (error) {
       console.warn('Could not add device orientation listener:', error);
@@ -873,13 +882,19 @@ export function animate() {
     controls.moveForward(velocity.z * delta);
   }
 
-  if (isMobile && controls.isLocked && initialOrientation && deviceOrientation.alpha !== null) {
-    const beta = THREE.MathUtils.degToRad(deviceOrientation.beta - initialOrientation.beta);
-    const gamma = THREE.MathUtils.degToRad(deviceOrientation.gamma - initialOrientation.gamma);
+  if (isMobile && controls.isLocked && initialOrientation && deviceOrientation.alpha !== null && deviceOrientation.beta !== null && deviceOrientation.gamma !== null) {
+    const deltaAlpha = deviceOrientation.alpha - initialOrientation.alpha;
+    const deltaBeta = deviceOrientation.beta - initialOrientation.beta;
+    const deltaGamma = deviceOrientation.gamma - initialOrientation.gamma;
     
-    // Make rotation more responsive and natural
-    const pitch = THREE.MathUtils.clamp(-beta * 1.2, -Math.PI / 2, Math.PI / 2);
-    const yaw = THREE.MathUtils.clamp(-gamma * 1.2, -Math.PI, Math.PI);
+    // Convert to radians
+    const alpha = THREE.MathUtils.degToRad(deltaAlpha);
+    const beta = THREE.MathUtils.degToRad(deltaBeta);
+    const gamma = THREE.MathUtils.degToRad(deltaGamma);
+    
+    // Apply rotation with better sensitivity
+    const pitch = THREE.MathUtils.clamp(-beta * 0.5, -Math.PI / 3, Math.PI / 3);
+    const yaw = THREE.MathUtils.clamp(gamma * 0.5, -Math.PI / 2, Math.PI / 2);
     
     // Apply rotation to camera using the controls object
     const controlsObject = controls.getObject();
@@ -888,8 +903,13 @@ export function animate() {
     controlsObject.rotation.y = yaw;
     
     // Debug logging for rotation values
-    if (Math.abs(pitch) > 0.1 || Math.abs(yaw) > 0.1) {
-      console.log('Applying rotation:', { pitch, yaw, beta, gamma });
+    if (Math.abs(pitch) > 0.05 || Math.abs(yaw) > 0.05) {
+      console.log('Gyro rotation applied:', { 
+        pitch: THREE.MathUtils.radToDeg(pitch),
+        yaw: THREE.MathUtils.radToDeg(yaw),
+        deltaBeta,
+        deltaGamma
+      });
     }
   }
 

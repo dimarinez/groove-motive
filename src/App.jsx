@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import LeftPanel from './components/LeftPanel';
 import RightPanel from './components/RightPanel';
 import UI from './components/UI';
@@ -8,19 +8,12 @@ import { initScene, animate, animatePreview, enterGallery } from './lib/scene';
 import gsap from 'gsap';
 
 function App() {
-  const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
-
   const handleEnterGallery = () => {
     enterGallery();
     // Small delay to ensure canvas is properly attached before starting animation
     setTimeout(() => {
       animate();
     }, 50);
-    // Only show hamburger menu on mobile
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth <= 768;
-    console.log('Is mobile:', isMobile);
-    setShowHamburgerMenu(isMobile);
-    console.log('Setting showHamburgerMenu to:', isMobile);
   };
 
   useEffect(() => {
@@ -66,7 +59,7 @@ function App() {
       </div>
       <UI />
       <MobileControls />
-      <div className={`hamburger-menu ${showHamburgerMenu ? 'show' : ''}`}>
+      <div className="hamburger-menu">
         <HamburgerMenu />
       </div>
     </>
