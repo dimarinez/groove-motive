@@ -1171,36 +1171,39 @@ export function animate() {
     const deltaBeta = deviceOrientation.beta - initialOrientation.beta;
 
     // Apply sensitivity and convert to radians
-    const sensitivity = 1.5;
-    const yaw = THREE.MathUtils.degToRad(deltaAlpha) * sensitivity;
+    const sensitivity = 0.02; // Much lower sensitivity for testing
+    const yaw = deltaAlpha * sensitivity;
     const pitch = THREE.MathUtils.clamp(
-      THREE.MathUtils.degToRad(deltaBeta) * sensitivity,
+      deltaBeta * sensitivity,
       -Math.PI / 3,
       Math.PI / 3
     );
 
-    // Apply rotation directly to the camera (not through controls)
-    // PointerLockControls manages the camera rotation through its internal object
-    const euler = new THREE.Euler(0, 0, 0, 'YXZ');
-    euler.setFromQuaternion(camera.quaternion);
+    // Directly manipulate the PointerLockControls internal object
+    const controlsObject = controls.getObject();
+    
+    // Store original rotation if not stored yet
+    if (!controlsObject.userData.originalRotation) {
+      controlsObject.userData.originalRotation = {
+        x: controlsObject.rotation.x,
+        y: controlsObject.rotation.y
+      };
+    }
     
     // Apply device orientation rotation
-    euler.y = -yaw;
-    euler.x = -pitch;
-    
-    camera.quaternion.setFromEuler(euler);
+    controlsObject.rotation.order = 'YXZ';
+    controlsObject.rotation.y = controlsObject.userData.originalRotation.y - yaw;
+    controlsObject.rotation.x = controlsObject.userData.originalRotation.x - pitch;
 
-    // Debug log occasionally
-    if (Math.random() < 0.05) {
-      console.log('🎯 Camera rotation applied:', {
-        yaw: THREE.MathUtils.radToDeg(-yaw),
-        pitch: THREE.MathUtils.radToDeg(-pitch),
-        deltaAlpha,
-        deltaBeta,
-        cameraRotationY: euler.y,
-        cameraRotationX: euler.x
-      });
-    }
+    // Debug log every time for testing
+    console.log('🎯 Camera rotation applied:', {
+      yaw: THREE.MathUtils.radToDeg(-yaw),
+      pitch: THREE.MathUtils.radToDeg(-pitch),
+      deltaAlpha,
+      deltaBeta,
+      controlsY: controlsObject.rotation.y,
+      controlsX: controlsObject.rotation.x
+    });
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
