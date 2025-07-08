@@ -329,32 +329,58 @@ if (isMobile) {
   setTimeout(() => {
     addOrientationButton();
     
-    // Add debug info
+    // Add live orientation debug display
     const debugDiv = document.createElement('div');
+    debugDiv.id = 'orientation-debug';
     debugDiv.style.cssText = `
       position: fixed;
       top: 80px;
       left: 10px;
-      background: rgba(0,0,0,0.8);
+      background: rgba(0,0,0,0.9);
       color: white;
-      padding: 10px;
+      padding: 15px;
       border-radius: 8px;
-      font-size: 12px;
+      font-size: 14px;
       z-index: 9999;
-      max-width: 300px;
+      max-width: 350px;
+      font-family: monospace;
     `;
     debugDiv.innerHTML = `
-      <strong>Debug Info:</strong><br>
-      User Agent: ${navigator.userAgent}<br>
-      DeviceOrientationEvent: ${typeof DeviceOrientationEvent !== 'undefined'}<br>
-      requestPermission: ${typeof DeviceOrientationEvent?.requestPermission === 'function'}<br>
-      HTTPS: ${location.protocol === 'https:'}<br>
-      Host: ${location.host}
+      <strong>Orientation Debug:</strong><br>
+      Alpha: <span id="alpha-value">--</span><br>
+      Beta: <span id="beta-value">--</span><br>
+      Gamma: <span id="gamma-value">--</span><br>
+      Delta Alpha: <span id="delta-alpha">--</span><br>
+      Delta Beta: <span id="delta-beta">--</span><br>
+      In Gallery: <span id="in-gallery">--</span><br>
+      Controls Locked: <span id="controls-locked">--</span>
     `;
     document.body.appendChild(debugDiv);
     
-    // Remove after 10 seconds
-    setTimeout(() => debugDiv.remove(), 10000);
+    // Update debug display continuously
+    setInterval(() => {
+      const alphaEl = document.getElementById('alpha-value');
+      const betaEl = document.getElementById('beta-value');
+      const gammaEl = document.getElementById('gamma-value');
+      const deltaAlphaEl = document.getElementById('delta-alpha');
+      const deltaBetaEl = document.getElementById('delta-beta');
+      const inGalleryEl = document.getElementById('in-gallery');
+      const controlsLockedEl = document.getElementById('controls-locked');
+      
+      if (alphaEl) {
+        alphaEl.textContent = deviceOrientation.alpha ? deviceOrientation.alpha.toFixed(1) : 'null';
+        betaEl.textContent = deviceOrientation.beta ? deviceOrientation.beta.toFixed(1) : 'null';
+        gammaEl.textContent = deviceOrientation.gamma ? deviceOrientation.gamma.toFixed(1) : 'null';
+        
+        if (initialOrientation) {
+          deltaAlphaEl.textContent = (deviceOrientation.alpha - initialOrientation.alpha).toFixed(1);
+          deltaBetaEl.textContent = (deviceOrientation.beta - initialOrientation.beta).toFixed(1);
+        }
+        
+        inGalleryEl.textContent = controls ? (controls.isLocked ? 'YES' : 'NO') : 'NO';
+        controlsLockedEl.textContent = controls ? (controls.isLocked ? 'YES' : 'NO') : 'NO';
+      }
+    }, 100);
   }, 1000);
 }
 
@@ -510,6 +536,16 @@ if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOr
   const pointLight = new THREE.PointLight(0xfff5e6, 1.0, 20);
   pointLight.position.set(0, 3, -8);
   scene.add(pointLight);
+
+  // Add a test cube that rotates with orientation (for debugging)
+  if (isMobile) {
+    const testGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+    const testMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const testCube = new THREE.Mesh(testGeometry, testMaterial);
+    testCube.position.set(2, 2, -6);
+    testCube.name = 'orientationTestCube';
+    scene.add(testCube);
+  }
 
   // Record player
   const gltfLoader = new GLTFLoader();
@@ -1156,6 +1192,18 @@ export function animate() {
       betaValue: deviceOrientation.beta,
       gammaValue: deviceOrientation.gamma
     });
+  }
+
+  // Test cube rotation (visual confirmation orientation works)
+  if (isMobile && initialOrientation && deviceOrientation.alpha !== null) {
+    const testCube = scene.getObjectByName('orientationTestCube');
+    if (testCube) {
+      const deltaAlpha = deviceOrientation.alpha - initialOrientation.alpha;
+      const deltaBeta = deviceOrientation.beta - initialOrientation.beta;
+      
+      testCube.rotation.y = THREE.MathUtils.degToRad(deltaAlpha * 0.5);
+      testCube.rotation.x = THREE.MathUtils.degToRad(deltaBeta * 0.5);
+    }
   }
 
   if (
