@@ -418,7 +418,7 @@ body {
   padding: 20px 30px;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  z-index: 1500;
+  z-index: 2500;
   opacity: 0;
   pointer-events: auto;
 }
@@ -522,6 +522,12 @@ body {
   z-index: 2000;
   display: block !important;
   pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+  .hamburger-menu.show {
+    display: block !important;
+  }
 }
 
 .hamburger-button {
@@ -677,6 +683,17 @@ body {
   #album-title {
     font-size: 1.2em;
     margin-bottom: 8px;
+  }
+  
+  /* Align mobile controls and instructions at bottom */
+  #mobile-controls {
+    bottom: 20px;
+    right: 20px;
+  }
+  
+  .instructions-group {
+    bottom: 20px;
+    left: 20px;
   }
   
 }

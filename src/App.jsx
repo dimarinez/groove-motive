@@ -17,7 +17,7 @@ function App() {
       animate();
     }, 50);
     // Only show hamburger menu on mobile
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth <= 768;
     console.log('Is mobile:', isMobile);
     setShowHamburgerMenu(isMobile);
     console.log('Setting showHamburgerMenu to:', isMobile);

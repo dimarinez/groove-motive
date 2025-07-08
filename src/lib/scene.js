@@ -878,8 +878,8 @@ export function animate() {
     const gamma = THREE.MathUtils.degToRad(deviceOrientation.gamma - initialOrientation.gamma);
     
     // Make rotation more responsive and natural
-    const pitch = THREE.MathUtils.clamp(beta * 0.8, -Math.PI / 3, Math.PI / 3);
-    const yaw = THREE.MathUtils.clamp(gamma * 0.8, -Math.PI / 1.5, Math.PI / 1.5);
+    const pitch = THREE.MathUtils.clamp(-beta * 1.2, -Math.PI / 2, Math.PI / 2);
+    const yaw = THREE.MathUtils.clamp(-gamma * 1.2, -Math.PI, Math.PI);
     
     // Apply rotation to camera using the controls object
     const controlsObject = controls.getObject();
