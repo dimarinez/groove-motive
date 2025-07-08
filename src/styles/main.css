@@ -108,14 +108,22 @@ body {
 .mobile-button {
   width: 60px;
   height: 60px;
-  border: none;
-  margin: 10px;
-  font-size: 1.2em;
   border: 2px solid white;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.1);
   cursor: pointer;
-  font-size: 33px;
+  font-size: 24px;
   color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin: 5px;
+}
+
+.mobile-button:active {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0.95);
 }
 
 @media screen and (min-width: 480px) {
@@ -436,6 +444,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 0;
 }
 
 .mobile-action-controls {
@@ -462,12 +471,13 @@ body {
 }
 
 .hamburger-menu {
-  display: none !important;
+  display: none;
 }
 
 @media (max-width: 768px) {
   #container {
     flex-direction: column;
+    height: 100dvh;
   }
   #left-panel {
     width: 100%;
@@ -555,7 +565,7 @@ body {
     top: 20px;
     right: 20px;
     z-index: 1000;
-    display: none !important;
+    display: none;
   }
   
   .hamburger-menu.show {

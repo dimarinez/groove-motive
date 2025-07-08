@@ -8,9 +8,11 @@ export default function MobileControls() {
         <div>
           <button className="mobile-button" id="move-up">↑</button>
         </div>
-        <button className="mobile-button" id="move-left">←</button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="mobile-button" id="move-left">←</button>
+          <button className="mobile-button" id="move-right">→</button>
+        </div>
         <button className="mobile-button" id="move-down">↓</button>
-        <button className="mobile-button" id="move-right">→</button>
       </div>
       <div className="mobile-action-controls">
         <button className="mobile-action-button" id="mobile-preview">G</button>

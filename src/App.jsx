@@ -10,6 +10,12 @@ import gsap from 'gsap';
 function App() {
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
 
+  const handleEnterGallery = () => {
+    enterGallery();
+    animate();
+    setShowHamburgerMenu(true);
+  };
+
   useEffect(() => {
     // Initialize Three.js scene for preview
     initScene();
@@ -30,19 +36,19 @@ function App() {
     // Add event listener for enter button
     const enterButton = document.getElementById('enter-button');
     if (enterButton) {
-      enterButton.addEventListener('click', () => {
-        enterGallery();
-        animate();
-        setShowHamburgerMenu(true);
+      enterButton.addEventListener('click', handleEnterGallery);
+      // Add touch support for mobile
+      enterButton.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleEnterGallery();
       });
+      
+      return () => {
+        // Cleanup (e.g., remove event listeners)
+        enterButton.removeEventListener('click', handleEnterGallery);
+        enterButton.removeEventListener('touchstart', handleEnterGallery);
+      };
     }
-
-    return () => {
-      // Cleanup (e.g., remove event listeners)
-      if (enterButton) {
-        enterButton.removeEventListener('click', enterGallery);
-      }
-    };
   }, []);
 
   return (
