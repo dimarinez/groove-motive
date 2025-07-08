@@ -50,7 +50,7 @@ export default function LeftPanel() {
 
   return (
     <div id="left-panel" className="left-panel-container">
-      <img src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/src/assets/GM_Wordmark_CLEAR_BLACK.png" alt="Groove Motive" className="left-panel-logo" />
+      <img src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM_Wordmark_CLEAR_BLACK.png" alt="Groove Motive" className="left-panel-logo" />
       <p className="left-panel-description">
         Groove Motive is a record label founded by a Maryland native (Luke Andy) whose journey from rejection to success is defined by perseverance and authenticity. After an eye-opening experience at Moonrise Festival, where he saw Claude VonStroke perform, he shifted from producing rap beats to diving into house music production.
       </p>
