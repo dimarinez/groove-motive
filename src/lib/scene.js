@@ -235,100 +235,167 @@ export function initScene() {
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
 
-// Global function to setup device orientation listener
+// Legacy setup function (keeping for compatibility)
 function setupDeviceOrientationListener() {
-  console.log('Setting up device orientation listener...');
-  let lastValidOrientation = null;
-  
-  // Remove existing listener if any
-  if (window.deviceOrientationHandler) {
-    window.removeEventListener('deviceorientation', window.deviceOrientationHandler);
-  }
-  
-  // Create new handler
-  window.deviceOrientationHandler = (event) => {
-    console.log('Raw orientation event:', event.alpha, event.beta, event.gamma);
-    
-    // Ensure valid data
-    if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
-      deviceOrientation.alpha = event.alpha; // Z-axis (yaw)
-      deviceOrientation.beta = event.beta;  // X-axis (pitch)
-      deviceOrientation.gamma = event.gamma; // Y-axis (roll)
-
-      // Set initial orientation on first valid event
-      if (!initialOrientation) {
-        initialOrientation = {
-          alpha: event.alpha,
-          beta: event.beta,
-          gamma: event.gamma,
-        };
-        console.log('Initial orientation set:', initialOrientation);
-      }
-      lastValidOrientation = {
-        alpha: event.alpha,
-        beta: event.beta,
-        gamma: event.gamma,
-      };
-    } else if (lastValidOrientation) {
-      // Use last valid orientation if current event has null values
-      deviceOrientation.alpha = lastValidOrientation.alpha;
-      deviceOrientation.beta = lastValidOrientation.beta;
-      deviceOrientation.gamma = lastValidOrientation.gamma;
-    }
-    
-    // Debug logging
-    console.log('Device orientation updated:', {
-      alpha: deviceOrientation.alpha,
-      beta: deviceOrientation.beta,
-      gamma: deviceOrientation.gamma,
-      initialSet: !!initialOrientation
-    });
-  };
-  
-  // Add the listener
-  window.addEventListener('deviceorientation', window.deviceOrientationHandler, { passive: true });
-  console.log('Device orientation listener added successfully');
+  startOrientationTracking();
 }
 
-if (isMobile) {
-  try {
-    if (globalThis.window) {
-      // Request device orientation permission for iOS 13+
-      const requestPermission = async () => {
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-          try {
-            console.log('Requesting device orientation permission...');
-            const permission = await DeviceOrientationEvent.requestPermission();
-            console.log('Device orientation permission:', permission);
-            if (permission === 'granted') {
-              setupDeviceOrientationListener();
-            } else {
-              console.warn('Device orientation permission denied');
-            }
-          } catch (error) {
-            console.warn('Error requesting device orientation permission:', error);
-          }
+// Add orientation button to the actual UI instead of immediately
+function addOrientationButton() {
+  if (!isMobile || !globalThis.window) return;
+  
+  // Remove any existing button
+  const existingButton = document.querySelector('#orientation-button');
+  if (existingButton) existingButton.remove();
+  
+  const testButton = document.createElement('button');
+  testButton.id = 'orientation-button';
+  testButton.textContent = 'Enable Device Rotation';
+  testButton.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    background: #007AFF;
+    color: white;
+    padding: 16px 24px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    cursor: pointer;
+  `;
+  
+  testButton.onclick = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('🚀 Orientation button clicked from user interaction');
+    
+    // Must be called directly from user interaction
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        console.log('🚀 Requesting iOS permission...');
+        const permission = await DeviceOrientationEvent.requestPermission();
+        console.log('🚀 Permission result:', permission);
+        
+        if (permission === 'granted') {
+          startOrientationTracking();
+          testButton.textContent = '✅ Rotation Enabled';
+          testButton.style.background = '#34C759';
+          
+          // Hide button after 2 seconds
+          setTimeout(() => {
+            testButton.style.opacity = '0';
+            setTimeout(() => testButton.remove(), 300);
+          }, 2000);
         } else {
-          console.log('Device orientation permission not required');
-          setupDeviceOrientationListener();
+          testButton.textContent = '❌ Permission Denied';
+          testButton.style.background = '#FF3B30';
         }
+      } catch (error) {
+        console.error('🚀 Permission error:', error);
+        testButton.textContent = '⚠️ Permission Error';
+        testButton.style.background = '#FF9500';
+      }
+    } else {
+      // Android or older iOS
+      startOrientationTracking();
+      testButton.textContent = '✅ Rotation Enabled';
+      testButton.style.background = '#34C759';
+      
+      setTimeout(() => {
+        testButton.style.opacity = '0';
+        setTimeout(() => testButton.remove(), 300);
+      }, 2000);
+    }
+  };
+  
+  document.body.appendChild(testButton);
+  
+  // Add fade-in animation
+  testButton.style.opacity = '0';
+  setTimeout(() => {
+    testButton.style.transition = 'opacity 0.3s ease';
+    testButton.style.opacity = '1';
+  }, 100);
+}
+
+// Call this when page is ready and user has interacted
+if (isMobile) {
+  // Add button after a delay to ensure DOM is ready
+  setTimeout(() => {
+    addOrientationButton();
+    
+    // Add debug info
+    const debugDiv = document.createElement('div');
+    debugDiv.style.cssText = `
+      position: fixed;
+      top: 80px;
+      left: 10px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      z-index: 9999;
+      max-width: 300px;
+    `;
+    debugDiv.innerHTML = `
+      <strong>Debug Info:</strong><br>
+      User Agent: ${navigator.userAgent}<br>
+      DeviceOrientationEvent: ${typeof DeviceOrientationEvent !== 'undefined'}<br>
+      requestPermission: ${typeof DeviceOrientationEvent?.requestPermission === 'function'}<br>
+      HTTPS: ${location.protocol === 'https:'}<br>
+      Host: ${location.host}
+    `;
+    document.body.appendChild(debugDiv);
+    
+    // Remove after 10 seconds
+    setTimeout(() => debugDiv.remove(), 10000);
+  }, 1000);
+}
+
+// Simple orientation tracking function
+function startOrientationTracking() {
+  console.log('📱 Starting orientation tracking');
+  
+  // Clear any existing listeners
+  if (window.orientationHandler) {
+    window.removeEventListener('deviceorientation', window.orientationHandler);
+  }
+  
+  window.orientationHandler = (event) => {
+    if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
+      deviceOrientation = {
+        alpha: event.alpha,
+        beta: event.beta,
+        gamma: event.gamma
       };
-
-
-      // Store permission request function
-      window.requestDeviceOrientationPermission = requestPermission;
-
-      // Add listener immediately for Android/older iOS
-      setupDeviceOrientationListener();
-
-      // Request permission for iOS when entering gallery
-      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        console.log('iOS device detected, permission will be requested on gallery entry');
+      
+      // Set initial orientation on first reading
+      if (!initialOrientation) {
+        initialOrientation = { ...deviceOrientation };
+        console.log('📍 Initial orientation set:', initialOrientation);
+      }
+      
+      // Log occasionally to verify it's working
+      if (Math.random() < 0.01) {
+        console.log('📱 Orientation update:', deviceOrientation);
       }
     }
-  } catch (error) {
-    console.warn('Could not set up device orientation:', error);
-  }
+  };
+  
+  window.addEventListener('deviceorientation', window.orientationHandler);
+  console.log('✅ Orientation listener added');
+}
+
+// Auto-setup for Android devices (no permission needed)
+if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') {
+  console.log('📱 Android device detected, auto-enabling orientation');
+  startOrientationTracking();
 }
 
   // Materials
@@ -734,50 +801,7 @@ export function enterGallery() {
   // Force a render to ensure the canvas is properly initialized
   renderer.render(scene, camera);
 
-if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-  const requestPermissionButton = document.createElement('button');
-  requestPermissionButton.textContent = 'Enable Device Rotation';
-  requestPermissionButton.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    border: none;
-    padding: 15px 30px;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    z-index: 3000;
-    font-family: inherit;
-  `;
-
-  requestPermissionButton.addEventListener('click', async () => {
-    try {
-      const permission = await DeviceOrientationEvent.requestPermission();
-      console.log('Device orientation permission:', permission);
-      if (permission === 'granted') {
-        initialOrientation = null;
-        addDeviceOrientationListener(); // <-- re-add listener if not already active
-      }
-    } catch (error) {
-      console.warn('Permission error:', error);
-    }
-    if (document.body.contains(requestPermissionButton)) {
-      document.body.removeChild(requestPermissionButton);
-    }
-  });
-
-  document.body.appendChild(requestPermissionButton);
-
-  // Auto-remove button after 8 seconds
-  setTimeout(() => {
-    if (document.body.contains(requestPermissionButton)) {
-      document.body.removeChild(requestPermissionButton);
-    }
-  }, 8000);
-}
+// Remove the gallery permission button - using the simpler top-left button instead
 
   // Initial lock with error handling
   setTimeout(() => {
@@ -1111,15 +1135,18 @@ export function animate() {
     controls.moveForward(velocity.z * delta);
   }
 
-  // Debug orientation conditions
-  if (isMobile) {
-    console.log('Orientation debug:', {
+  // Debug orientation conditions (only log occasionally to avoid spam)
+  if (isMobile && Math.random() < 0.01) { // Log ~1% of the time
+    console.log('🎮 Animate orientation debug:', {
       isMobile,
       isLocked: controls.isLocked,
       hasInitialOrientation: !!initialOrientation,
       hasAlpha: deviceOrientation.alpha !== null,
       hasBeta: deviceOrientation.beta !== null,
-      hasGamma: deviceOrientation.gamma !== null
+      hasGamma: deviceOrientation.gamma !== null,
+      alphaValue: deviceOrientation.alpha,
+      betaValue: deviceOrientation.beta,
+      gammaValue: deviceOrientation.gamma
     });
   }
 
@@ -1136,25 +1163,31 @@ export function animate() {
     const deltaBeta = deviceOrientation.beta - initialOrientation.beta;
 
     // Apply sensitivity and convert to radians
-    const sensitivity = 0.8; // Increased sensitivity
+    const sensitivity = 2.0; // Increased sensitivity for testing
     const yaw = THREE.MathUtils.degToRad(deltaAlpha) * sensitivity;
     const pitch = THREE.MathUtils.clamp(
       THREE.MathUtils.degToRad(deltaBeta) * sensitivity,
-      -Math.PI / 3,
-      Math.PI / 3
+      -Math.PI / 2,
+      Math.PI / 2
     );
 
-    // Apply rotation to camera
-    camera.rotation.order = "YXZ";
-    camera.rotation.y = -yaw;
-    camera.rotation.x = -pitch;
+    // Get the camera object from controls and apply rotation
+    const cameraObject = controls.getObject();
+    cameraObject.rotation.order = "YXZ";
+    cameraObject.rotation.y = -yaw;
+    cameraObject.rotation.x = -pitch;
 
-    // Debug log for testing
-    console.log('Camera rotation applied:', {
+    // Force controls update
+    controls.update();
+
+    // Debug log for testing - log every time
+    console.log('🎯 Camera rotation applied:', {
       yaw: THREE.MathUtils.radToDeg(-yaw),
       pitch: THREE.MathUtils.radToDeg(-pitch),
       deltaAlpha,
-      deltaBeta
+      deltaBeta,
+      cameraRotationY: cameraObject.rotation.y,
+      cameraRotationX: cameraObject.rotation.x
     });
   }
 
