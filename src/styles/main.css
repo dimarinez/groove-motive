@@ -516,7 +516,7 @@ body {
 }
 
 @media (max-width: 768px) {
-  .hamburger-menu {
+  body.gallery-entered .hamburger-menu {
     position: fixed;
     top: 20px;
     right: 20px;

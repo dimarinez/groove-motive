@@ -181,7 +181,14 @@ export function initScene() {
         };
 
         const addDeviceOrientationListener = () => {
+          console.log('Adding device orientation listener');
           window.addEventListener('deviceorientation', (event) => {
+            console.log('Device orientation event received:', {
+              alpha: event.alpha,
+              beta: event.beta,
+              gamma: event.gamma
+            });
+            
             if (!initialOrientation && event.alpha !== null && event.beta !== null && event.gamma !== null) {
               initialOrientation = {
                 alpha: event.alpha || 0,
@@ -191,22 +198,21 @@ export function initScene() {
               console.log('Initial orientation set:', initialOrientation);
             }
             
-            if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
-              deviceOrientation.alpha = event.alpha || 0;
-              deviceOrientation.beta = event.beta || 0;
-              deviceOrientation.gamma = event.gamma || 0;
-              
-              // Debug logging
-              if (controls.isLocked && initialOrientation) {
-                console.log('Device orientation values:', { 
-                  alpha: event.alpha, 
-                  beta: event.beta, 
-                  gamma: event.gamma,
-                  deltaAlpha: (event.alpha || 0) - initialOrientation.alpha,
-                  deltaBeta: (event.beta || 0) - initialOrientation.beta,
-                  deltaGamma: (event.gamma || 0) - initialOrientation.gamma
-                });
-              }
+            // Always update device orientation, even if values are null
+            deviceOrientation.alpha = event.alpha;
+            deviceOrientation.beta = event.beta;
+            deviceOrientation.gamma = event.gamma;
+            
+            // Debug logging when controls are locked
+            if (controls && controls.isLocked && initialOrientation) {
+              console.log('Device orientation values (locked):', { 
+                alpha: event.alpha, 
+                beta: event.beta, 
+                gamma: event.gamma,
+                deltaAlpha: (event.alpha || 0) - initialOrientation.alpha,
+                deltaBeta: (event.beta || 0) - initialOrientation.beta,
+                deltaGamma: (event.gamma || 0) - initialOrientation.gamma
+              });
             }
           });
         };
@@ -404,6 +410,9 @@ function resetToInitialState() {
   // Reset cursor
   document.body.style.cursor = 'auto';
   
+  // Remove body class to hide mobile menu
+  document.body.classList.remove('gallery-entered');
+  
   // Show container with panels
   const container = document.getElementById('container');
   if (container) {
@@ -517,6 +526,9 @@ export function enterGallery() {
   const container = document.getElementById('container');
   if (container) container.style.display = 'none';
   
+  // Add body class to show mobile menu
+  document.body.classList.add('gallery-entered');
+  
   // Stop preview animation
   if (previewAnimationId) {
     cancelAnimationFrame(previewAnimationId);
@@ -578,10 +590,47 @@ export function enterGallery() {
   renderer.render(scene, camera);
 
   // Request device orientation permission on mobile
-  if (isMobile && window.requestDeviceOrientationPermission) {
+  if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    // Create a button or prompt user for permission
+    const requestPermissionButton = document.createElement('button');
+    requestPermissionButton.textContent = 'Enable Device Rotation';
+    requestPermissionButton.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 3000;
+      font-family: inherit;
+    `;
+    
+    requestPermissionButton.addEventListener('click', async () => {
+      try {
+        const permission = await DeviceOrientationEvent.requestPermission();
+        console.log('Device orientation permission:', permission);
+        if (permission === 'granted') {
+          console.log('Device orientation permission granted');
+        }
+      } catch (error) {
+        console.warn('Device orientation permission error:', error);
+      }
+      document.body.removeChild(requestPermissionButton);
+    });
+    
+    document.body.appendChild(requestPermissionButton);
+    
+    // Auto-remove button after 10 seconds
     setTimeout(() => {
-      window.requestDeviceOrientationPermission();
-    }, 200);
+      if (document.body.contains(requestPermissionButton)) {
+        document.body.removeChild(requestPermissionButton);
+      }
+    }, 10000);
   }
 
   // Initial lock with error handling
@@ -893,8 +942,8 @@ export function animate() {
     const gamma = THREE.MathUtils.degToRad(deltaGamma);
     
     // Apply rotation with better sensitivity
-    const pitch = THREE.MathUtils.clamp(-beta * 0.5, -Math.PI / 3, Math.PI / 3);
-    const yaw = THREE.MathUtils.clamp(gamma * 0.5, -Math.PI / 2, Math.PI / 2);
+    const pitch = THREE.MathUtils.clamp(-beta * 0.8, -Math.PI / 3, Math.PI / 3);
+    const yaw = THREE.MathUtils.clamp(gamma * 0.8, -Math.PI / 2, Math.PI / 2);
     
     // Apply rotation to camera using the controls object
     const controlsObject = controls.getObject();
@@ -902,8 +951,8 @@ export function animate() {
     controlsObject.rotation.x = pitch;
     controlsObject.rotation.y = yaw;
     
-    // Debug logging for rotation values
-    if (Math.abs(pitch) > 0.05 || Math.abs(yaw) > 0.05) {
+    // Debug logging for rotation values (only when significant movement)
+    if (Math.abs(pitch) > 0.1 || Math.abs(yaw) > 0.1) {
       console.log('Gyro rotation applied:', { 
         pitch: THREE.MathUtils.radToDeg(pitch),
         yaw: THREE.MathUtils.radToDeg(yaw),
