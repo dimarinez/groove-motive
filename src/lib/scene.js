@@ -240,7 +240,7 @@ function setupDeviceOrientationListener() {
   startOrientationTracking();
 }
 
-// Add orientation button to the actual UI instead of immediately
+// Alternative approach using gyroscope data and manual rotation
 function addOrientationButton() {
   if (!isMobile || !globalThis.window) return;
   
@@ -250,7 +250,7 @@ function addOrientationButton() {
   
   const testButton = document.createElement('button');
   testButton.id = 'orientation-button';
-  testButton.textContent = 'Enable Device Rotation';
+  testButton.textContent = 'Enable Touch Rotation';
   testButton.style.cssText = `
     position: fixed;
     top: 20px;
@@ -268,105 +268,22 @@ function addOrientationButton() {
     cursor: pointer;
   `;
   
-  testButton.onclick = async (e) => {
+  testButton.onclick = (e) => {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('🚀 Orientation button clicked from user interaction');
+    console.log('🚀 Enabling touch rotation instead of orientation');
     
-    // Test multiple event types
-    let orientationListener, motionListener;
-    const testPromise = new Promise((resolve) => {
-      let resolved = false;
-      
-      orientationListener = (event) => {
-        console.log('🧪 DeviceOrientation event:', event.alpha, event.beta, event.gamma);
-        if (!resolved && event.alpha !== null) {
-          resolved = true;
-          resolve('orientation');
-        }
-      };
-      
-      motionListener = (event) => {
-        console.log('🧪 DeviceMotion event:', event.rotationRate);
-        if (!resolved && event.rotationRate) {
-          resolved = true;
-          resolve('motion');
-        }
-      };
-      
-      window.addEventListener('deviceorientation', orientationListener);
-      window.addEventListener('devicemotion', motionListener);
-      
-      // Timeout after 5 seconds
-      setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          resolve(false);
-        }
-      }, 5000);
-    });
+    // Enable touch rotation for mobile
+    enableTouchRotation();
+    testButton.textContent = '✅ Touch Rotation Enabled';
+    testButton.style.background = '#34C759';
     
-    // Request permissions for both events
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-      try {
-        console.log('🚀 Requesting iOS permissions...');
-        
-        // Request orientation permission
-        const orientationPermission = await DeviceOrientationEvent.requestPermission();
-        console.log('🚀 Orientation permission:', orientationPermission);
-        
-        // Request motion permission if available
-        let motionPermission = 'granted';
-        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-          motionPermission = await DeviceMotionEvent.requestPermission();
-          console.log('🚀 Motion permission:', motionPermission);
-        }
-        
-        if (orientationPermission === 'granted' || motionPermission === 'granted') {
-          testButton.textContent = '⏳ Testing Events...';
-          testButton.style.background = '#FF9500';
-          
-          // Test if events actually work
-          const eventType = await testPromise;
-          window.removeEventListener('deviceorientation', orientationListener);
-          window.removeEventListener('devicemotion', motionListener);
-          
-          if (eventType) {
-            startOrientationTracking();
-            testButton.textContent = `✅ ${eventType} Working`;
-            testButton.style.background = '#34C759';
-          } else {
-            testButton.textContent = '❌ No Events';
-            testButton.style.background = '#FF3B30';
-          }
-        } else {
-          testButton.textContent = '❌ Permission Denied';
-          testButton.style.background = '#FF3B30';
-        }
-      } catch (error) {
-        console.error('🚀 Permission error:', error);
-        testButton.textContent = '⚠️ Permission Error';
-        testButton.style.background = '#FF9500';
-      }
-    } else {
-      // Android or older iOS
-      testButton.textContent = '⏳ Testing Events...';
-      testButton.style.background = '#FF9500';
-      
-      const eventType = await testPromise;
-      window.removeEventListener('deviceorientation', orientationListener);
-      window.removeEventListener('devicemotion', motionListener);
-      
-      if (eventType) {
-        startOrientationTracking();
-        testButton.textContent = `✅ ${eventType} Working`;
-        testButton.style.background = '#34C759';
-      } else {
-        testButton.textContent = '❌ No Events';
-        testButton.style.background = '#FF3B30';
-      }
-    }
+    // Hide button after 2 seconds
+    setTimeout(() => {
+      testButton.style.opacity = '0';
+      setTimeout(() => testButton.remove(), 300);
+    }, 2000);
   };
   
   document.body.appendChild(testButton);
@@ -438,6 +355,76 @@ if (isMobile) {
       }
     }, 100);
   }, 1000);
+}
+
+// Touch rotation system for mobile (fallback when orientation doesn't work)
+function enableTouchRotation() {
+  if (!isMobile) return;
+  
+  console.log('📱 Setting up touch rotation');
+  
+  let touchRotation = { x: 0, y: 0 };
+  let lastTouch = { x: 0, y: 0 };
+  let touching = false;
+  
+  const handleTouchStart = (e) => {
+    e.preventDefault();
+    touching = true;
+    const touch = e.touches[0];
+    lastTouch.x = touch.clientX;
+    lastTouch.y = touch.clientY;
+    
+    // Store initial rotation
+    if (!initialOrientation) {
+      initialOrientation = { alpha: 0, beta: 0, gamma: 0 };
+    }
+  };
+  
+  const handleTouchMove = (e) => {
+    if (!touching) return;
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - lastTouch.x;
+    const deltaY = touch.clientY - lastTouch.y;
+    
+    // Update rotation based on touch movement
+    touchRotation.y += deltaX * 0.01;
+    touchRotation.x += deltaY * 0.01;
+    
+    // Clamp vertical rotation
+    touchRotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, touchRotation.x));
+    
+    // Update device orientation simulation
+    deviceOrientation = {
+      alpha: touchRotation.y * 57.2958, // Convert to degrees
+      beta: touchRotation.x * 57.2958,
+      gamma: 0
+    };
+    
+    lastTouch.x = touch.clientX;
+    lastTouch.y = touch.clientY;
+    
+    console.log('📱 Touch rotation:', touchRotation, 'Device sim:', deviceOrientation);
+  };
+  
+  const handleTouchEnd = (e) => {
+    e.preventDefault();
+    touching = false;
+  };
+  
+  // Add touch listeners to the canvas
+  const canvas = document.getElementById('gallery-canvas') || renderer.domElement;
+  canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+  canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+  canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+  
+  // Also add to document for fullscreen mode
+  document.addEventListener('touchstart', handleTouchStart, { passive: false });
+  document.addEventListener('touchmove', handleTouchMove, { passive: false });
+  document.addEventListener('touchend', handleTouchEnd, { passive: false });
+  
+  console.log('✅ Touch rotation enabled');
 }
 
 // Simple orientation tracking function
