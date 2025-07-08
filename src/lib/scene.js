@@ -216,9 +216,7 @@ export function initScene() {
           console.log('Device orientation permission:', permission);
           if (permission === 'granted') {
             initialOrientation = null; // Reset initial orientation
-            if (window.requestDeviceOrientationPermission) {
-              window.requestDeviceOrientationPermission();
-            }
+            setupDeviceOrientationListener(); // Add listener directly
           }
         }).catch(error => {
           console.warn('Permission error:', error);
@@ -237,6 +235,61 @@ export function initScene() {
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
 
+// Global function to setup device orientation listener
+function setupDeviceOrientationListener() {
+  console.log('Setting up device orientation listener...');
+  let lastValidOrientation = null;
+  
+  // Remove existing listener if any
+  if (window.deviceOrientationHandler) {
+    window.removeEventListener('deviceorientation', window.deviceOrientationHandler);
+  }
+  
+  // Create new handler
+  window.deviceOrientationHandler = (event) => {
+    console.log('Raw orientation event:', event.alpha, event.beta, event.gamma);
+    
+    // Ensure valid data
+    if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
+      deviceOrientation.alpha = event.alpha; // Z-axis (yaw)
+      deviceOrientation.beta = event.beta;  // X-axis (pitch)
+      deviceOrientation.gamma = event.gamma; // Y-axis (roll)
+
+      // Set initial orientation on first valid event
+      if (!initialOrientation) {
+        initialOrientation = {
+          alpha: event.alpha,
+          beta: event.beta,
+          gamma: event.gamma,
+        };
+        console.log('Initial orientation set:', initialOrientation);
+      }
+      lastValidOrientation = {
+        alpha: event.alpha,
+        beta: event.beta,
+        gamma: event.gamma,
+      };
+    } else if (lastValidOrientation) {
+      // Use last valid orientation if current event has null values
+      deviceOrientation.alpha = lastValidOrientation.alpha;
+      deviceOrientation.beta = lastValidOrientation.beta;
+      deviceOrientation.gamma = lastValidOrientation.gamma;
+    }
+    
+    // Debug logging
+    console.log('Device orientation updated:', {
+      alpha: deviceOrientation.alpha,
+      beta: deviceOrientation.beta,
+      gamma: deviceOrientation.gamma,
+      initialSet: !!initialOrientation
+    });
+  };
+  
+  // Add the listener
+  window.addEventListener('deviceorientation', window.deviceOrientationHandler, { passive: true });
+  console.log('Device orientation listener added successfully');
+}
+
 if (isMobile) {
   try {
     if (globalThis.window) {
@@ -248,7 +301,7 @@ if (isMobile) {
             const permission = await DeviceOrientationEvent.requestPermission();
             console.log('Device orientation permission:', permission);
             if (permission === 'granted') {
-              addDeviceOrientationListener();
+              setupDeviceOrientationListener();
             } else {
               console.warn('Device orientation permission denied');
             }
@@ -257,55 +310,16 @@ if (isMobile) {
           }
         } else {
           console.log('Device orientation permission not required');
-          addDeviceOrientationListener();
+          setupDeviceOrientationListener();
         }
       };
 
-      const addDeviceOrientationListener = () => {
-        console.log('Adding device orientation listener');
-        let lastValidOrientation = null;
-        window.addEventListener('deviceorientation', (event) => {
-          // Ensure valid data
-          if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
-            deviceOrientation.alpha = event.alpha; // Z-axis (yaw)
-            deviceOrientation.beta = event.beta;  // X-axis (pitch)
-            deviceOrientation.gamma = event.gamma; // Y-axis (roll)
-
-            // Set initial orientation on first valid event
-            if (!initialOrientation) {
-              initialOrientation = {
-                alpha: event.alpha,
-                beta: event.beta,
-                gamma: event.gamma,
-              };
-              console.log('Initial orientation set:', initialOrientation);
-            }
-            lastValidOrientation = {
-              alpha: event.alpha,
-              beta: event.beta,
-              gamma: event.gamma,
-            };
-          } else if (lastValidOrientation) {
-            // Use last valid orientation if current event has null values
-            deviceOrientation.alpha = lastValidOrientation.alpha;
-            deviceOrientation.beta = lastValidOrientation.beta;
-            deviceOrientation.gamma = lastValidOrientation.gamma;
-          }
-          // Debug logging
-          console.log('Device orientation:', {
-            alpha: deviceOrientation.alpha,
-            beta: deviceOrientation.beta,
-            gamma: deviceOrientation.gamma,
-            initialSet: !!initialOrientation
-          });
-        }, { passive: true });
-      };
 
       // Store permission request function
       window.requestDeviceOrientationPermission = requestPermission;
 
       // Add listener immediately for Android/older iOS
-      addDeviceOrientationListener();
+      setupDeviceOrientationListener();
 
       // Request permission for iOS when entering gallery
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
