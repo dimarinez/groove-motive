@@ -274,37 +274,67 @@ function addOrientationButton() {
     
     console.log('🚀 Orientation button clicked from user interaction');
     
-    // Test basic orientation event first
-    let testListener;
+    // Test multiple event types
+    let orientationListener, motionListener;
     const testPromise = new Promise((resolve) => {
-      testListener = (event) => {
-        console.log('🧪 Test orientation event received:', event.alpha, event.beta, event.gamma);
-        resolve(event.alpha !== null);
-      };
-      window.addEventListener('deviceorientation', testListener);
+      let resolved = false;
       
-      // Timeout after 3 seconds
-      setTimeout(() => resolve(false), 3000);
+      orientationListener = (event) => {
+        console.log('🧪 DeviceOrientation event:', event.alpha, event.beta, event.gamma);
+        if (!resolved && event.alpha !== null) {
+          resolved = true;
+          resolve('orientation');
+        }
+      };
+      
+      motionListener = (event) => {
+        console.log('🧪 DeviceMotion event:', event.rotationRate);
+        if (!resolved && event.rotationRate) {
+          resolved = true;
+          resolve('motion');
+        }
+      };
+      
+      window.addEventListener('deviceorientation', orientationListener);
+      window.addEventListener('devicemotion', motionListener);
+      
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          resolve(false);
+        }
+      }, 5000);
     });
     
-    // Must be called directly from user interaction
+    // Request permissions for both events
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
       try {
-        console.log('🚀 Requesting iOS permission...');
-        const permission = await DeviceOrientationEvent.requestPermission();
-        console.log('🚀 Permission result:', permission);
+        console.log('🚀 Requesting iOS permissions...');
         
-        if (permission === 'granted') {
+        // Request orientation permission
+        const orientationPermission = await DeviceOrientationEvent.requestPermission();
+        console.log('🚀 Orientation permission:', orientationPermission);
+        
+        // Request motion permission if available
+        let motionPermission = 'granted';
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+          motionPermission = await DeviceMotionEvent.requestPermission();
+          console.log('🚀 Motion permission:', motionPermission);
+        }
+        
+        if (orientationPermission === 'granted' || motionPermission === 'granted') {
           testButton.textContent = '⏳ Testing Events...';
           testButton.style.background = '#FF9500';
           
           // Test if events actually work
-          const eventsWork = await testPromise;
-          window.removeEventListener('deviceorientation', testListener);
+          const eventType = await testPromise;
+          window.removeEventListener('deviceorientation', orientationListener);
+          window.removeEventListener('devicemotion', motionListener);
           
-          if (eventsWork) {
+          if (eventType) {
             startOrientationTracking();
-            testButton.textContent = '✅ Rotation Working';
+            testButton.textContent = `✅ ${eventType} Working`;
             testButton.style.background = '#34C759';
           } else {
             testButton.textContent = '❌ No Events';
@@ -324,12 +354,13 @@ function addOrientationButton() {
       testButton.textContent = '⏳ Testing Events...';
       testButton.style.background = '#FF9500';
       
-      const eventsWork = await testPromise;
-      window.removeEventListener('deviceorientation', testListener);
+      const eventType = await testPromise;
+      window.removeEventListener('deviceorientation', orientationListener);
+      window.removeEventListener('devicemotion', motionListener);
       
-      if (eventsWork) {
+      if (eventType) {
         startOrientationTracking();
-        testButton.textContent = '✅ Rotation Working';
+        testButton.textContent = `✅ ${eventType} Working`;
         testButton.style.background = '#34C759';
       } else {
         testButton.textContent = '❌ No Events';
