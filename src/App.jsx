@@ -16,7 +16,9 @@ function App() {
     setTimeout(() => {
       animate();
     }, 50);
-    setShowHamburgerMenu(true);
+    // Only show hamburger menu on mobile
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    setShowHamburgerMenu(isMobile);
   };
 
   useEffect(() => {

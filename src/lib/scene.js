@@ -179,19 +179,21 @@ export function initScene() {
                 beta: event.beta,
                 gamma: event.gamma,
               };
+              console.log('Initial orientation set:', initialOrientation);
             }
             deviceOrientation.alpha = event.alpha;
             deviceOrientation.beta = event.beta;
             deviceOrientation.gamma = event.gamma;
+            
+            // Debug logging
+            if (controls.isLocked && initialOrientation) {
+              console.log('Device orientation:', { alpha: event.alpha, beta: event.beta, gamma: event.gamma });
+            }
           });
         };
 
-        // Add click handler to request permission when entering fullscreen
-        document.addEventListener('click', (event) => {
-          if (event.target.id === 'enter-button') {
-            requestPermission();
-          }
-        });
+        // Store the permission request function for later use
+        window.requestDeviceOrientationPermission = requestPermission;
 
         // Also try to add listener immediately (will work on Android and older iOS)
         addDeviceOrientationListener();
@@ -389,6 +391,12 @@ function resetToInitialState() {
     if (mobileControls) mobileControls.style.display = 'none';
   }
   
+  // Hide hamburger menu
+  const hamburgerMenu = document.querySelector('.hamburger-menu');
+  if (hamburgerMenu) {
+    hamburgerMenu.classList.remove('show');
+  }
+  
   // Restore panel animations
   gsap.fromTo('#left-panel', 
     { opacity: 0, x: -50 }, 
@@ -398,7 +406,14 @@ function resetToInitialState() {
   
   // Reset camera to initial position
   camera.position.set(0, 1.6, -2);
+  camera.rotation.set(0, 0, 0);
   camera.lookAt(0, 1.6, -6);
+  
+  // Reset device orientation
+  if (isMobile) {
+    initialOrientation = null;
+    deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
+  }
   
   // Remove fullscreen canvas if it exists
   if (document.body.contains(renderer.domElement)) {
@@ -536,6 +551,11 @@ export function enterGallery() {
 
   // Force a render to ensure the canvas is properly initialized
   renderer.render(scene, camera);
+
+  // Request device orientation permission on mobile
+  if (isMobile && window.requestDeviceOrientationPermission) {
+    window.requestDeviceOrientationPermission();
+  }
 
   // Initial lock with error handling
   setTimeout(() => {
@@ -843,10 +863,13 @@ export function animate() {
     const pitch = THREE.MathUtils.clamp(beta * 0.8, -Math.PI / 3, Math.PI / 3);
     const yaw = THREE.MathUtils.clamp(gamma * 0.8, -Math.PI / 1.5, Math.PI / 1.5);
     
-    // Apply rotation to camera
+    // Apply rotation to camera (bypass PointerLockControls for mobile)
     camera.rotation.order = 'YXZ';
     camera.rotation.x = pitch;
     camera.rotation.y = yaw;
+    
+    // Update controls to match camera rotation
+    controls.getObject().rotation.copy(camera.rotation);
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
@@ -874,6 +897,10 @@ export function animate() {
       albumTitle.textContent = currentAlbum.title;
       if (ui.style.display !== 'block') {
         ui.style.display = 'block';
+        // Debug logging for mobile
+        if (isMobile) {
+          console.log('Showing album popup on mobile:', currentAlbum.title);
+        }
         gsap.fromTo(
           '#ui',
           { opacity: 0, scale: 0.8 },
@@ -883,6 +910,10 @@ export function animate() {
       ui.classList.add('visible');
     } else if (!closestAlbum && currentAlbum) {
       currentAlbum = null;
+      // Debug logging for mobile
+      if (isMobile) {
+        console.log('Hiding album popup on mobile');
+      }
       gsap.to('#ui', {
         opacity: 0,
         scale: 0.8,
