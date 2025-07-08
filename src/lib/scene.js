@@ -381,9 +381,17 @@ function startOrientationTracking() {
         console.log('📍 Initial orientation set:', initialOrientation);
       }
       
-      // Log occasionally to verify it's working
-      if (Math.random() < 0.01) {
-        console.log('📱 Orientation update:', deviceOrientation);
+      // Log more frequently to verify it's working
+      if (Math.random() < 0.1) {
+        console.log('📱 Orientation update:', {
+          current: deviceOrientation,
+          initial: initialOrientation,
+          delta: initialOrientation ? {
+            alpha: deviceOrientation.alpha - initialOrientation.alpha,
+            beta: deviceOrientation.beta - initialOrientation.beta,
+            gamma: deviceOrientation.gamma - initialOrientation.gamma
+          } : null
+        });
       }
     }
   };
@@ -1163,32 +1171,36 @@ export function animate() {
     const deltaBeta = deviceOrientation.beta - initialOrientation.beta;
 
     // Apply sensitivity and convert to radians
-    const sensitivity = 2.0; // Increased sensitivity for testing
+    const sensitivity = 1.5;
     const yaw = THREE.MathUtils.degToRad(deltaAlpha) * sensitivity;
     const pitch = THREE.MathUtils.clamp(
       THREE.MathUtils.degToRad(deltaBeta) * sensitivity,
-      -Math.PI / 2,
-      Math.PI / 2
+      -Math.PI / 3,
+      Math.PI / 3
     );
 
-    // Get the camera object from controls and apply rotation
-    const cameraObject = controls.getObject();
-    cameraObject.rotation.order = "YXZ";
-    cameraObject.rotation.y = -yaw;
-    cameraObject.rotation.x = -pitch;
+    // Apply rotation directly to the camera (not through controls)
+    // PointerLockControls manages the camera rotation through its internal object
+    const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+    euler.setFromQuaternion(camera.quaternion);
+    
+    // Apply device orientation rotation
+    euler.y = -yaw;
+    euler.x = -pitch;
+    
+    camera.quaternion.setFromEuler(euler);
 
-    // Force controls update
-    controls.update();
-
-    // Debug log for testing - log every time
-    console.log('🎯 Camera rotation applied:', {
-      yaw: THREE.MathUtils.radToDeg(-yaw),
-      pitch: THREE.MathUtils.radToDeg(-pitch),
-      deltaAlpha,
-      deltaBeta,
-      cameraRotationY: cameraObject.rotation.y,
-      cameraRotationX: cameraObject.rotation.x
-    });
+    // Debug log occasionally
+    if (Math.random() < 0.05) {
+      console.log('🎯 Camera rotation applied:', {
+        yaw: THREE.MathUtils.radToDeg(-yaw),
+        pitch: THREE.MathUtils.radToDeg(-pitch),
+        deltaAlpha,
+        deltaBeta,
+        cameraRotationY: euler.y,
+        cameraRotationX: euler.x
+      });
+    }
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
