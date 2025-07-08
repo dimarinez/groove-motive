@@ -207,6 +207,23 @@ export function initScene() {
       } else {
         console.warn("Mobile controls element not found");
       }
+      
+      // Request device orientation permission when entering gallery on iOS
+      if (typeof DeviceOrientationEvent !== 'undefined' && 
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        console.log('Requesting device orientation permission on gallery entry...');
+        DeviceOrientationEvent.requestPermission().then(permission => {
+          console.log('Device orientation permission:', permission);
+          if (permission === 'granted') {
+            initialOrientation = null; // Reset initial orientation
+            if (window.requestDeviceOrientationPermission) {
+              window.requestDeviceOrientationPermission();
+            }
+          }
+        }).catch(error => {
+          console.warn('Permission error:', error);
+        });
+      }
     }
   });
   controls.addEventListener("unlock", () => {
@@ -1096,23 +1113,35 @@ export function animate() {
     isMobile &&
     controls.isLocked &&
     initialOrientation &&
-    deviceOrientation.alpha !== null
+    deviceOrientation.alpha !== null &&
+    deviceOrientation.beta !== null &&
+    deviceOrientation.gamma !== null
   ) {
     // Calculate relative orientation
     const deltaAlpha = deviceOrientation.alpha - initialOrientation.alpha;
     const deltaBeta = deviceOrientation.beta - initialOrientation.beta;
 
-    const yaw = THREE.MathUtils.degToRad(deltaAlpha) * 0.5;
+    // Apply sensitivity and convert to radians
+    const sensitivity = 0.8; // Increased sensitivity
+    const yaw = THREE.MathUtils.degToRad(deltaAlpha) * sensitivity;
     const pitch = THREE.MathUtils.clamp(
-      THREE.MathUtils.degToRad(deltaBeta) * 0.5,
+      THREE.MathUtils.degToRad(deltaBeta) * sensitivity,
       -Math.PI / 3,
       Math.PI / 3
     );
 
-    // Instead of controls.getObject().rotation:
+    // Apply rotation to camera
     camera.rotation.order = "YXZ";
     camera.rotation.y = -yaw;
     camera.rotation.x = -pitch;
+
+    // Debug log for testing
+    console.log('Camera rotation applied:', {
+      yaw: THREE.MathUtils.radToDeg(-yaw),
+      pitch: THREE.MathUtils.radToDeg(-pitch),
+      deltaAlpha,
+      deltaBeta
+    });
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
