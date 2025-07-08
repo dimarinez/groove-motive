@@ -274,6 +274,19 @@ function addOrientationButton() {
     
     console.log('🚀 Orientation button clicked from user interaction');
     
+    // Test basic orientation event first
+    let testListener;
+    const testPromise = new Promise((resolve) => {
+      testListener = (event) => {
+        console.log('🧪 Test orientation event received:', event.alpha, event.beta, event.gamma);
+        resolve(event.alpha !== null);
+      };
+      window.addEventListener('deviceorientation', testListener);
+      
+      // Timeout after 3 seconds
+      setTimeout(() => resolve(false), 3000);
+    });
+    
     // Must be called directly from user interaction
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
       try {
@@ -282,15 +295,21 @@ function addOrientationButton() {
         console.log('🚀 Permission result:', permission);
         
         if (permission === 'granted') {
-          startOrientationTracking();
-          testButton.textContent = '✅ Rotation Enabled';
-          testButton.style.background = '#34C759';
+          testButton.textContent = '⏳ Testing Events...';
+          testButton.style.background = '#FF9500';
           
-          // Hide button after 2 seconds
-          setTimeout(() => {
-            testButton.style.opacity = '0';
-            setTimeout(() => testButton.remove(), 300);
-          }, 2000);
+          // Test if events actually work
+          const eventsWork = await testPromise;
+          window.removeEventListener('deviceorientation', testListener);
+          
+          if (eventsWork) {
+            startOrientationTracking();
+            testButton.textContent = '✅ Rotation Working';
+            testButton.style.background = '#34C759';
+          } else {
+            testButton.textContent = '❌ No Events';
+            testButton.style.background = '#FF3B30';
+          }
         } else {
           testButton.textContent = '❌ Permission Denied';
           testButton.style.background = '#FF3B30';
@@ -302,14 +321,20 @@ function addOrientationButton() {
       }
     } else {
       // Android or older iOS
-      startOrientationTracking();
-      testButton.textContent = '✅ Rotation Enabled';
-      testButton.style.background = '#34C759';
+      testButton.textContent = '⏳ Testing Events...';
+      testButton.style.background = '#FF9500';
       
-      setTimeout(() => {
-        testButton.style.opacity = '0';
-        setTimeout(() => testButton.remove(), 300);
-      }, 2000);
+      const eventsWork = await testPromise;
+      window.removeEventListener('deviceorientation', testListener);
+      
+      if (eventsWork) {
+        startOrientationTracking();
+        testButton.textContent = '✅ Rotation Working';
+        testButton.style.background = '#34C759';
+      } else {
+        testButton.textContent = '❌ No Events';
+        testButton.style.background = '#FF3B30';
+      }
     }
   };
   
