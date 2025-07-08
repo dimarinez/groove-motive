@@ -448,8 +448,14 @@ function startOrientationTracking() {
   if (window.orientationHandler) {
     window.removeEventListener('deviceorientation', window.orientationHandler);
   }
+  if (window.motionHandler) {
+    window.removeEventListener('devicemotion', window.motionHandler);
+  }
   
-  window.orientationHandler = (event) => {
+  // Try the exact same approach as working sites
+  const handleOrientation = (event) => {
+    console.log('📱 Raw orientation event:', event);
+    
     if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
       deviceOrientation = {
         alpha: event.alpha,
@@ -463,23 +469,46 @@ function startOrientationTracking() {
         console.log('📍 Initial orientation set:', initialOrientation);
       }
       
-      // Log more frequently to verify it's working
-      if (Math.random() < 0.1) {
-        console.log('📱 Orientation update:', {
-          current: deviceOrientation,
-          initial: initialOrientation,
-          delta: initialOrientation ? {
-            alpha: deviceOrientation.alpha - initialOrientation.alpha,
-            beta: deviceOrientation.beta - initialOrientation.beta,
-            gamma: deviceOrientation.gamma - initialOrientation.gamma
-          } : null
-        });
+      console.log('📱 Orientation values:', deviceOrientation);
+    }
+  };
+  
+  const handleMotion = (event) => {
+    console.log('📱 Raw motion event:', event);
+    
+    if (event.rotationRate) {
+      const { alpha, beta, gamma } = event.rotationRate;
+      if (alpha !== null && beta !== null && gamma !== null) {
+        // Use rotation rate as backup
+        deviceOrientation = {
+          alpha: alpha * 10, // Scale up rotation rate
+          beta: beta * 10,
+          gamma: gamma * 10
+        };
+        
+        if (!initialOrientation) {
+          initialOrientation = { ...deviceOrientation };
+          console.log('📍 Initial motion orientation set:', initialOrientation);
+        }
+        
+        console.log('📱 Motion values:', deviceOrientation);
       }
     }
   };
   
-  window.addEventListener('deviceorientation', window.orientationHandler);
-  console.log('✅ Orientation listener added');
+  // Add listeners with different options
+  window.orientationHandler = handleOrientation;
+  window.motionHandler = handleMotion;
+  
+  // Try different event registration methods
+  window.addEventListener('deviceorientation', handleOrientation, { passive: false });
+  window.addEventListener('devicemotion', handleMotion, { passive: false });
+  
+  // Also try without passive
+  document.addEventListener('deviceorientation', handleOrientation);
+  document.addEventListener('devicemotion', handleMotion);
+  
+  console.log('✅ Multiple orientation listeners added');
 }
 
 // Auto-setup for Android devices (no permission needed)
