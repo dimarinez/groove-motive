@@ -130,7 +130,15 @@ export function initScene() {
   controls.addEventListener('lock', () => {
     document.body.style.cursor = 'none';
     ui.style.display = 'none';
-    if (isMobile) document.getElementById('mobile-controls').style.display = 'flex';
+    if (isMobile) {
+      const mobileControls = document.getElementById('mobile-controls');
+      if (mobileControls) {
+        mobileControls.style.display = 'flex';
+        console.log('Mobile controls shown');
+      } else {
+        console.warn('Mobile controls element not found');
+      }
+    }
   });
   controls.addEventListener('unlock', () => {
     document.body.style.cursor = 'auto';
@@ -146,18 +154,47 @@ export function initScene() {
   if (isMobile) {
     try {
       if (globalThis.window) {
-        window.addEventListener('deviceorientation', (event) => {
-          if (!initialOrientation) {
-            initialOrientation = {
-              alpha: event.alpha,
-              beta: event.beta,
-              gamma: event.gamma,
-            };
+        // Request device orientation permission for iOS 13+
+        const requestPermission = async () => {
+          if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            try {
+              const permission = await DeviceOrientationEvent.requestPermission();
+              if (permission === 'granted') {
+                addDeviceOrientationListener();
+              }
+            } catch (error) {
+              console.warn('Device orientation permission denied:', error);
+              addDeviceOrientationListener(); // Try anyway
+            }
+          } else {
+            addDeviceOrientationListener();
           }
-          deviceOrientation.alpha = event.alpha;
-          deviceOrientation.beta = event.beta;
-          deviceOrientation.gamma = event.gamma;
+        };
+
+        const addDeviceOrientationListener = () => {
+          window.addEventListener('deviceorientation', (event) => {
+            if (!initialOrientation && event.alpha !== null && event.beta !== null && event.gamma !== null) {
+              initialOrientation = {
+                alpha: event.alpha,
+                beta: event.beta,
+                gamma: event.gamma,
+              };
+            }
+            deviceOrientation.alpha = event.alpha;
+            deviceOrientation.beta = event.beta;
+            deviceOrientation.gamma = event.gamma;
+          });
+        };
+
+        // Add click handler to request permission when entering fullscreen
+        document.addEventListener('click', (event) => {
+          if (event.target.id === 'enter-button') {
+            requestPermission();
+          }
         });
+
+        // Also try to add listener immediately (will work on Android and older iOS)
+        addDeviceOrientationListener();
       }
     } catch (error) {
       console.warn('Could not add device orientation listener:', error);
@@ -393,7 +430,15 @@ function resetToInitialState() {
   controls.addEventListener('lock', () => {
     document.body.style.cursor = 'none';
     ui.style.display = 'none';
-    if (isMobile) document.getElementById('mobile-controls').style.display = 'flex';
+    if (isMobile) {
+      const mobileControls = document.getElementById('mobile-controls');
+      if (mobileControls) {
+        mobileControls.style.display = 'flex';
+        console.log('Mobile controls shown in resetToInitialState');
+      } else {
+        console.warn('Mobile controls element not found in resetToInitialState');
+      }
+    }
   });
   controls.addEventListener('unlock', () => {
     // Clean up click-to-lock handler
@@ -499,6 +544,15 @@ export function enterGallery() {
         controls.lock();
       } catch (error) {
         console.warn('Initial pointer lock failed:', error);
+      }
+    }
+    
+    // Ensure mobile controls are visible after fullscreen transition
+    if (isMobile) {
+      const mobileControls = document.getElementById('mobile-controls');
+      if (mobileControls) {
+        mobileControls.style.display = 'flex';
+        console.log('Mobile controls ensured visible in enterGallery');
       }
     }
   }, 100);
@@ -781,11 +835,15 @@ export function animate() {
     controls.moveForward(velocity.z * delta);
   }
 
-  if (isMobile && controls.isLocked && initialOrientation) {
+  if (isMobile && controls.isLocked && initialOrientation && deviceOrientation.alpha !== null) {
     const beta = THREE.MathUtils.degToRad(deviceOrientation.beta - initialOrientation.beta);
     const gamma = THREE.MathUtils.degToRad(deviceOrientation.gamma - initialOrientation.gamma);
-    const pitch = THREE.MathUtils.clamp(beta * 0.5, -Math.PI / 4, Math.PI / 4);
-    const yaw = THREE.MathUtils.clamp(gamma * 0.5, -Math.PI / 2, Math.PI / 2);
+    
+    // Make rotation more responsive and natural
+    const pitch = THREE.MathUtils.clamp(beta * 0.8, -Math.PI / 3, Math.PI / 3);
+    const yaw = THREE.MathUtils.clamp(gamma * 0.8, -Math.PI / 1.5, Math.PI / 1.5);
+    
+    // Apply rotation to camera
     camera.rotation.order = 'YXZ';
     camera.rotation.x = pitch;
     camera.rotation.y = yaw;
