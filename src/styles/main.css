@@ -66,6 +66,16 @@ body {
   display: flex;
   opacity: 1;
   transition: opacity 0.5s ease;
+  
+  /* Prevent text selection */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  
+  /* Prevent text highlighting on touch */
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .instructions-group.show {
@@ -408,8 +418,9 @@ body {
   padding: 20px 30px;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  z-index: 900;
+  z-index: 1500;
   opacity: 0;
+  pointer-events: auto;
 }
 
 #ui.visible {
@@ -508,8 +519,9 @@ body {
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 1000;
+  z-index: 2000;
   display: block !important;
+  pointer-events: auto;
 }
 
 .hamburger-button {
@@ -653,6 +665,18 @@ body {
   #right-panel {
     width: 100%;
     height: 50%;
+  }
+  
+  /* Adjust UI positioning on mobile to avoid conflicts with mobile controls */
+  #ui {
+    bottom: 60px;
+    max-width: 280px;
+    font-size: 0.9em;
+  }
+  
+  #album-title {
+    font-size: 1.2em;
+    margin-bottom: 8px;
   }
   
 }

@@ -70,6 +70,12 @@ export function initScene() {
     return;
   }
 
+  // Debug logging for mobile UI element
+  if (isMobile) {
+    console.log('UI element found during init:', ui);
+    console.log('Album title element found during init:', albumTitle);
+  }
+
   // Mobile button event listeners
   if (isMobile) {
     moveUpButton.addEventListener('touchstart', () => { moveBackward = true; }); // Changed to moveBackward
@@ -158,7 +164,9 @@ export function initScene() {
         const requestPermission = async () => {
           if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
             try {
+              console.log('Requesting device orientation permission...');
               const permission = await DeviceOrientationEvent.requestPermission();
+              console.log('Device orientation permission:', permission);
               if (permission === 'granted') {
                 addDeviceOrientationListener();
               }
@@ -167,6 +175,7 @@ export function initScene() {
               addDeviceOrientationListener(); // Try anyway
             }
           } else {
+            console.log('Device orientation permission not required, adding listener directly');
             addDeviceOrientationListener();
           }
         };
@@ -187,7 +196,14 @@ export function initScene() {
             
             // Debug logging
             if (controls.isLocked && initialOrientation) {
-              console.log('Device orientation:', { alpha: event.alpha, beta: event.beta, gamma: event.gamma });
+              console.log('Device orientation values:', { 
+                alpha: event.alpha, 
+                beta: event.beta, 
+                gamma: event.gamma,
+                deltaAlpha: event.alpha - initialOrientation.alpha,
+                deltaBeta: event.beta - initialOrientation.beta,
+                deltaGamma: event.gamma - initialOrientation.gamma
+              });
             }
           });
         };
@@ -554,7 +570,9 @@ export function enterGallery() {
 
   // Request device orientation permission on mobile
   if (isMobile && window.requestDeviceOrientationPermission) {
-    window.requestDeviceOrientationPermission();
+    setTimeout(() => {
+      window.requestDeviceOrientationPermission();
+    }, 200);
   }
 
   // Initial lock with error handling
@@ -863,21 +881,27 @@ export function animate() {
     const pitch = THREE.MathUtils.clamp(beta * 0.8, -Math.PI / 3, Math.PI / 3);
     const yaw = THREE.MathUtils.clamp(gamma * 0.8, -Math.PI / 1.5, Math.PI / 1.5);
     
-    // Apply rotation to camera (bypass PointerLockControls for mobile)
-    camera.rotation.order = 'YXZ';
-    camera.rotation.x = pitch;
-    camera.rotation.y = yaw;
+    // Apply rotation to camera using the controls object
+    const controlsObject = controls.getObject();
+    controlsObject.rotation.order = 'YXZ';
+    controlsObject.rotation.x = pitch;
+    controlsObject.rotation.y = yaw;
     
-    // Update controls to match camera rotation
-    controls.getObject().rotation.copy(camera.rotation);
+    // Debug logging for rotation values
+    if (Math.abs(pitch) > 0.1 || Math.abs(yaw) > 0.1) {
+      console.log('Applying rotation:', { pitch, yaw, beta, gamma });
+    }
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
   camera.position.z = THREE.MathUtils.clamp(camera.position.z, -8.5, 9);
   camera.position.y = 1.6;
 
-  // Only show album popups when in active gallery mode (controls locked)
-  if (controls.isLocked) {
+  // Only show album popups when in active gallery mode (controls locked or mobile in fullscreen)
+  const container = document.getElementById('container');
+  const isInGalleryMode = controls.isLocked || (isMobile && container && container.style.display === 'none');
+  
+  if (isInGalleryMode) {
     // Find closest album based on position only (not looking direction)
     let closestAlbum = null;
     let closestDistance = Infinity;
@@ -892,6 +916,11 @@ export function animate() {
       }
     });
 
+    // Debug logging for mobile
+    if (isMobile && closestAlbum) {
+      console.log('Found closest album on mobile:', closestAlbum.title, 'Distance:', closestDistance);
+    }
+
     if (closestAlbum && closestAlbum !== currentAlbum) {
       currentAlbum = closestAlbum;
       albumTitle.textContent = currentAlbum.title;
@@ -900,6 +929,7 @@ export function animate() {
         // Debug logging for mobile
         if (isMobile) {
           console.log('Showing album popup on mobile:', currentAlbum.title);
+          console.log('UI element found:', ui);
         }
         gsap.fromTo(
           '#ui',
