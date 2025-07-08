@@ -727,8 +727,8 @@ if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOr
       const permission = await DeviceOrientationEvent.requestPermission();
       console.log('Device orientation permission:', permission);
       if (permission === 'granted') {
-        console.log('Permission granted, resetting initial orientation');
-        initialOrientation = null; // Reset to ensure fresh calibration
+        initialOrientation = null;
+        addDeviceOrientationListener(); // <-- re-add listener if not already active
       }
     } catch (error) {
       console.warn('Permission error:', error);
@@ -1096,45 +1096,23 @@ export function animate() {
     isMobile &&
     controls.isLocked &&
     initialOrientation &&
-    deviceOrientation.alpha !== null &&
-    deviceOrientation.beta !== null &&
-    deviceOrientation.gamma !== null
+    deviceOrientation.alpha !== null
   ) {
-    // Calculate relative orientation changes
+    // Calculate relative orientation
     const deltaAlpha = deviceOrientation.alpha - initialOrientation.alpha;
     const deltaBeta = deviceOrientation.beta - initialOrientation.beta;
-    const deltaGamma = deviceOrientation.gamma - initialOrientation.gamma;
 
-    // Convert to radians
-    const yaw = THREE.MathUtils.degToRad(deltaAlpha); // Horizontal rotation
-    const pitch = THREE.MathUtils.degToRad(deltaBeta); // Vertical rotation
-
-    // Apply sensitivity and clamp rotations for natural feel
-    const sensitivity = 0.5; // Adjust for smoother or faster response
-    const maxPitch = Math.PI / 3; // Limit vertical rotation to ±60 degrees
-
-    const adjustedYaw = -yaw * sensitivity; // Negative for natural left-right
-    const adjustedPitch = THREE.MathUtils.clamp(
-      -pitch * sensitivity,
-      -maxPitch,
-      maxPitch
+    const yaw = THREE.MathUtils.degToRad(deltaAlpha) * 0.5;
+    const pitch = THREE.MathUtils.clamp(
+      THREE.MathUtils.degToRad(deltaBeta) * 0.5,
+      -Math.PI / 3,
+      Math.PI / 3
     );
 
-    // Update camera rotation (bypass PointerLockControls for orientation)
-    const controlsObject = controls.getObject();
-    controlsObject.rotation.order = "YXZ"; // Yaw first, then pitch
-    controlsObject.rotation.y = adjustedYaw;
-    controlsObject.rotation.x = adjustedPitch;
-
-    // Debug logging for significant rotations
-    if (Math.abs(adjustedPitch) > 0.01 || Math.abs(adjustedYaw) > 0.01) {
-      console.log("Camera rotation applied:", {
-        yaw: THREE.MathUtils.radToDeg(adjustedYaw),
-        pitch: THREE.MathUtils.radToDeg(adjustedPitch),
-        deltaAlpha,
-        deltaBeta,
-      });
-    }
+    // Instead of controls.getObject().rotation:
+    camera.rotation.order = "YXZ";
+    camera.rotation.y = -yaw;
+    camera.rotation.x = -pitch;
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
