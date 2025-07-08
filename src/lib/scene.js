@@ -275,7 +275,12 @@ if (isMobile) {
             deviceOrientation.gamma = lastValidOrientation.gamma;
           }
           // Debug logging
-          console.log('Device orientation:', deviceOrientation);
+          console.log('Device orientation:', {
+            alpha: deviceOrientation.alpha,
+            beta: deviceOrientation.beta,
+            gamma: deviceOrientation.gamma,
+            initialSet: !!initialOrientation
+          });
         }, { passive: true });
       };
 
@@ -1073,6 +1078,18 @@ export function animate() {
   // Allow movement in Z direction if no collision
   if (checkCollision(newPositionZ)) {
     controls.moveForward(velocity.z * delta);
+  }
+
+  // Debug orientation conditions
+  if (isMobile) {
+    console.log('Orientation debug:', {
+      isMobile,
+      isLocked: controls.isLocked,
+      hasInitialOrientation: !!initialOrientation,
+      hasAlpha: deviceOrientation.alpha !== null,
+      hasBeta: deviceOrientation.beta !== null,
+      hasGamma: deviceOrientation.gamma !== null
+    });
   }
 
   if (
