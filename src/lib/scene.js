@@ -220,84 +220,80 @@ export function initScene() {
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
 
-  // Device orientation for mobile
-  if (isMobile) {
-    try {
-      if (globalThis.window) {
-        // Request device orientation permission for iOS 13+
-        const requestPermission = async () => {
-          if (
-            typeof DeviceOrientationEvent !== "undefined" &&
-            typeof DeviceOrientationEvent.requestPermission === "function"
-          ) {
-            try {
-              console.log("Requesting device orientation permission...");
-              const permission =
-                await DeviceOrientationEvent.requestPermission();
-              console.log("Device orientation permission:", permission);
-              if (permission === "granted") {
-                addDeviceOrientationListener();
-              } else {
-                console.warn("Device orientation permission denied");
-              }
-            } catch (error) {
-              console.warn(
-                "Error requesting device orientation permission:",
-                error
-              );
-              // Fallback to limited controls without orientation
+if (isMobile) {
+  try {
+    if (globalThis.window) {
+      // Request device orientation permission for iOS 13+
+      const requestPermission = async () => {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          try {
+            console.log('Requesting device orientation permission...');
+            const permission = await DeviceOrientationEvent.requestPermission();
+            console.log('Device orientation permission:', permission);
+            if (permission === 'granted') {
+              addDeviceOrientationListener();
+            } else {
+              console.warn('Device orientation permission denied');
             }
-          } else {
-            console.log("Device orientation permission not required");
-            addDeviceOrientationListener();
+          } catch (error) {
+            console.warn('Error requesting device orientation permission:', error);
           }
-        };
+        } else {
+          console.log('Device orientation permission not required');
+          addDeviceOrientationListener();
+        }
+      };
 
-        const addDeviceOrientationListener = () => {
-          console.log("Adding device orientation listener");
-          window.addEventListener("deviceorientation", (event) => {
-            // Store orientation data
-            deviceOrientation.alpha = event.alpha || 0; // Z-axis rotation (yaw)
-            deviceOrientation.beta = event.beta || 0; // X-axis rotation (pitch)
-            deviceOrientation.gamma = event.gamma || 0; // Y-axis rotation (roll)
+      const addDeviceOrientationListener = () => {
+        console.log('Adding device orientation listener');
+        let lastValidOrientation = null;
+        window.addEventListener('deviceorientation', (event) => {
+          // Ensure valid data
+          if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
+            deviceOrientation.alpha = event.alpha; // Z-axis (yaw)
+            deviceOrientation.beta = event.beta;  // X-axis (pitch)
+            deviceOrientation.gamma = event.gamma; // Y-axis (roll)
 
             // Set initial orientation on first valid event
-            if (
-              !initialOrientation &&
-              event.alpha !== null &&
-              event.beta !== null &&
-              event.gamma !== null
-            ) {
+            if (!initialOrientation) {
               initialOrientation = {
-                alpha: deviceOrientation.alpha,
-                beta: deviceOrientation.beta,
-                gamma: deviceOrientation.gamma,
+                alpha: event.alpha,
+                beta: event.beta,
+                gamma: event.gamma,
               };
-              console.log("Initial orientation set:", initialOrientation);
+              console.log('Initial orientation set:', initialOrientation);
             }
-          });
-        };
+            lastValidOrientation = {
+              alpha: event.alpha,
+              beta: event.beta,
+              gamma: event.gamma,
+            };
+          } else if (lastValidOrientation) {
+            // Use last valid orientation if current event has null values
+            deviceOrientation.alpha = lastValidOrientation.alpha;
+            deviceOrientation.beta = lastValidOrientation.beta;
+            deviceOrientation.gamma = lastValidOrientation.gamma;
+          }
+          // Debug logging
+          console.log('Device orientation:', deviceOrientation);
+        }, { passive: true });
+      };
 
-        // Store permission request for later use
-        window.requestDeviceOrientationPermission = requestPermission;
+      // Store permission request function
+      window.requestDeviceOrientationPermission = requestPermission;
 
-        // Add listener immediately for Android/older iOS
-        addDeviceOrientationListener();
+      // Add listener immediately for Android/older iOS
+      addDeviceOrientationListener();
 
-        // Request permission when entering gallery (for iOS)
-        if (
-          typeof DeviceOrientationEvent !== "undefined" &&
-          typeof DeviceOrientationEvent.requestPermission === "function"
-        ) {
-          console.log(
-            "iOS device detected, permission will be requested on gallery entry"
-          );
-        }
+      // Request permission for iOS when entering gallery
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        console.log('iOS device detected, permission will be requested on gallery entry');
       }
-    } catch (error) {
-      console.warn("Could not set up device orientation:", error);
     }
+  } catch (error) {
+    console.warn('Could not set up device orientation:', error);
   }
+}
 
   // Materials
   const floorMaterial = new THREE.MeshStandardMaterial({
@@ -702,53 +698,50 @@ export function enterGallery() {
   // Force a render to ensure the canvas is properly initialized
   renderer.render(scene, camera);
 
-  // Request device orientation permission on mobile
-  if (
-    isMobile &&
-    typeof DeviceOrientationEvent !== "undefined" &&
-    typeof DeviceOrientationEvent.requestPermission === "function"
-  ) {
-    // Create a button or prompt user for permission
-    const requestPermissionButton = document.createElement("button");
-    requestPermissionButton.textContent = "Enable Device Rotation";
-    requestPermissionButton.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      border: none;
-      padding: 15px 30px;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      z-index: 3000;
-      font-family: inherit;
-    `;
+if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+  const requestPermissionButton = document.createElement('button');
+  requestPermissionButton.textContent = 'Enable Device Rotation';
+  requestPermissionButton.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 3000;
+    font-family: inherit;
+  `;
 
-    requestPermissionButton.addEventListener("click", async () => {
-      try {
-        const permission = await DeviceOrientationEvent.requestPermission();
-        console.log("Device orientation permission:", permission);
-        if (permission === "granted") {
-          console.log("Device orientation permission granted");
-        }
-      } catch (error) {
-        console.warn("Device orientation permission error:", error);
+  requestPermissionButton.addEventListener('click', async () => {
+    try {
+      const permission = await DeviceOrientationEvent.requestPermission();
+      console.log('Device orientation permission:', permission);
+      if (permission === 'granted') {
+        console.log('Permission granted, resetting initial orientation');
+        initialOrientation = null; // Reset to ensure fresh calibration
       }
+    } catch (error) {
+      console.warn('Permission error:', error);
+    }
+    if (document.body.contains(requestPermissionButton)) {
       document.body.removeChild(requestPermissionButton);
-    });
+    }
+  });
 
-    document.body.appendChild(requestPermissionButton);
+  document.body.appendChild(requestPermissionButton);
 
-    // Auto-remove button after 10 seconds
-    setTimeout(() => {
-      if (document.body.contains(requestPermissionButton)) {
-        document.body.removeChild(requestPermissionButton);
-      }
-    }, 10000);
-  }
+  // Auto-remove button after 8 seconds
+  setTimeout(() => {
+    if (document.body.contains(requestPermissionButton)) {
+      document.body.removeChild(requestPermissionButton);
+    }
+  }, 8000);
+}
 
   // Initial lock with error handling
   setTimeout(() => {
