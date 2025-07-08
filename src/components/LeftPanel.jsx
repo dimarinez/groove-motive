@@ -9,7 +9,7 @@ export default function LeftPanel() {
 
     eventLinks.forEach((link, index) => {
       const img = document.createElement('img');
-      img.src = `/src/assets/exhibition-${index + 1}.jpg`; // Placeholder paths, replace with actual image paths
+      img.src = `https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/exhibition-${index + 1}.jpg`; // Placeholder paths, replace with actual image paths
       img.className = 'hover-image';
       img.id = `hover-img-${index}`;
       img.style.display = 'none';
@@ -50,7 +50,7 @@ export default function LeftPanel() {
 
   return (
     <div id="left-panel" className="left-panel-container">
-      <img src="/src/assets/GM_Wordmark_CLEAR_BLACK.png" alt="Groove Motive" className="left-panel-logo" />
+      <img src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/src/assets/GM_Wordmark_CLEAR_BLACK.png" alt="Groove Motive" className="left-panel-logo" />
       <p className="left-panel-description">
         Groove Motive is a record label founded by a Maryland native (Luke Andy) whose journey from rejection to success is defined by perseverance and authenticity. After an eye-opening experience at Moonrise Festival, where he saw Claude VonStroke perform, he shifted from producing rap beats to diving into house music production.
       </p>

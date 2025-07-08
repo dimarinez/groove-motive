@@ -176,7 +176,7 @@ export function initScene() {
   scene.add(floor);
 
   // Carpet with logo
-  const logoTexture = new THREE.TextureLoader().load('/src/assets/GM_Wordmark_CLEAR_BLACK.png', (texture) => {
+  const logoTexture = new THREE.TextureLoader().load('https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/src/assets/GM_Wordmark_CLEAR_BLACK.png', (texture) => {
     texture.encoding = THREE.sRGBEncoding;
     texture.needsUpdate = true;
     const aspect = texture.image.width / texture.image.height;
@@ -242,7 +242,7 @@ export function initScene() {
 
   // Record player
   const gltfLoader = new GLTFLoader();
-  gltfLoader.load('/src/assets/vinyl_record_player.glb', (gltf) => {
+  gltfLoader.load('https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/src/assets/vinyl_record_player.glb', (gltf) => {
     animatedRecordPlayer = gltf.scene;
     animatedRecordPlayer.position.set(0, 0, -6);
     animatedRecordPlayer.scale.set(0.05, 0.05, 0.05);
