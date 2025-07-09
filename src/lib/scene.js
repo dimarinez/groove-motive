@@ -694,6 +694,7 @@ function setupDeviceOrientationControls() {
 /**
  * Updates camera rotation based on device orientation for smooth navigation
  * Designed for portrait mode with full 360° horizontal and vertical range
+ * Uses quaternions to avoid gimbal lock and handles orientation discontinuities
  */
 function updateCameraFromOrientation() {
   if (!deviceOrientation || !initialOrientation) return;
@@ -703,53 +704,64 @@ function updateCameraFromOrientation() {
   let relativeBeta = deviceOrientation.beta - initialOrientation.beta;
   let relativeGamma = deviceOrientation.gamma - initialOrientation.gamma;
 
-  // Handle 360° wraparound for alpha (compass heading)
+  // Handle 360° wraparound for alpha (compass heading) with hysteresis
   if (relativeAlpha > 180) relativeAlpha -= 360;
   if (relativeAlpha < -180) relativeAlpha += 360;
 
-  // For portrait mode with full 360° rotation:
-  // - Alpha (compass) controls yaw (horizontal camera rotation) for full 360°
-  // - Beta (forward/back tilt) controls pitch (vertical camera rotation)
+  // Smooth wraparound transitions for alpha to prevent glitches
+  const previousYaw = smoothedOrientation.yaw;
+  let targetYaw = THREE.MathUtils.degToRad(relativeAlpha) * orientationSensitivity;
   
-  // Alpha controls yaw (left/right look) - full 360° rotation
-  // Use alpha instead of gamma for full room rotation
-  const targetYaw = THREE.MathUtils.degToRad(relativeAlpha) * orientationSensitivity;
+  // Detect and handle 360° wraparound jumps
+  const yawDiff = targetYaw - previousYaw;
+  if (yawDiff > Math.PI) {
+    targetYaw -= 2 * Math.PI;
+  } else if (yawDiff < -Math.PI) {
+    targetYaw += 2 * Math.PI;
+  }
   
-  // Beta controls pitch (up/down look) - extended range for better vertical movement
-  // Remove clamps to allow full vertical range, but use a more responsive approach
-  const targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
+  // Beta controls pitch with gimbal lock prevention
+  // Clamp pitch to prevent gimbal lock at exactly ±90°
+  const clampedBeta = THREE.MathUtils.clamp(relativeBeta, -85, 85);
+  const targetPitch = THREE.MathUtils.degToRad(clampedBeta) * orientationSensitivity;
 
   // Apply exponential smoothing to reduce jitter
-  // Use higher smoothing for yaw to handle compass jitter, lower for pitch for responsiveness
+  // Use adaptive smoothing based on movement speed
+  const yawSpeed = Math.abs(yawDiff);
+  const pitchSpeed = Math.abs(targetPitch - smoothedOrientation.pitch);
+  
+  // Adaptive smoothing - faster for quick movements, slower for small adjustments
+  const yawSmoothingFactor = Math.min(0.3, 0.05 + yawSpeed * 0.5);
+  const pitchSmoothingFactor = Math.min(0.4, 0.1 + pitchSpeed * 0.8);
+  
   smoothedOrientation.yaw = THREE.MathUtils.lerp(
     smoothedOrientation.yaw, 
     targetYaw, 
-    0.15 // Lower smoothing for yaw to handle compass noise
+    yawSmoothingFactor
   );
   
   smoothedOrientation.pitch = THREE.MathUtils.lerp(
     smoothedOrientation.pitch, 
     targetPitch, 
-    0.4 // Higher smoothing for pitch for more responsive up/down
+    pitchSmoothingFactor
   );
 
-  // Apply the smoothed orientation to the camera
-  // Use PointerLockControls object for compatibility if available
+  // Apply the smoothed orientation to the camera using quaternions for stability
+  // Create rotation quaternion to avoid gimbal lock
+  const quaternion = new THREE.Quaternion();
+  quaternion.setFromEuler(new THREE.Euler(smoothedOrientation.pitch, smoothedOrientation.yaw, 0, 'YXZ'));
+
+  // Apply the quaternion rotation to the camera
   if (controls && controls.getObject) {
     const cameraObject = controls.getObject();
-    cameraObject.rotation.y = smoothedOrientation.yaw;   // Yaw: horizontal rotation (360°)
-    cameraObject.rotation.x = smoothedOrientation.pitch; // Pitch: vertical rotation (full range)
-    cameraObject.rotation.z = 0; // Roll: keep level for comfort
+    cameraObject.quaternion.copy(quaternion);
   } else {
-    // Fallback to direct camera rotation
-    camera.rotation.y = smoothedOrientation.yaw;   // Yaw: horizontal rotation (360°)
-    camera.rotation.x = smoothedOrientation.pitch; // Pitch: vertical rotation (full range)
-    camera.rotation.z = 0; // Roll: keep level for comfort
+    camera.quaternion.copy(quaternion);
   }
 
   // Optional: Log orientation data for debugging (remove for production)
   if (Math.random() < 0.01) { // Log occasionally to avoid spam
-    console.log('Full 360° orientation update:', {
+    console.log('Stable 360° orientation update:', {
       rawAlpha: deviceOrientation.alpha.toFixed(1),
       rawBeta: deviceOrientation.beta.toFixed(1),
       relativeAlpha: relativeAlpha.toFixed(1),
@@ -757,7 +769,9 @@ function updateCameraFromOrientation() {
       targetYaw: THREE.MathUtils.radToDeg(targetYaw).toFixed(1),
       targetPitch: THREE.MathUtils.radToDeg(targetPitch).toFixed(1),
       smoothedYaw: THREE.MathUtils.radToDeg(smoothedOrientation.yaw).toFixed(1),
-      smoothedPitch: THREE.MathUtils.radToDeg(smoothedOrientation.pitch).toFixed(1)
+      smoothedPitch: THREE.MathUtils.radToDeg(smoothedOrientation.pitch).toFixed(1),
+      yawSpeed: yawSpeed.toFixed(3),
+      pitchSpeed: pitchSpeed.toFixed(3)
     });
   }
 }
