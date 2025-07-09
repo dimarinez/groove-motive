@@ -715,32 +715,14 @@ function updateCameraFromOrientation() {
   if (relativeAlpha > 180) relativeAlpha -= 360;
   if (relativeAlpha < -180) relativeAlpha += 360;
 
-  // Smart orientation mapping based on phone position
+  // Simple and correct orientation mapping for portrait mode
   const previousYaw = smoothedOrientation.yaw;
-  let targetYaw, targetPitch;
   
-  // Determine if phone is roughly horizontal (flat)
-  const phoneIsFlat = Math.abs(Math.abs(relativeBeta) - 90) < 30;
+  // Alpha controls horizontal rotation (360° around the room)
+  let targetYaw = THREE.MathUtils.degToRad(relativeAlpha) * orientationSensitivity;
   
-  if (phoneIsFlat) {
-    // Phone is laid flat - use alpha for rotation, set pitch based on face up/down
-    targetYaw = THREE.MathUtils.degToRad(relativeAlpha) * orientationSensitivity;
-    
-    // When face down (beta around 180°), look down at ground
-    // When face up (beta around 0°), look up at ceiling
-    const isFaceDown = relativeBeta > 0;
-    targetPitch = isFaceDown ? 
-      THREE.MathUtils.degToRad(85) : // Look down when face down
-      THREE.MathUtils.degToRad(-85); // Look up when face up
-  } else {
-    // Phone is upright - use gamma for horizontal, beta for vertical
-    const relativeGamma = deviceOrientation.gamma - initialOrientation.gamma;
-    targetYaw = THREE.MathUtils.degToRad(relativeGamma) * orientationSensitivity;
-    
-    // Invert pitch for natural feel and clamp to prevent gimbal lock
-    const clampedBeta = THREE.MathUtils.clamp(relativeBeta, -85, 85);
-    targetPitch = THREE.MathUtils.degToRad(-clampedBeta) * orientationSensitivity;
-  }
+  // Beta controls vertical rotation (tilt phone forward = look down, tilt back = look up)
+  let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
   
   // Handle 360° wraparound jumps for yaw
   const yawDiff = targetYaw - previousYaw;
@@ -750,26 +732,22 @@ function updateCameraFromOrientation() {
     targetYaw += 2 * Math.PI;
   }
 
-  // Simple smoothing to reduce jitter without complex logic
-  const yawSmoothingFactor = 0.15; // Lower for smoother horizontal movement
-  const pitchSmoothingFactor = 0.25; // Lower for smoother vertical movement
+  // Higher smoothing to reduce jitter
+  const yawSmoothingFactor = 0.08; // Lower for much smoother horizontal movement
+  const pitchSmoothingFactor = 0.1; // Lower for much smoother vertical movement
   
-  // Apply deadzone only for very small movements
-  if (Math.abs(yawDiff) > deadZoneThreshold) {
-    smoothedOrientation.yaw = THREE.MathUtils.lerp(
-      smoothedOrientation.yaw, 
-      targetYaw, 
-      yawSmoothingFactor
-    );
-  }
+  // Always apply smoothing - no deadzone to maintain responsiveness
+  smoothedOrientation.yaw = THREE.MathUtils.lerp(
+    smoothedOrientation.yaw, 
+    targetYaw, 
+    yawSmoothingFactor
+  );
   
-  if (Math.abs(targetPitch - smoothedOrientation.pitch) > deadZoneThreshold) {
-    smoothedOrientation.pitch = THREE.MathUtils.lerp(
-      smoothedOrientation.pitch, 
-      targetPitch, 
-      pitchSmoothingFactor
-    );
-  }
+  smoothedOrientation.pitch = THREE.MathUtils.lerp(
+    smoothedOrientation.pitch, 
+    targetPitch, 
+    pitchSmoothingFactor
+  );
 
   // Apply the smoothed orientation to the camera using quaternions for stability
   // Create rotation quaternion to avoid gimbal lock
@@ -1370,6 +1348,15 @@ export function animatePreview() {
     renderer.render(scene, camera);
     previewAnimationId = requestAnimationFrame(animatePreview);
   }
+}
+
+// Expose animatePreview to global scope for hamburger menu
+try {
+  if (globalThis.window) {
+    window.animatePreview = animatePreview;
+  }
+} catch (error) {
+  console.warn("Could not expose animatePreview to global scope:", error);
 }
 
 export function animate() {
