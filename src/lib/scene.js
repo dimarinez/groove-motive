@@ -115,13 +115,13 @@ export function initScene() {
   if (isMobile) {
     moveUpButton.addEventListener("touchstart", () => {
       moveBackward = true;
-    }); // Changed to moveBackward
+    });
     moveUpButton.addEventListener("touchend", () => {
       moveBackward = false;
     });
     moveDownButton.addEventListener("touchstart", () => {
       moveForward = true;
-    }); // Changed to moveForward
+    });
     moveDownButton.addEventListener("touchend", () => {
       moveForward = false;
     });
@@ -169,7 +169,7 @@ export function initScene() {
 
   // Scene setup
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf0f0f0); // Slightly lighter background
+  scene.background = new THREE.Color(0xf0f0f0);
 
   // Ensure proper canvas sizing by using parent dimensions
   const rightPanel = document.getElementById("right-panel");
@@ -207,21 +207,6 @@ export function initScene() {
       } else {
         console.warn("Mobile controls element not found");
       }
-      
-      // Request device orientation permission when entering gallery on iOS
-      if (typeof DeviceOrientationEvent !== 'undefined' && 
-          typeof DeviceOrientationEvent.requestPermission === 'function') {
-        console.log('Requesting device orientation permission on gallery entry...');
-        DeviceOrientationEvent.requestPermission().then(permission => {
-          console.log('Device orientation permission:', permission);
-          if (permission === 'granted') {
-            initialOrientation = null; // Reset initial orientation
-            setupDeviceOrientationListener(); // Add listener directly
-          }
-        }).catch(error => {
-          console.warn('Permission error:', error);
-        });
-      }
     }
   });
   controls.addEventListener("unlock", () => {
@@ -235,249 +220,10 @@ export function initScene() {
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
 
-// Legacy setup function (keeping for compatibility)
-function setupDeviceOrientationListener() {
-  startOrientationTracking();
-}
-
-// Alternative approach using gyroscope data and manual rotation
-function addOrientationButton() {
-  if (!isMobile || !globalThis.window) return;
-  
-  // Remove any existing button
-  const existingButton = document.querySelector('#orientation-button');
-  if (existingButton) existingButton.remove();
-  
-  const testButton = document.createElement('button');
-  testButton.id = 'orientation-button';
-  testButton.textContent = 'Enable Touch Rotation';
-  testButton.style.cssText = `
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10000;
-    background: #007AFF;
-    color: white;
-    padding: 16px 24px;
-    border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    cursor: pointer;
-  `;
-  
-  testButton.onclick = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    testButton.textContent = '⏳ Trying Library...';
-    testButton.style.background = '#FF9500';
-    
-    let permissionGranted = false;
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-      try {
-        const permission = await DeviceOrientationEvent.requestPermission();
-        permissionGranted = permission === 'granted';
-      } catch (error) {
-        // Silently fail
-      }
-    } else {
-      permissionGranted = true;
-    }
-    
-    if (permissionGranted) {
-      const libraryWorking = enableDeviceOrientationLibrary();
-      
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      if (deviceOrientation.alpha !== null && deviceOrientation.alpha !== 0) {
-        testButton.textContent = '✅ Orientation Working';
-        testButton.style.background = '#34C759';
-      } else {
-        enableTouchRotation();
-        testButton.textContent = '✅ Touch Rotation';
-        testButton.style.background = '#34C759';
-      }
-    } else {
-      enableTouchRotation();
-      testButton.textContent = '✅ Touch Rotation';
-      testButton.style.background = '#34C759';
-    }
-    
-    setTimeout(() => {
-      testButton.style.opacity = '0';
-      setTimeout(() => testButton.remove(), 300);
-    }, 2000);
-  };
-  
-  document.body.appendChild(testButton);
-  
-  // Add fade-in animation
-  testButton.style.opacity = '0';
-  setTimeout(() => {
-    testButton.style.transition = 'opacity 0.3s ease';
-    testButton.style.opacity = '1';
-  }, 100);
-}
-
-// Call this when page is ready and user has interacted
-if (isMobile) {
-  // Add button after a delay to ensure DOM is ready
-  setTimeout(() => {
-    addOrientationButton();
-    
-  }, 1000);
-}
-
-// Device orientation using a more reliable approach
-function enableDeviceOrientationLibrary() {
-  const orientationHandler = (event) => {
-    const alpha = event.alpha || event.webkitCompassHeading || 0;
-    const beta = event.beta || 0;
-    const gamma = event.gamma || 0;
-    
-    if (alpha !== 0 || beta !== 0 || gamma !== 0) {
-      deviceOrientation = { alpha, beta, gamma };
-      
-      if (!initialOrientation) {
-        initialOrientation = { ...deviceOrientation };
-      }
-      
-      return true;
-    }
-    return false;
-  };
-  
-  const events = ['deviceorientation', 'deviceorientationabsolute', 'compassneedscalibration'];
-  let successCount = 0;
-  
-  events.forEach(eventName => {
-    try {
-      window.addEventListener(eventName, orientationHandler);
-      document.addEventListener(eventName, orientationHandler);
-      successCount++;
-    } catch (error) {
-      // Silently fail
-    }
-  });
-  
-  return successCount > 0;
-}
-
-// Touch rotation system for mobile (fallback when orientation doesn't work)
-function enableTouchRotation() {
-  if (!isMobile) return;
-  
-  let touchRotation = { x: 0, y: 0 };
-  let lastTouch = { x: 0, y: 0 };
-  let touching = false;
-  
-  const handleTouchStart = (e) => {
-    e.preventDefault();
-    touching = true;
-    const touch = e.touches[0];
-    lastTouch.x = touch.clientX;
-    lastTouch.y = touch.clientY;
-    
-    if (!initialOrientation) {
-      initialOrientation = { alpha: 0, beta: 0, gamma: 0 };
-    }
-  };
-  
-  const handleTouchMove = (e) => {
-    if (!touching) return;
-    e.preventDefault();
-    
-    const touch = e.touches[0];
-    const deltaX = touch.clientX - lastTouch.x;
-    const deltaY = touch.clientY - lastTouch.y;
-    
-    touchRotation.y += deltaX * 0.01;
-    touchRotation.x += deltaY * 0.01;
-    
-    touchRotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, touchRotation.x));
-    
-    deviceOrientation = {
-      alpha: touchRotation.y * 57.2958,
-      beta: touchRotation.x * 57.2958,
-      gamma: 0
-    };
-    
-    lastTouch.x = touch.clientX;
-    lastTouch.y = touch.clientY;
-  };
-  
-  const handleTouchEnd = (e) => {
-    e.preventDefault();
-    touching = false;
-  };
-  
-  const canvas = document.getElementById('gallery-canvas') || renderer.domElement;
-  canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-  canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-  canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-  
-  document.addEventListener('touchstart', handleTouchStart, { passive: false });
-  document.addEventListener('touchmove', handleTouchMove, { passive: false });
-  document.addEventListener('touchend', handleTouchEnd, { passive: false });
-}
-
-// Simple orientation tracking function
-function startOrientationTracking() {
-  if (window.orientationHandler) {
-    window.removeEventListener('deviceorientation', window.orientationHandler);
+  // Setup device orientation for mobile
+  if (isMobile) {
+    setupDeviceOrientationControls();
   }
-  if (window.motionHandler) {
-    window.removeEventListener('devicemotion', window.motionHandler);
-  }
-  
-  const handleOrientation = (event) => {
-    if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
-      deviceOrientation = {
-        alpha: event.alpha,
-        beta: event.beta,
-        gamma: event.gamma
-      };
-      
-      if (!initialOrientation) {
-        initialOrientation = { ...deviceOrientation };
-      }
-    }
-  };
-  
-  const handleMotion = (event) => {
-    if (event.rotationRate) {
-      const { alpha, beta, gamma } = event.rotationRate;
-      if (alpha !== null && beta !== null && gamma !== null) {
-        deviceOrientation = {
-          alpha: alpha * 10,
-          beta: beta * 10,
-          gamma: gamma * 10
-        };
-        
-        if (!initialOrientation) {
-          initialOrientation = { ...deviceOrientation };
-        }
-      }
-    }
-  };
-  
-  window.orientationHandler = handleOrientation;
-  window.motionHandler = handleMotion;
-  
-  window.addEventListener('deviceorientation', handleOrientation, { passive: false });
-  window.addEventListener('devicemotion', handleMotion, { passive: false });
-  
-  document.addEventListener('deviceorientation', handleOrientation);
-  document.addEventListener('devicemotion', handleMotion);
-}
-
-// Auto-setup for Android devices (no permission needed)
-if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') {
-  startOrientationTracking();
-}
 
   // Materials
   const floorMaterial = new THREE.MeshStandardMaterial({
@@ -499,7 +245,7 @@ if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOr
     color: 0x87ceeb,
     transparent: true,
     opacity: 0.7,
-  }); // Light blue for window
+  });
 
   // Floor
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), floorMaterial);
@@ -551,12 +297,12 @@ if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOr
     new THREE.Mesh(new THREE.PlaneGeometry(20, 5), wallMaterial),
     new THREE.Mesh(new THREE.PlaneGeometry(20, 5), wallMaterial),
   ];
-  walls[0].position.set(0, 2.5, -10); // Back wall
-  walls[1].position.set(0, 2.5, 10); // Front wall (with window)
+  walls[0].position.set(0, 2.5, -10);
+  walls[1].position.set(0, 2.5, 10);
   walls[1].rotation.y = Math.PI;
-  walls[2].position.set(-10, 2.5, 0); // Left wall
+  walls[2].position.set(-10, 2.5, 0);
   walls[2].rotation.y = Math.PI / 2;
-  walls[3].position.set(10, 2.5, 0); // Right wall
+  walls[3].position.set(10, 2.5, 0);
   walls[3].rotation.y = -Math.PI / 2;
   walls.forEach((wall) => {
     wall.userData.isWall = true;
@@ -565,25 +311,23 @@ if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOr
 
   // Window on front wall
   const window = new THREE.Mesh(new THREE.PlaneGeometry(4, 2), windowMaterial);
-  window.position.set(0, 2.5, 10.1); // Slightly in front of the front wall
+  window.position.set(0, 2.5, 10.1);
   window.userData.isWall = false;
   scene.add(window);
 
-  // Lighting (enhanced with window light)
-  const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); // Increased intensity
+  // Lighting
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
   scene.add(ambientLight);
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8); // Increased intensity
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8);
   directionalLight.position.set(5, 10, 5);
   directionalLight.castShadow = true;
   directionalLight.shadow.mapSize.set(1024, 1024);
   scene.add(directionalLight);
-  const windowLight = new THREE.PointLight(0x87ceeb, 2.2, 15); // Light blue window light
-  windowLight.position.set(0, 3, 10); // Positioned at window
+  const windowLight = new THREE.PointLight(0x87ceeb,  windowLight.x.setPosition(0, 2.2, 3, 10);
   scene.add(windowLight);
-  const pointLight = new THREE.PointLight(0xfff5e6, 1.0, 20);
+  const pointLight = new THREE.PointLight(0xfff5e6, 20, 1.0);
   pointLight.position.set(0, 3, -8);
   scene.add(pointLight);
-
 
   // Record player
   const gltfLoader = new GLTFLoader();
@@ -641,7 +385,7 @@ if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOr
   albums.forEach((album, index) => createAlbumMesh(album, index));
 
   audio = new Audio();
-  audio.addEventListener("ended", () => {});
+  audio.addEventListener("ended", () => []);
 
   try {
     if (globalThis.window) {
@@ -669,6 +413,60 @@ if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOr
   }, 100);
 }
 
+// Device orientation handling for mobile camera control
+function setupDeviceOrientationControls() {
+  if (!isMobile) return;
+
+  // Reset orientation data
+  deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
+  initialOrientation = null;
+
+  const handleOrientation = (event) => {
+    if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
+      deviceOrientation = {
+        alpha: event.alpha, // Rotation around Z-axis (yaw)
+        beta: event.beta,   // Rotation around X-axis (pitch)
+        gamma: event.gamma  // Rotation around Y-axis (roll)
+      };
+
+      if (!initialOrientation) {
+        initialOrientation = { ...deviceOrientation };
+        console.log('Initial orientation set:', initialOrientation);
+      }
+    }
+  };
+
+  // Request permission for iOS devices
+  if (typeof DeviceOrientationEvent !== 'undefined' && 
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    console.log('Requesting device orientation permission...');
+    DeviceOrientationEvent.requestPermission()
+      .then(permission => {
+        console.log('Device orientation permission:', permission);
+        if (permission === 'granted') {
+          window.addEventListener('deviceorientation', handleOrientation, { passive: false });
+          document.addEventListener('deviceorientation', handleOrientation, { passive: false });
+        }
+      })
+      .catch(error => {
+        console.warn('Error requesting device orientation permission:', error);
+      });
+  } else {
+    // Android or devices without permission requirement
+    window.addEventListener('deviceorientation', handleOrientation, { passive: false });
+    document.addEventListener('deviceorientation', handleOrientation, { passive: false });
+    console.log('Device orientation listener added for non-iOS device');
+  }
+}
+
+// Clean up orientation listeners
+function cleanupDeviceOrientation() {
+  window.removeEventListener('deviceorientation', () => {});
+  document.removeEventListener('deviceorientation', () => {});
+  window.removeEventListener('devicemotion', () => {});
+  document.removeEventListener('devicemotion', () => {});
+}
+
 function resetToInitialState() {
   // Stop any music preview
   if (isPreviewing) {
@@ -680,7 +478,7 @@ function resetToInitialState() {
   currentAlbum = null;
   albumTitle.textContent = "";
 
-  // Move instructions back to right panel when exiting gallery
+  // Move instructions back to right panel
   const instructionsGroup = document.getElementById("instructions-group");
   if (instructionsGroup) {
     instructionsGroup.classList.remove("show");
@@ -725,7 +523,7 @@ function resetToInitialState() {
   gsap.to("#right-panel", {
     opacity: 1,
     duration: 0.8,
-    ease: "power2.out",
+    ease: "power2",
     delay: 0.2,
   });
 
@@ -738,6 +536,7 @@ function resetToInitialState() {
   if (isMobile) {
     initialOrientation = null;
     deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
+    cleanupDeviceOrientation();
   }
 
   // Remove fullscreen canvas if it exists
@@ -757,7 +556,7 @@ function resetToInitialState() {
     renderer.domElement.style.height = "100%";
     galleryCanvas = renderer.domElement;
 
-    // Resize renderer to preview size
+    // Resize to preview size
     renderer.setSize(rightPanel.clientWidth, rightPanel.clientHeight);
     camera.aspect = rightPanel.clientWidth / rightPanel.clientHeight;
     camera.updateProjectionMatrix();
@@ -767,7 +566,7 @@ function resetToInitialState() {
   controls.dispose();
   controls = new PointerLockControls(camera, renderer.domElement);
 
-  // Re-add standard control event listeners
+  // Re-add control event listeners
   controls.addEventListener("lock", () => {
     document.body.style.cursor = "none";
     ui.style.display = "none";
@@ -790,11 +589,11 @@ function resetToInitialState() {
       clickToLockHandler = null;
     }
 
-    // Reset to initial state recursively
+    // Reset to initial state
     resetToInitialState();
   });
 
-  // Stop main animation
+  // Stop main animation loop
   if (mainAnimationId) {
     cancelAnimationFrame(mainAnimationId);
     mainAnimationId = null;
@@ -810,7 +609,7 @@ function resetToInitialState() {
     }
   }, 100);
 
-  // Trigger resize to ensure proper canvas dimensions
+  // Trigger resize
   setTimeout(() => {
     onWindowResize();
   }, 100);
@@ -820,7 +619,7 @@ export function enterGallery() {
   const container = document.getElementById("container");
   if (container) container.style.display = "none";
 
-  // Add body class to show mobile menu
+  // Add body class for mobile menu
   document.body.classList.add("gallery-entered");
 
   // Stop preview animation
@@ -829,7 +628,7 @@ export function enterGallery() {
     previewAnimationId = null;
   }
 
-  // Move instructions to body for fullscreen overlay
+  // Move instructions to body for fullscreen
   const instructionsGroup = document.getElementById("instructions-group");
   if (instructionsGroup) {
     document.body.appendChild(instructionsGroup);
@@ -851,7 +650,7 @@ export function enterGallery() {
   controls.dispose();
   controls = new PointerLockControls(camera, renderer.domElement);
 
-  // Add unlock event listener to handle ESC properly
+  // Add unlock event listener
   controls.addEventListener("unlock", () => {
     // Clean up click-to-lock handler
     if (clickToLockHandler) {
@@ -859,16 +658,34 @@ export function enterGallery() {
       clickToLockHandler = null;
     }
 
-    // Reset to initial state - simpler approach
+    // Clean up orientation listeners
+    cleanupDeviceOrientation();
+
+    // Reset to initial state
     resetToInitialState();
   });
+
+  // Ensure device orientation permission on mobile
+  if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && 
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+      
+    DeviceOrientationEvent.requestPermission()
+      .then(permission => {
+        if (permission === 'granted') {
+          setupDeviceOrientationControls();
+        }
+      })
+      .catch(error => {
+        console.warn('Error requesting device orientation permission in enterGallery:', error);
+      });
+  }
 
   // Clean up any existing click-to-lock handler
   if (clickToLockHandler) {
     document.removeEventListener("click", clickToLockHandler);
   }
 
-  // Enable click-to-lock after entering gallery (but not on enter button)
+  // Enable click-to-lock
   clickToLockHandler = (event) => {
     if (event.target.id !== "enter-button" && !controls.isLocked) {
       try {
@@ -880,12 +697,10 @@ export function enterGallery() {
   };
   document.addEventListener("click", clickToLockHandler);
 
-  // Force a render to ensure the canvas is properly initialized
+  // Force render
   renderer.render(scene, camera);
 
-// Remove the gallery permission button - using the simpler top-left button instead
-
-  // Initial lock with error handling
+  // Initial lock
   setTimeout(() => {
     if (!controls.isLocked) {
       try {
@@ -895,7 +710,7 @@ export function enterGallery() {
       }
     }
 
-    // Ensure mobile controls are visible after fullscreen transition
+    // Ensure mobile controls visible
     if (isMobile) {
       const mobileControls = document.getElementById("mobile-controls");
       if (mobileControls) {
@@ -977,8 +792,8 @@ function applyCoverTexture(album, onComplete) {
               geometry.boundingBox.max.x - geometry.boundingBox.min.x;
             const height =
               geometry.boundingBox.max.y - geometry.boundingBox.min.y;
-            const textureAspect = texture.image.width / texture.image.height;
-            const geometryAspect = width / height;
+            const aspectTexture = texture.image.width / texture.image.height;
+            const aspectGeometry = width / height;
             const shrinkFactor = 1.95;
             let repeatX = shrinkFactor;
             let repeatY = shrinkFactor * (geometryAspect / textureAspect);
@@ -1065,7 +880,7 @@ function onKeyDown(event) {
       break;
     case "ArrowUp":
       moveBackward = true;
-      break; // Corrected to moveBackward
+      break;
     case "ArrowRight":
       moveLeft = true;
       break;
@@ -1105,7 +920,7 @@ function onKeyUp(event) {
       break;
     case "ArrowUp":
       moveBackward = false;
-      break; // Corrected to moveBackward
+      break;
     case "ArrowRight":
       moveLeft = false;
       break;
@@ -1125,12 +940,12 @@ function onWindowResize() {
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     } else {
-      // Preview mode - use right panel dimensions
+      // Preview mode
       const rightPanel = document.getElementById("right-panel");
       if (rightPanel) {
         const canvasWidth = rightPanel.clientWidth;
         const canvasHeight = rightPanel.clientHeight;
-        camera.aspect = canvasWidth / canvasHeight;
+        camera.aspectWidth = canvasWidth / canvasHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(canvasWidth, canvasHeight);
       }
@@ -1155,7 +970,7 @@ function checkCollision(newPosition) {
     const intersects = raycaster.intersectObjects(
       scene.children.filter((obj) => obj.userData.isWall)
     );
-    if (intersects.length > 0 && intersects[0].distance < 0.5) {
+    if (intersects.length > 0 && intersects[0].point.distance < 0.5) {
       canMove = false;
     }
   });
@@ -1194,14 +1009,14 @@ export function animate() {
   if (!moveForward && !moveBackward && !moveLeft && !moveRight) {
     velocity.set(0, 0, 0);
   } else {
-    direction.z = Number(moveForward) - Number(moveBackward); // Forward is negative z, backward is positive z
+    direction.z = Number(moveForward) - Number(moveBackward);
     direction.x = Number(moveRight) - Number(moveLeft);
     direction.normalize();
-    if (moveForward || moveBackward) velocity.z = -direction.z * 400.0 * delta; // Adjusted for correct direction
+    if (moveForward || moveBackward) velocity.z = -direction.z * 400.0 * delta;
     if (moveLeft || moveRight) velocity.x = -direction.x * 400.0 * delta;
   }
 
-  // Check collision separately for each axis to allow sliding along walls
+  // Check collision separately for each axis
   const newPositionX = camera.position.clone();
   newPositionX.x += velocity.x * delta;
   const newPositionZ = camera.position.clone();
@@ -1217,58 +1032,49 @@ export function animate() {
     controls.moveForward(velocity.z * delta);
   }
 
+  // Mobile device orientation control
+  if (isMobile && controls.isLocked && initialOrientation) {
+    // Convert device orientation to quaternions
+    const alpha = THREE.MathUtils.degToRad(deviceOrientation.alpha - initialOrientation.alpha);
+    const beta = THREE.MathUtils.degToRad(deviceOrientation.beta - initialOrientation.beta);
+    const gamma = THREE.MathUtils.degToRad(deviceOrientation.gamma - initialOrientation.gamma);
 
+    // Create quaternions
+    const quaternion = new THREE.Quaternion();
+    const euler = new THREE.Euler();
 
-  if (
-    isMobile &&
-    controls.isLocked &&
-    initialOrientation &&
-    deviceOrientation.alpha !== null &&
-    deviceOrientation.beta !== null &&
-    deviceOrientation.gamma !== null
-  ) {
-    // Calculate relative orientation
-    const deltaAlpha = deviceOrientation.alpha - initialOrientation.alpha;
-    const deltaBeta = deviceOrientation.beta - initialOrientation.beta;
+    // Adjust for screen orientation
+    const screenOrientation = window.orientation || 0;
+    const zee = new THREE.Vector3(0, 0, 1);
+    const q0 = new THREE.Quaternion();
+    q0.setFromAxisAngle(zee, -THREE.MathUtils.degToRad(screenOrientation));
 
-    // Apply sensitivity and convert to radians
-    const sensitivity = 0.02;
-    const yaw = deltaAlpha * sensitivity;
-    const pitch = THREE.MathUtils.clamp(
-      deltaBeta * sensitivity,
-      -Math.PI / 3,
-      Math.PI / 3
-    );
+    // Apply rotations
+    euler.set(beta, alpha, -gamma, 'YXZ');
+    quaternion.setFromEuler(euler);
+    quaternion.multiply(q0);
 
-    // Directly manipulate the PointerLockControls internal object
-    const controlsObject = controls.getObject();
-    
-    // Store original rotation if not stored yet
-    if (!controlsObject.userData.originalRotation) {
-      controlsObject.userData.originalRotation = {
-        x: controlsObject.rotation.x,
-        y: controlsObject.rotation.y
-      };
-    }
-    
-    // Apply device orientation rotation
-    controlsObject.rotation.order = 'YXZ';
-    controlsObject.rotation.y = controlsObject.userData.originalRotation.y - yaw;
-    controlsObject.rotation.x = controlsObject.userData.originalRotation.x - pitch;
+    // Apply sensitivity and damping
+    const sensitivity = 0.8;
+    const damping = 0.1;
+    const currentQuaternion = controls.getObject().quaternion;
+    currentQuaternion.slerp(quaternion, damping);
+
+    // Apply rotation
+    controls.getObject().quaternion.copy(currentQuaternion);
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
   camera.position.z = THREE.MathUtils.clamp(camera.position.z, -8.5, 9);
   camera.position.y = 1.6;
 
-  // Only show album popups when in active gallery mode (controls locked or mobile in fullscreen)
+  // Album popups
   const container = document.getElementById("container");
   const isInGalleryMode =
     controls.isLocked ||
     (isMobile && container && container.style.display === "none");
 
   if (isInGalleryMode) {
-    // Find closest album based on position only (not looking direction)
     let closestAlbum = null;
     let closestDistance = Infinity;
 
@@ -1276,14 +1082,12 @@ export function animate() {
       if (child.userData.album) {
         const distance = camera.position.distanceTo(child.position);
         if (distance < 3 && distance < closestDistance) {
-          // Within 3 units
           closestDistance = distance;
           closestAlbum = child.userData.album;
         }
       }
     });
 
-    // Debug logging for mobile
     if (isMobile && closestAlbum) {
       console.log(
         "Found closest album on mobile:",
@@ -1298,7 +1102,6 @@ export function animate() {
       albumTitle.textContent = currentAlbum.title;
       if (ui.style.display !== "block") {
         ui.style.display = "block";
-        // Debug logging for mobile
         if (isMobile) {
           console.log("Showing album popup on mobile:", currentAlbum.title);
           console.log("UI element found:", ui);
@@ -1312,7 +1115,6 @@ export function animate() {
       ui.classList.add("visible");
     } else if (!closestAlbum && currentAlbum) {
       currentAlbum = null;
-      // Debug logging for mobile
       if (isMobile) {
         console.log("Hiding album popup on mobile");
       }
@@ -1328,7 +1130,6 @@ export function animate() {
       });
     }
   } else if (currentAlbum) {
-    // If not in gallery mode but there's a current album, clear it
     currentAlbum = null;
     ui.style.display = "none";
     ui.classList.remove("visible");
