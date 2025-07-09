@@ -73,6 +73,7 @@ let orientationStatus = null;
 let orientationIndicator = null;
 let orientationText = null;
 let audioPreloaded = false;
+let orientationDebugLogged = false;
 
 // Asset loading helpers
 function updateLoadingProgress() {
@@ -580,8 +581,11 @@ async function requestDeviceOrientationPermission() {
       
       if (permissionResult === 'granted') {
         updateOrientationStatus('granted', 'Orientation: Granted');
-        setupDeviceOrientationControls();
         console.log('Device orientation permission granted');
+        // Wait a bit then setup controls
+        setTimeout(() => {
+          setupDeviceOrientationControls();
+        }, 500);
       } else if (permissionResult === 'denied') {
         updateOrientationStatus('denied', 'Orientation: Denied');
         console.log('Device orientation permission denied');
@@ -633,7 +637,19 @@ function setupDeviceOrientationControls() {
       if (!initialOrientation) {
         initialOrientation = { ...deviceOrientation };
         console.log('Initial orientation set:', initialOrientation);
+        console.log('Device orientation tracking enabled');
       }
+      
+      // Debug logging every 60 frames (~1 second)
+      if (Math.random() < 0.016) {
+        console.log('Device orientation:', {
+          alpha: event.alpha?.toFixed(1),
+          beta: event.beta?.toFixed(1),
+          gamma: event.gamma?.toFixed(1)
+        });
+      }
+    } else {
+      console.warn('Device orientation event missing values:', event);
     }
   };
 
@@ -641,6 +657,16 @@ function setupDeviceOrientationControls() {
   window.addEventListener('deviceorientation', handleOrientation, { passive: false });
   document.addEventListener('deviceorientation', handleOrientation, { passive: false });
   console.log('Device orientation listener added');
+  
+  // Test if we're getting events after 2 seconds
+  setTimeout(() => {
+    if (!initialOrientation) {
+      console.warn('No device orientation events received after 2 seconds');
+      updateOrientationStatus('denied', 'Orientation: No events');
+    } else {
+      console.log('Device orientation working correctly');
+    }
+  }, 2000);
 }
 
 // Clean up orientation listeners
@@ -1219,35 +1245,57 @@ export function animate() {
   }
 
   // Mobile device orientation control
-  if (isMobile && controls.isLocked && initialOrientation) {
-    // Convert device orientation to quaternions
-    const alpha = THREE.MathUtils.degToRad(deviceOrientation.alpha - initialOrientation.alpha);
-    const beta = THREE.MathUtils.degToRad(deviceOrientation.beta - initialOrientation.beta);
-    const gamma = THREE.MathUtils.degToRad(deviceOrientation.gamma - initialOrientation.gamma);
+  if (isMobile && controls.isLocked && initialOrientation && deviceOrientation) {
+    if (!orientationDebugLogged) {
+      console.log('✅ Device orientation control active!');
+      console.log('Initial orientation:', initialOrientation);
+      console.log('Current orientation:', deviceOrientation);
+      orientationDebugLogged = true;
+    }
+    
+    // Calculate relative changes from initial orientation
+    const deltaAlpha = deviceOrientation.alpha - initialOrientation.alpha;
+    const deltaBeta = deviceOrientation.beta - initialOrientation.beta;
+    const deltaGamma = deviceOrientation.gamma - initialOrientation.gamma;
+    
+    // Handle alpha wraparound (0-360 degrees)
+    let normalizedAlpha = deltaAlpha;
+    if (normalizedAlpha > 180) normalizedAlpha -= 360;
+    if (normalizedAlpha < -180) normalizedAlpha += 360;
+    
+    // Convert to radians with sensitivity
+    const sensitivity = 0.5;
+    const alphaRad = THREE.MathUtils.degToRad(normalizedAlpha * sensitivity);
+    const betaRad = THREE.MathUtils.degToRad(deltaBeta * sensitivity);
+    const gammaRad = THREE.MathUtils.degToRad(deltaGamma * sensitivity);
 
-    // Create quaternions
+    // Create rotation quaternion
     const quaternion = new THREE.Quaternion();
     const euler = new THREE.Euler();
-
+    
     // Adjust for screen orientation
     const screenOrientation = window.orientation || 0;
-    const zee = new THREE.Vector3(0, 0, 1);
-    const q0 = new THREE.Quaternion();
-    q0.setFromAxisAngle(zee, -THREE.MathUtils.degToRad(screenOrientation));
+    const screenAdjustment = new THREE.Quaternion();
+    screenAdjustment.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -THREE.MathUtils.degToRad(screenOrientation));
 
-    // Apply rotations
-    euler.set(beta, alpha, -gamma, 'YXZ');
+    // Set euler angles (order matters for device orientation)
+    euler.set(betaRad, alphaRad, -gammaRad, 'YXZ');
     quaternion.setFromEuler(euler);
-    quaternion.multiply(q0);
+    quaternion.multiply(screenAdjustment);
 
-    // Apply sensitivity and damping
-    const sensitivity = 0.8;
-    const damping = 0.1;
+    // Apply to camera with damping
+    const damping = 0.05;
     const currentQuaternion = controls.getObject().quaternion;
     currentQuaternion.slerp(quaternion, damping);
-
-    // Apply rotation
-    controls.getObject().quaternion.copy(currentQuaternion);
+    
+    // Log occasionally for debugging
+    if (Math.random() < 0.01) {
+      console.log('Orientation deltas:', {
+        alpha: normalizedAlpha.toFixed(1),
+        beta: deltaBeta.toFixed(1),
+        gamma: deltaGamma.toFixed(1)
+      });
+    }
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
