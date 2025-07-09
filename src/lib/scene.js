@@ -755,42 +755,19 @@ function updateCameraFromOrientation() {
   if (relativeAlpha > 180) relativeAlpha -= 360;
   if (relativeAlpha < -180) relativeAlpha += 360;
 
-  // Phone-tilt mapping with anti-whiplash filtering
-  const previousYaw = smoothedOrientation.yaw;
-  
+  // Phone-tilt mapping for immediate response - no smoothing
   // Gamma controls horizontal rotation (left/right tilt)
   let targetYaw = THREE.MathUtils.degToRad(relativeGamma) * orientationSensitivity;
   
-  // Beta controls vertical rotation (forward/back tilt) - same as horizontal
+  // Beta controls vertical rotation (forward/back tilt)
   let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
   
-  // Handle 360° wraparound jumps for yaw
-  const yawDiff = targetYaw - previousYaw;
-  if (yawDiff > Math.PI) {
-    targetYaw -= 2 * Math.PI;
-  } else if (yawDiff < -Math.PI) {
-    targetYaw += 2 * Math.PI;
-  }
+  // Apply orientation directly to camera for immediate response
+  // No smoothing - user wants immediate reaction to tilts
+  smoothedOrientation.yaw = targetYaw;
+  smoothedOrientation.pitch = targetPitch;
 
-  // Same smoothing for both axes - what worked for horizontal
-  const yawSmoothingFactor = 0.05; // Very smooth horizontal movement  
-  const pitchSmoothingFactor = 0.05; // Same smoothing as horizontal
-  
-  // Apply smoothing with anti-jitter logic
-  smoothedOrientation.yaw = THREE.MathUtils.lerp(
-    smoothedOrientation.yaw, 
-    targetYaw, 
-    yawSmoothingFactor
-  );
-  
-  // Always apply smoothing without deadzone for consistent response
-  smoothedOrientation.pitch = THREE.MathUtils.lerp(
-    smoothedOrientation.pitch, 
-    targetPitch, 
-    pitchSmoothingFactor
-  );
-
-  // Apply the smoothed orientation to the camera using quaternions for stability
+  // Apply the orientation to the camera using quaternions for stability
   // Create rotation quaternion to avoid gimbal lock
   const quaternion = new THREE.Quaternion();
   quaternion.setFromEuler(new THREE.Euler(smoothedOrientation.pitch, smoothedOrientation.yaw, 0, 'YXZ'));
@@ -812,8 +789,8 @@ function updateCameraFromOrientation() {
       relativeBeta: relativeBeta.toFixed(1),
       targetYaw: THREE.MathUtils.radToDeg(targetYaw).toFixed(1),
       targetPitch: THREE.MathUtils.radToDeg(targetPitch).toFixed(1),
-      smoothedYaw: THREE.MathUtils.radToDeg(smoothedOrientation.yaw).toFixed(1),
-      smoothedPitch: THREE.MathUtils.radToDeg(smoothedOrientation.pitch).toFixed(1),
+      immediateYaw: THREE.MathUtils.radToDeg(smoothedOrientation.yaw).toFixed(1),
+      immediatePitch: THREE.MathUtils.radToDeg(smoothedOrientation.pitch).toFixed(1),
       hasInitial: !!initialOrientation
     });
   }
@@ -1264,31 +1241,73 @@ function startPreview(album) {
         putVinylAction.reset();
         putVinylAction.play();
       }
-      // Simple and reliable audio setup
-      audio.src = album.previewUrl;
       
-      // Preload the audio but don't wait
+      // Improved audio setup for reliable first-play
+      audio.src = album.previewUrl;
+      audio.preload = 'auto';
+      
+      // Clear any previous audio state
+      audio.currentTime = 0;
+      audio.pause();
+      
+      // Force load and wait for ready state
       audio.load();
       
-      // Always schedule playback - let the browser handle loading
-      audioTimeout = setTimeout(() => {
-        if (isPreviewing) {
-          console.log('Playing audio for:', album.title);
-          const playPromise = audio.play();
-          
-          if (playPromise !== undefined) {
-            playPromise.catch(error => {
-              console.warn('Audio play failed, retrying in 1 second...', error);
-              // Single retry after longer delay
-              setTimeout(() => {
-                if (isPreviewing) {
-                  audio.play().catch(e => console.warn('Final audio retry failed:', e));
-                }
-              }, 1000);
-            });
+      // Multiple fallback strategies for audio loading
+      let audioReady = false;
+      let playAttempted = false;
+      
+      const tryAudioPlay = () => {
+        if (playAttempted || !isPreviewing) return;
+        playAttempted = true;
+        
+        console.log('Playing audio for:', album.title, 'readyState:', audio.readyState);
+        const playPromise = audio.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.warn('Audio play failed, will retry...', error);
+            playAttempted = false; // Allow retry
+            
+            // Quick retry after short delay
+            setTimeout(() => {
+              if (isPreviewing && !playAttempted) {
+                tryAudioPlay();
+              }
+            }, 500);
+          });
+        }
+      };
+      
+      // Listen for when audio is ready to play
+      const onCanPlay = () => {
+        console.log('Audio canplay event fired, readyState:', audio.readyState);
+        audioReady = true;
+        audio.removeEventListener('canplay', onCanPlay);
+        audio.removeEventListener('canplaythrough', onCanPlay);
+        audio.removeEventListener('loadeddata', onCanPlay);
+        
+        // Short delay then try to play
+        setTimeout(() => {
+          if (isPreviewing) {
+            tryAudioPlay();
           }
+        }, 100);
+      };
+      
+      // Multiple event listeners for better compatibility
+      audio.addEventListener('canplay', onCanPlay);
+      audio.addEventListener('canplaythrough', onCanPlay);
+      audio.addEventListener('loadeddata', onCanPlay);
+      
+      // Fallback timer - try to play after animation completes regardless
+      audioTimeout = setTimeout(() => {
+        if (isPreviewing && !audioReady) {
+          console.log('Audio fallback timer - forcing play attempt');
+          tryAudioPlay();
         }
       }, 4800);
+      
       previewInstruction.style.display = "block";
 
       // Animate camera to face record player from further back
