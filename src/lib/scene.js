@@ -56,8 +56,12 @@ let audioTimeout = null;
 let ui, albumTitle, enterButton, galleryCanvas, galleryScreen;
 let moveUpButton, moveDownButton, moveLeftButton, moveRightButton;
 let isMobile = false;
+// Device orientation state for smooth camera control
 let deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
 let initialOrientation = null;
+let smoothedOrientation = { yaw: 0, pitch: 0 };
+let orientationSmoothingFactor = 0.1; // Lower = smoother but more lag
+let orientationSensitivity = 0.8; // Sensitivity multiplier for orientation input
 let clickToLockHandler = null;
 let previewInstruction = null;
 let previewAnimationId = null;
@@ -626,54 +630,141 @@ async function requestDeviceOrientationPermission() {
   }
 }
 
-// Device orientation handling for mobile camera control
+/**
+ * Device orientation handling for mobile camera control
+ * Optimized for portrait mode with smooth navigation
+ */
 function setupDeviceOrientationControls() {
   if (!isMobile) return;
 
   // Reset orientation data
   deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
   initialOrientation = null;
+  smoothedOrientation = { yaw: 0, pitch: 0 };
 
-  // Show orientation values UI
+  // Show orientation values UI for debugging
   if (orientationValues) {
     orientationValues.style.display = 'block';
   }
 
+  /**
+   * Device orientation event handler for portrait mode
+   * Maps phone orientation to camera rotation for intuitive navigation
+   */
   window.addEventListener('deviceorientation', function(event) {
-    // Update UI values
+    // Update debug UI values
     if (alphaValue) alphaValue.textContent = event.alpha ? event.alpha.toFixed(1) : '0';
     if (betaValue) betaValue.textContent = event.beta ? event.beta.toFixed(1) : '0';
     if (gammaValue) gammaValue.textContent = event.gamma ? event.gamma.toFixed(1) : '0';
     
-    // Update device orientation for camera control
+    // Process orientation data for camera control
     if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
+      // Store raw orientation values
       deviceOrientation = {
-        alpha: event.alpha,
-        beta: event.beta,
-        gamma: event.gamma
+        alpha: event.alpha,    // Compass heading (0-360°)
+        beta: event.beta,      // Front-to-back tilt (-180° to 180°)
+        gamma: event.gamma     // Left-to-right tilt (-90° to 90°)
       };
 
+      // Set initial orientation when device is held upright in portrait mode
       if (!initialOrientation) {
         initialOrientation = { ...deviceOrientation };
-        console.log('Initial upright orientation set:', initialOrientation);
-        console.log('Device orientation tracking enabled');
+        console.log('Initial portrait orientation calibrated:', {
+          alpha: initialOrientation.alpha.toFixed(1),
+          beta: initialOrientation.beta.toFixed(1),
+          gamma: initialOrientation.gamma.toFixed(1)
+        });
       }
     }
   });
   
-  console.log('Device orientation listener added');
+  console.log('Device orientation controls initialized for portrait mode');
   
-  // Test if we're getting events after 2 seconds
+  // Verify orientation events are working
   setTimeout(() => {
     if (!initialOrientation) {
-      console.warn('No device orientation events received after 2 seconds');
+      console.warn('No device orientation events received - check permissions');
       updateOrientationStatus('denied', 'Orientation: No events');
     } else {
-      console.log('Device orientation working correctly');
+      console.log('Device orientation active and calibrated');
     }
   }, 2000);
 }
 
+/**
+ * Updates camera rotation based on device orientation for smooth navigation
+ * Designed for portrait mode with anti-jitter smoothing
+ */
+function updateCameraFromOrientation() {
+  if (!deviceOrientation || !initialOrientation) return;
+
+  // Calculate relative rotation from initial upright portrait position
+  let relativeAlpha = deviceOrientation.alpha - initialOrientation.alpha;
+  let relativeBeta = deviceOrientation.beta - initialOrientation.beta;
+
+  // Handle 360° wraparound for alpha (compass heading)
+  if (relativeAlpha > 180) relativeAlpha -= 360;
+  if (relativeAlpha < -180) relativeAlpha += 360;
+
+  // Convert to target rotation values (in radians)
+  // Alpha controls yaw (left/right look) - inverted for intuitive control
+  const targetYaw = -THREE.MathUtils.degToRad(relativeAlpha) * orientationSensitivity;
+  
+  // Beta controls pitch (up/down look) - for portrait mode
+  // Clamp beta to prevent over-rotation (comfortable head movement range)
+  const clampedBeta = THREE.MathUtils.clamp(relativeBeta, -45, 45);
+  const targetPitch = THREE.MathUtils.degToRad(clampedBeta) * orientationSensitivity;
+
+  // Apply exponential smoothing to reduce jitter
+  smoothedOrientation.yaw = THREE.MathUtils.lerp(
+    smoothedOrientation.yaw, 
+    targetYaw, 
+    orientationSmoothingFactor
+  );
+  
+  smoothedOrientation.pitch = THREE.MathUtils.lerp(
+    smoothedOrientation.pitch, 
+    targetPitch, 
+    orientationSmoothingFactor
+  );
+
+  // Apply the smoothed orientation to the camera
+  // We use the camera's rotation directly for immediate response
+  camera.rotation.y = smoothedOrientation.yaw;   // Yaw: horizontal rotation
+  camera.rotation.x = smoothedOrientation.pitch; // Pitch: vertical rotation
+  camera.rotation.z = 0; // Roll: keep level for comfort
+
+  // Optional: Log orientation data for debugging (remove for production)
+  if (Math.random() < 0.01) { // Log occasionally to avoid spam
+    console.log('Orientation update:', {
+      rawAlpha: deviceOrientation.alpha.toFixed(1),
+      rawBeta: deviceOrientation.beta.toFixed(1),
+      relativeAlpha: relativeAlpha.toFixed(1),
+      relativeBeta: relativeBeta.toFixed(1),
+      targetYaw: THREE.MathUtils.radToDeg(targetYaw).toFixed(1),
+      targetPitch: THREE.MathUtils.radToDeg(targetPitch).toFixed(1),
+      smoothedYaw: THREE.MathUtils.radToDeg(smoothedOrientation.yaw).toFixed(1),
+      smoothedPitch: THREE.MathUtils.radToDeg(smoothedOrientation.pitch).toFixed(1)
+    });
+  }
+}
+
+
+/**
+ * Recalibrates device orientation to current position
+ * Useful for resetting the "center" position during navigation
+ */
+function recalibrateOrientation() {
+  if (isMobile && deviceOrientation) {
+    initialOrientation = { ...deviceOrientation };
+    smoothedOrientation = { yaw: 0, pitch: 0 };
+    console.log('Orientation recalibrated to current position:', {
+      alpha: initialOrientation.alpha.toFixed(1),
+      beta: initialOrientation.beta.toFixed(1),
+      gamma: initialOrientation.gamma.toFixed(1)
+    });
+  }
+}
 
 // Clean up orientation listeners
 function cleanupDeviceOrientation() {
@@ -681,6 +772,11 @@ function cleanupDeviceOrientation() {
   document.removeEventListener('deviceorientation', () => {});
   window.removeEventListener('devicemotion', () => {});
   document.removeEventListener('devicemotion', () => {});
+  
+  // Reset orientation state
+  deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
+  initialOrientation = null;
+  smoothedOrientation = { yaw: 0, pitch: 0 };
 }
 
 function resetToInitialState() {
@@ -1207,8 +1303,6 @@ export function animatePreview() {
 }
 
 export function animate() {
-  camera.rotation.x += 0.01; // Test pitch
-  camera.rotation.y += 0.01; // Test yaw
   mainAnimationId = requestAnimationFrame(animate);
   const delta = clock.getDelta();
   if (mixer) mixer.update(delta);
@@ -1252,69 +1346,9 @@ export function animate() {
     controls.moveForward(velocity.z * delta);
   }
 
-  // Mobile device orientation control - apply rotation to camera
-  if (isMobile && deviceOrientation && initialOrientation) {
-    const alpha = deviceOrientation.alpha || 0;
-    const beta = deviceOrientation.beta || 0;
-    const gamma = deviceOrientation.gamma || 0;
-
-    // Calculate relative rotation from initial upright position
-    const relativeAlpha = alpha - initialOrientation.alpha;
-    const relativeBeta = beta - initialOrientation.beta;
-
-    // Convert to radians with slight scaling for smoother control
-    const yaw = THREE.MathUtils.degToRad(relativeAlpha) * 0.8; // Left/right rotation, scaled
-    const pitch = THREE.MathUtils.degToRad(relativeBeta) * 0.8; // Up/down tilt, scaled
-    const roll = 0; // Ignore roll for stable view
-
-    // Log orientation values for debugging
-    console.log('Orientation data:', {
-      alpha, beta, gamma,
-      relativeAlpha, relativeBeta,
-      yaw, pitch, roll,
-      cameraRotationBefore: {
-        x: camera.rotation.x.toFixed(3),
-        y: camera.rotation.y.toFixed(3),
-        z: camera.rotation.z.toFixed(3)
-      }
-    });
-
-    // Temporarily disable PointerLockControls to apply orientation
-    const wasLocked = controls.isLocked;
-    if (wasLocked) {
-      try {
-        controls.unlock();
-      } catch (error) {
-        console.warn('Failed to unlock controls:', error);
-      }
-    }
-
-    // Reset camera rotation to avoid cumulative effects
-    camera.rotation.set(0, 0, 0);
-
-    // Apply rotation to match phone tilting from upright position
-    camera.rotation.x = pitch;   // Beta: Tilt forward (positive) = look down (positive), tilt backward (negative) = look up (negative)
-    camera.rotation.y = -yaw;    // Alpha: Rotate left (positive) = turn left (negative), rotate right (negative) = turn right (positive)
-    camera.rotation.z = roll;    // Gamma: Ignore (set to 0)
-
-    // Log camera rotation after update
-    console.log('Camera rotation after:', {
-      x: camera.rotation.x.toFixed(3),
-      y: camera.rotation.y.toFixed(3),
-      z: camera.rotation.z.toFixed(3)
-    });
-
-    // Re-lock controls if they were previously locked
-    if (wasLocked) {
-      try {
-        controls.lock();
-      } catch (error) {
-        console.warn('Failed to re-lock controls:', error);
-      }
-    }
-
-    // Force render to ensure update
-    renderer.render(scene, camera);
+  // Apply device orientation for mobile camera control (portrait mode)
+  if (isMobile && deviceOrientation && initialOrientation && controls.isLocked) {
+    updateCameraFromOrientation();
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
