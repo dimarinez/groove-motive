@@ -5,8 +5,10 @@ export default function HamburgerMenu() {
     try {
       // First try to access controls from global scope
       if (window.controls && window.controls.unlock) {
+        console.log('Unlocking controls via hamburger menu');
         window.controls.unlock();
       } else {
+        console.log('Controls not available, trying escape event');
         // Fallback: dispatch escape event
         const escEvent = new KeyboardEvent('keydown', {
           key: 'Escape',
@@ -19,8 +21,20 @@ export default function HamburgerMenu() {
       }
     } catch (error) {
       console.warn('Could not exit gallery:', error);
-      // Last resort: reload page to exit gallery
-      window.location.reload();
+      // Force exit by showing container and hiding controls
+      const container = document.getElementById('container');
+      const mobileControls = document.getElementById('mobile-controls');
+      
+      if (container) {
+        container.style.display = 'flex';
+      }
+      if (mobileControls) {
+        mobileControls.style.display = 'none';
+      }
+      
+      // Reset body styles
+      document.body.style.cursor = 'auto';
+      document.body.classList.remove('gallery-entered');
     }
   };
 

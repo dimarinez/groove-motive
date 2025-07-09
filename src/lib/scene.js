@@ -62,11 +62,9 @@ let initialOrientation = null;
 let smoothedOrientation = { yaw: 0, pitch: 0 };
 let orientationSmoothingFactor = 0.3; // Increased for faster response, especially pitch
 let orientationSensitivity = 1.0; // Increased sensitivity for better response
-// Rolling average filter for noise reduction
-let orientationHistory = { alpha: [], beta: [], gamma: [] };
-const historyLength = 5; // Number of samples to average
+// Simplified orientation tracking - remove complex filtering that causes jitter
 let previousSmoothedOrientation = { yaw: 0, pitch: 0 };
-const deadZoneThreshold = 0.002; // Minimum change in radians to register movement
+const deadZoneThreshold = 0.005; // Increased deadzone to reduce jitter
 let clickToLockHandler = null;
 let previewInstruction = null;
 let previewAnimationId = null;
@@ -655,7 +653,6 @@ function setupDeviceOrientationControls() {
   initialOrientation = null;
   smoothedOrientation = { yaw: 0, pitch: 0 };
   previousSmoothedOrientation = { yaw: 0, pitch: 0 };
-  orientationHistory = { alpha: [], beta: [], gamma: [] };
 
   // Keep orientation values hidden
   if (orientationValues) {
@@ -665,38 +662,15 @@ function setupDeviceOrientationControls() {
   /**
    * Device orientation event handler for portrait mode
    * Maps phone orientation to camera rotation for intuitive navigation
-   * Uses rolling average filter to reduce sensor noise
    */
   window.addEventListener('deviceorientation', function(event) {
-    // Update debug UI values
-    if (alphaValue) alphaValue.textContent = event.alpha ? event.alpha.toFixed(1) : '0';
-    if (betaValue) betaValue.textContent = event.beta ? event.beta.toFixed(1) : '0';
-    if (gammaValue) gammaValue.textContent = event.gamma ? event.gamma.toFixed(1) : '0';
-    
     // Process orientation data for camera control
     if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
-      // Add to rolling average filter
-      orientationHistory.alpha.push(event.alpha);
-      orientationHistory.beta.push(event.beta);
-      orientationHistory.gamma.push(event.gamma);
-      
-      // Keep only the last N samples
-      if (orientationHistory.alpha.length > historyLength) {
-        orientationHistory.alpha.shift();
-        orientationHistory.beta.shift();
-        orientationHistory.gamma.shift();
-      }
-      
-      // Calculate rolling average to reduce noise
-      const avgAlpha = orientationHistory.alpha.reduce((a, b) => a + b, 0) / orientationHistory.alpha.length;
-      const avgBeta = orientationHistory.beta.reduce((a, b) => a + b, 0) / orientationHistory.beta.length;
-      const avgGamma = orientationHistory.gamma.reduce((a, b) => a + b, 0) / orientationHistory.gamma.length;
-      
-      // Store filtered orientation values
+      // Store raw orientation values - no filtering to reduce complexity
       deviceOrientation = {
-        alpha: avgAlpha,    // Compass heading (0-360°)
-        beta: avgBeta,      // Front-to-back tilt (-180° to 180°)
-        gamma: avgGamma     // Left-to-right tilt (-90° to 90°)
+        alpha: event.alpha,    // Compass heading (0-360°)
+        beta: event.beta,      // Front-to-back tilt (-180° to 180°)
+        gamma: event.gamma     // Left-to-right tilt (-90° to 90°)
       };
 
       // Set initial orientation when device is held upright in portrait mode
@@ -741,37 +715,47 @@ function updateCameraFromOrientation() {
   if (relativeAlpha > 180) relativeAlpha -= 360;
   if (relativeAlpha < -180) relativeAlpha += 360;
 
-  // Smooth wraparound transitions for alpha to prevent glitches
+  // Smart orientation mapping based on phone position
   const previousYaw = smoothedOrientation.yaw;
-  let targetYaw = THREE.MathUtils.degToRad(relativeAlpha) * orientationSensitivity;
+  let targetYaw, targetPitch;
   
-  // Detect and handle 360° wraparound jumps
+  // Determine if phone is roughly horizontal (flat)
+  const phoneIsFlat = Math.abs(Math.abs(relativeBeta) - 90) < 30;
+  
+  if (phoneIsFlat) {
+    // Phone is laid flat - use alpha for rotation, set pitch based on face up/down
+    targetYaw = THREE.MathUtils.degToRad(relativeAlpha) * orientationSensitivity;
+    
+    // When face down (beta around 180°), look down at ground
+    // When face up (beta around 0°), look up at ceiling
+    const isFaceDown = relativeBeta > 0;
+    targetPitch = isFaceDown ? 
+      THREE.MathUtils.degToRad(85) : // Look down when face down
+      THREE.MathUtils.degToRad(-85); // Look up when face up
+  } else {
+    // Phone is upright - use gamma for horizontal, beta for vertical
+    const relativeGamma = deviceOrientation.gamma - initialOrientation.gamma;
+    targetYaw = THREE.MathUtils.degToRad(relativeGamma) * orientationSensitivity;
+    
+    // Invert pitch for natural feel and clamp to prevent gimbal lock
+    const clampedBeta = THREE.MathUtils.clamp(relativeBeta, -85, 85);
+    targetPitch = THREE.MathUtils.degToRad(-clampedBeta) * orientationSensitivity;
+  }
+  
+  // Handle 360° wraparound jumps for yaw
   const yawDiff = targetYaw - previousYaw;
   if (yawDiff > Math.PI) {
     targetYaw -= 2 * Math.PI;
   } else if (yawDiff < -Math.PI) {
     targetYaw += 2 * Math.PI;
   }
-  
-  // Beta controls pitch with gimbal lock prevention
-  // Clamp pitch to prevent gimbal lock at exactly ±90°
-  const clampedBeta = THREE.MathUtils.clamp(relativeBeta, -85, 85);
-  const targetPitch = THREE.MathUtils.degToRad(clampedBeta) * orientationSensitivity;
 
-  // Apply exponential smoothing to reduce jitter
-  // Use adaptive smoothing based on movement speed
-  const yawSpeed = Math.abs(yawDiff);
-  const pitchSpeed = Math.abs(targetPitch - smoothedOrientation.pitch);
+  // Simple smoothing to reduce jitter without complex logic
+  const yawSmoothingFactor = 0.15; // Lower for smoother horizontal movement
+  const pitchSmoothingFactor = 0.25; // Lower for smoother vertical movement
   
-  // Simplified smoothing - reduce complexity that was causing issues
-  // Faster horizontal, responsive vertical
-  const yawSmoothingFactor = 0.2; // Increased for faster horizontal response
-  const pitchSmoothingFactor = 0.4; // Higher for responsive vertical movement
-  
-  // Apply smoothing with minimal deadzone
-  const minMovement = 0.001; // Reduced deadzone threshold
-  
-  if (Math.abs(yawDiff) > minMovement) {
+  // Apply deadzone only for very small movements
+  if (Math.abs(yawDiff) > deadZoneThreshold) {
     smoothedOrientation.yaw = THREE.MathUtils.lerp(
       smoothedOrientation.yaw, 
       targetYaw, 
@@ -779,7 +763,7 @@ function updateCameraFromOrientation() {
     );
   }
   
-  if (Math.abs(targetPitch - smoothedOrientation.pitch) > minMovement) {
+  if (Math.abs(targetPitch - smoothedOrientation.pitch) > deadZoneThreshold) {
     smoothedOrientation.pitch = THREE.MathUtils.lerp(
       smoothedOrientation.pitch, 
       targetPitch, 
