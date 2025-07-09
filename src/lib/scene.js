@@ -570,41 +570,61 @@ async function requestDeviceOrientationPermission() {
       typeof DeviceOrientationEvent.requestPermission === 'function') {
     
     try {
-      // Try to check current permission status without requesting
-      // On iOS 13+, we need user interaction to actually request permission
-      console.log('Checking device orientation permission status...');
+      console.log('Requesting device orientation permission...');
       
-      // Just setup controls directly - if permission is granted, it will work
-      // If not, we'll show the button when needed
-      setupDeviceOrientationControls();
+      // Create a user interaction button that triggers permission request
+      const permissionButton = document.createElement('button');
+      permissionButton.textContent = 'Enable Device Orientation';
+      permissionButton.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10000;
+        background: #007AFF;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+      `;
       
-      // Small delay to test if orientation events are working
-      setTimeout(async () => {
-        if (!initialOrientation) {
-          console.log('No orientation detected, requesting permission...');
-          
-          // Now request permission with user interaction
-          const currentPermission = await DeviceOrientationEvent.requestPermission();
-          
-          if (currentPermission === 'granted') {
-            console.log('Device orientation permission granted after request');
-            setupDeviceOrientationControls();
-          } else {
-            console.log('Device orientation permission denied');
+      document.body.appendChild(permissionButton);
+      
+      // Wait for user to click the button
+      const permissionResult = await new Promise((resolve) => {
+        permissionButton.addEventListener('click', async () => {
+          try {
+            console.log('User clicked permission button, requesting...');
+            const result = await DeviceOrientationEvent.requestPermission();
+            console.log('Permission result:', result);
+            resolve(result);
+          } catch (error) {
+            console.error('Error in permission request:', error);
+            resolve('error');
           }
-        } else {
-          console.log('Orientation working without explicit permission request');
-        }
-      }, 2000);
+        });
+      });
       
-      return;
+      // Remove the button
+      document.body.removeChild(permissionButton);
+      
+      if (permissionResult === 'granted') {
+        console.log('Device orientation permission granted');
+        setupDeviceOrientationControls();
+      } else if (permissionResult === 'denied') {
+        console.log('Device orientation permission denied');
+      } else {
+        console.log('Device orientation permission error:', permissionResult);
+      }
       
     } catch (error) {
       console.error('Error requesting device orientation permission:', error);
     }
   } else {
     // Android or older iOS - no permission required
-    console.log('No permission required for device orientation - setting up controls');
+    console.log('No permission required for device orientation');
     setupDeviceOrientationControls();
   }
 
