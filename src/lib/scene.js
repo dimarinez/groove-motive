@@ -1206,6 +1206,8 @@ export function animatePreview() {
 }
 
 export function animate() {
+  camera.rotation.x += 0.01; // Test pitch
+  camera.rotation.y += 0.01; // Test yaw
   mainAnimationId = requestAnimationFrame(animate);
   const delta = clock.getDelta();
   if (mixer) mixer.update(delta);
