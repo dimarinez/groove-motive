@@ -673,10 +673,15 @@ function setupDeviceOrientationControls() {
         gamma: event.gamma     // Left-to-right tilt (-90° to 90°)
       };
 
-      // Set initial orientation when device is held upright in portrait mode
+      // Set initial orientation when device is held in natural viewing position
+      // Account for phone being held slightly tilted down (natural viewing angle)
       if (!initialOrientation) {
-        initialOrientation = { ...deviceOrientation };
-        console.log('Initial portrait orientation calibrated:', {
+        initialOrientation = {
+          alpha: deviceOrientation.alpha,
+          beta: deviceOrientation.beta + 15, // Offset for natural downward tilt
+          gamma: deviceOrientation.gamma
+        };
+        console.log('Initial orientation calibrated with natural tilt offset:', {
           alpha: initialOrientation.alpha.toFixed(1),
           beta: initialOrientation.beta.toFixed(1),
           gamma: initialOrientation.gamma.toFixed(1)
@@ -715,14 +720,15 @@ function updateCameraFromOrientation() {
   if (relativeAlpha > 180) relativeAlpha -= 360;
   if (relativeAlpha < -180) relativeAlpha += 360;
 
-  // Simple and correct orientation mapping for portrait mode
+  // Phone-tilt based orientation mapping for portrait mode
   const previousYaw = smoothedOrientation.yaw;
   
-  // Alpha controls horizontal rotation (360° around the room)
-  let targetYaw = THREE.MathUtils.degToRad(relativeAlpha) * orientationSensitivity;
+  // Gamma controls horizontal rotation (tilt phone left/right to look around)
+  const relativeGamma = deviceOrientation.gamma - initialOrientation.gamma;
+  let targetYaw = THREE.MathUtils.degToRad(-relativeGamma) * orientationSensitivity * 2; // Inverted and amplified
   
   // Beta controls vertical rotation (tilt phone forward = look down, tilt back = look up)
-  let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
+  let targetPitch = THREE.MathUtils.degToRad(-relativeBeta) * orientationSensitivity; // Inverted for natural feel
   
   // Handle 360° wraparound jumps for yaw
   const yawDiff = targetYaw - previousYaw;
@@ -1194,10 +1200,43 @@ function startPreview(album) {
         putVinylAction.reset();
         putVinylAction.play();
       }
+      // Set audio source and ensure it's loaded before playing
       audio.src = album.previewUrl;
-      audioTimeout = setTimeout(() => {
-        if (isPreviewing) audio.play();
-      }, 4800);
+      
+      // Function to play audio once it's ready
+      const playAudio = () => {
+        if (isPreviewing) {
+          audio.play().catch(error => {
+            console.warn('Audio play failed:', error);
+            // Retry once more after a short delay
+            setTimeout(() => {
+              if (isPreviewing) {
+                audio.play().catch(e => console.warn('Audio retry failed:', e));
+              }
+            }, 100);
+          });
+        }
+      };
+      
+      // Check if audio can be played, or wait for it to load
+      if (audio.readyState >= 2) { // HAVE_CURRENT_DATA or better
+        audioTimeout = setTimeout(playAudio, 4800);
+      } else {
+        // Wait for audio to be ready, then set timeout
+        const onCanPlay = () => {
+          audio.removeEventListener('canplay', onCanPlay);
+          audioTimeout = setTimeout(playAudio, 4800);
+        };
+        audio.addEventListener('canplay', onCanPlay);
+        
+        // Fallback timeout in case canplay never fires
+        setTimeout(() => {
+          audio.removeEventListener('canplay', onCanPlay);
+          if (!audioTimeout) {
+            audioTimeout = setTimeout(playAudio, 4800);
+          }
+        }, 2000);
+      }
       previewInstruction.style.display = "block";
 
       // Animate camera to face record player from further back
@@ -1350,13 +1389,14 @@ export function animatePreview() {
   }
 }
 
-// Expose animatePreview to global scope for hamburger menu
+// Expose functions to global scope for hamburger menu
 try {
   if (globalThis.window) {
     window.animatePreview = animatePreview;
+    window.resetToInitialState = resetToInitialState;
   }
 } catch (error) {
-  console.warn("Could not expose animatePreview to global scope:", error);
+  console.warn("Could not expose functions to global scope:", error);
 }
 
 export function animate() {
