@@ -63,6 +63,61 @@ let previewInstruction = null;
 let previewAnimationId = null;
 let mainAnimationId = null;
 
+// Asset loading tracking
+let assetsLoaded = 0;
+let totalAssets = 0;
+let loadingIndicator = null;
+let orientationStatus = null;
+let orientationIndicator = null;
+let orientationText = null;
+
+// Asset loading helpers
+function updateLoadingProgress() {
+  if (loadingIndicator) {
+    const progress = (assetsLoaded / totalAssets) * 100;
+    console.log(`Loading progress: ${assetsLoaded}/${totalAssets} (${progress.toFixed(1)}%)`);
+    
+    if (assetsLoaded >= totalAssets) {
+      loadingIndicator.style.display = 'none';
+      if (enterButton) {
+        enterButton.disabled = false;
+        enterButton.style.opacity = '1';
+      }
+    } else {
+      loadingIndicator.style.display = 'block';
+      if (enterButton) {
+        enterButton.disabled = true;
+        enterButton.style.opacity = '0.5';
+      }
+    }
+  }
+}
+
+function onAssetLoaded() {
+  assetsLoaded++;
+  updateLoadingProgress();
+}
+
+// Orientation status helpers
+function updateOrientationStatus(status, text) {
+  if (orientationIndicator && orientationText) {
+    orientationIndicator.className = `orientation-indicator ${status}`;
+    orientationText.textContent = text;
+    
+    switch(status) {
+      case 'granted':
+        orientationIndicator.textContent = '✅';
+        break;
+      case 'denied':
+        orientationIndicator.textContent = '❌';
+        break;
+      case 'not-requested':
+        orientationIndicator.textContent = '⚠️';
+        break;
+    }
+  }
+}
+
 export function initScene() {
   // Check if we're in a browser environment
   try {
@@ -99,6 +154,10 @@ export function initScene() {
   moveDownButton = document.getElementById("move-down");
   moveLeftButton = document.getElementById("move-left");
   moveRightButton = document.getElementById("move-right");
+  loadingIndicator = document.getElementById("loading-indicator");
+  orientationStatus = document.getElementById("orientation-status");
+  orientationIndicator = document.getElementById("orientation-indicator");
+  orientationText = document.getElementById("orientation-text");
 
   if (!galleryCanvas || !enterButton) {
     console.error("Required DOM elements not found.");
@@ -225,6 +284,20 @@ export function initScene() {
     setupDeviceOrientationControls();
   }
 
+  // Initialize asset loading (count: logo texture, record player GLB, album covers)
+  totalAssets = 1 + 1 + albums.length; // logo + record player + album covers
+  updateLoadingProgress();
+  
+  // Initialize orientation status
+  if (isMobile) {
+    updateOrientationStatus('not-requested', 'Orientation: Not requested');
+  } else {
+    // Hide orientation status on desktop
+    if (orientationStatus) {
+      orientationStatus.style.display = 'none';
+    }
+  }
+
   // Materials
   const floorMaterial = new THREE.MeshStandardMaterial({
     color: 0xe0e0e0,
@@ -266,6 +339,7 @@ export function initScene() {
       carpet.geometry = new THREE.PlaneGeometry(carpetWidth, carpetHeight);
       texture.repeat.set(1, 1);
       texture.offset.set(0, 0);
+      onAssetLoaded(); // Logo texture loaded
     }
   );
   const carpetMaterial = new THREE.MeshStandardMaterial({
@@ -375,10 +449,13 @@ export function initScene() {
       } else {
         console.error("No vinyl mesh found in GLB model");
       }
+      
+      onAssetLoaded(); // Record player GLB loaded
     },
     undefined,
     (error) => {
       console.error("Error loading GLB model:", error);
+      onAssetLoaded(); // Still count as loaded even if failed
     }
   );
 
@@ -417,6 +494,8 @@ export function initScene() {
 // Request device orientation permission with user interaction
 async function requestDeviceOrientationPermission() {
   try {
+    updateOrientationStatus('not-requested', 'Requesting permission...');
+    
     // Request orientation permission
     if (typeof DeviceOrientationEvent !== 'undefined' && 
         typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -425,10 +504,14 @@ async function requestDeviceOrientationPermission() {
       console.log('Device orientation permission:', orientationPermission);
       
       if (orientationPermission === 'granted') {
+        updateOrientationStatus('granted', 'Orientation: Granted');
         setupDeviceOrientationControls();
+      } else {
+        updateOrientationStatus('denied', 'Orientation: Denied');
       }
     } else {
       // Android or older iOS
+      updateOrientationStatus('granted', 'Orientation: Available');
       setupDeviceOrientationControls();
     }
 
@@ -441,6 +524,7 @@ async function requestDeviceOrientationPermission() {
     }
   } catch (error) {
     console.warn('Error requesting device permissions:', error);
+    updateOrientationStatus('denied', 'Orientation: Error');
     // Fallback to regular orientation setup
     setupDeviceOrientationControls();
   }
@@ -743,7 +827,15 @@ function findVinylMesh(object) {
 }
 
 function createAlbumMesh(album, index) {
-  const texture = new THREE.TextureLoader().load(album.cover);
+  const texture = new THREE.TextureLoader().load(
+    album.cover,
+    () => onAssetLoaded(), // Album cover loaded
+    undefined,
+    (error) => {
+      console.error("Error loading album cover:", error);
+      onAssetLoaded(); // Still count as loaded even if failed
+    }
+  );
   const material = new THREE.MeshBasicMaterial({ map: texture });
   const albumMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
   albumMesh.position.set(-8 + index * 4, 2.5, -9.8);
