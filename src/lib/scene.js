@@ -1208,6 +1208,8 @@ export function animatePreview() {
 }
 
 export function animate() {
+  camera.rotation.x += 0.01; // Test pitch
+  camera.rotation.y += 0.01; // Test yaw
   mainAnimationId = requestAnimationFrame(animate);
   const delta = clock.getDelta();
   if (mixer) mixer.update(delta);
@@ -1251,7 +1253,7 @@ export function animate() {
     controls.moveForward(velocity.z * delta);
   }
 
-// Mobile device orientation control - apply rotation to camera
+  // Mobile device orientation control - apply rotation to camera
   if (isMobile && deviceOrientation && initialOrientation) {
     const alpha = deviceOrientation.alpha || 0;
     const beta = deviceOrientation.beta || 0;
@@ -1292,8 +1294,7 @@ export function animate() {
     // Reset camera rotation to avoid cumulative effects
     camera.rotation.set(0, 0, 0);
 
-    // Apply rotation using Euler angles
-  -camera.rotation.order = 'YXZ'; // Ensure correct rotation order
+    // Apply rotation using direct assignment (mimicking manual test)
     camera.rotation.x = pitch;  // Beta (forward/backward tilt) -> X-axis (pitch)
     camera.rotation.y = yaw;    // Alpha (left/right rotation) -> Y-axis (yaw)
     camera.rotation.z = roll;   // Gamma (left/right tilt) -> Z-axis (roll)
