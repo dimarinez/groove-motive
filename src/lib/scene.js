@@ -640,8 +640,6 @@ function setupDeviceOrientationControls() {
   }
 
   window.addEventListener('deviceorientation', function(event) {
-    console.log(event.alpha + ' : ' + event.beta + ' : ' + event.gamma);
-    
     // Update UI values
     if (alphaValue) alphaValue.textContent = event.alpha ? event.alpha.toFixed(1) : '0';
     if (betaValue) betaValue.textContent = event.beta ? event.beta.toFixed(1) : '0';
@@ -657,7 +655,7 @@ function setupDeviceOrientationControls() {
 
       if (!initialOrientation) {
         initialOrientation = { ...deviceOrientation };
-        console.log('Initial orientation set:', initialOrientation);
+        console.log('Initial upright orientation set:', initialOrientation);
         console.log('Device orientation tracking enabled');
       }
     }
@@ -675,6 +673,7 @@ function setupDeviceOrientationControls() {
     }
   }, 2000);
 }
+
 
 // Clean up orientation listeners
 function cleanupDeviceOrientation() {
@@ -1254,19 +1253,24 @@ export function animate() {
   }
 
   // Mobile device orientation control - apply rotation to camera
-  if (isMobile && deviceOrientation) {
+  if (isMobile && deviceOrientation && initialOrientation) {
     const alpha = deviceOrientation.alpha || 0;
     const beta = deviceOrientation.beta || 0;
     const gamma = deviceOrientation.gamma || 0;
 
+    // Calculate relative rotation from initial upright position
+    const relativeAlpha = alpha - initialOrientation.alpha;
+    const relativeBeta = beta - initialOrientation.beta;
+
     // Convert to radians
-    const yaw = THREE.MathUtils.degToRad(alpha); // Left/right rotation
-    const pitch = THREE.MathUtils.degToRad(beta); // Forward/backward tilt
-    const roll = 0; // Ignore roll for natural first-person view (or use THREE.MathUtils.degToRad(gamma * 0.2) for slight roll)
+    const yaw = THREE.MathUtils.degToRad(relativeAlpha); // Left/right rotation
+    const pitch = THREE.MathUtils.degToRad(relativeBeta); // Up/down tilt
+    const roll = 0; // Ignore roll for stable view
 
     // Log orientation values for debugging
     console.log('Orientation data:', {
       alpha, beta, gamma,
+      relativeAlpha, relativeBeta,
       yaw, pitch, roll,
       cameraRotationBefore: {
         x: camera.rotation.x.toFixed(3),
@@ -1288,10 +1292,10 @@ export function animate() {
     // Reset camera rotation to avoid cumulative effects
     camera.rotation.set(0, 0, 0);
 
-    // Apply rotation to match phone camera orientation
-    camera.rotation.x = pitch;   // Beta: Tilt down (positive) = look down, tilt up (negative) = look up
-    camera.rotation.y = -yaw;    // Alpha: Rotate left (positive) = turn left, rotate right (negative) = turn right
-    camera.rotation.z = roll;    // Gamma: Ignore or minimize roll
+    // Apply rotation to match phone tilting from upright position
+    camera.rotation.x = pitch;   // Beta: Tilt forward (positive) = look down (positive), tilt backward (negative) = look up (negative)
+    camera.rotation.y = -yaw;    // Alpha: Rotate left (positive) = turn left (positive), rotate right (negative) = turn right (negative)
+    camera.rotation.z = roll;    // Gamma: Ignore (set to 0)
 
     // Log camera rotation after update
     console.log('Camera rotation after:', {
