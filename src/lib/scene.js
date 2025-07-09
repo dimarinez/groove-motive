@@ -414,6 +414,38 @@ export function initScene() {
   }, 100);
 }
 
+// Request device orientation permission with user interaction
+async function requestDeviceOrientationPermission() {
+  try {
+    // Request orientation permission
+    if (typeof DeviceOrientationEvent !== 'undefined' && 
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      console.log('Requesting device orientation permission...');
+      const orientationPermission = await DeviceOrientationEvent.requestPermission();
+      console.log('Device orientation permission:', orientationPermission);
+      
+      if (orientationPermission === 'granted') {
+        setupDeviceOrientationControls();
+      }
+    } else {
+      // Android or older iOS
+      setupDeviceOrientationControls();
+    }
+
+    // Request motion permission
+    if (typeof DeviceMotionEvent !== 'undefined' && 
+        typeof DeviceMotionEvent.requestPermission === 'function') {
+      console.log('Requesting device motion permission...');
+      const motionPermission = await DeviceMotionEvent.requestPermission();
+      console.log('Device motion permission:', motionPermission);
+    }
+  } catch (error) {
+    console.warn('Error requesting device permissions:', error);
+    // Fallback to regular orientation setup
+    setupDeviceOrientationControls();
+  }
+}
+
 // Device orientation handling for mobile camera control
 function setupDeviceOrientationControls() {
   if (!isMobile) return;
@@ -437,27 +469,10 @@ function setupDeviceOrientationControls() {
     }
   };
 
-  // Request permission for iOS devices
-  if (typeof DeviceOrientationEvent !== 'undefined' && 
-      typeof DeviceOrientationEvent.requestPermission === 'function') {
-    console.log('Requesting device orientation permission...');
-    DeviceOrientationEvent.requestPermission()
-      .then(permission => {
-        console.log('Device orientation permission:', permission);
-        if (permission === 'granted') {
-          window.addEventListener('deviceorientation', handleOrientation, { passive: false });
-          document.addEventListener('deviceorientation', handleOrientation, { passive: false });
-        }
-      })
-      .catch(error => {
-        console.warn('Error requesting device orientation permission:', error);
-      });
-  } else {
-    // Android or devices without permission requirement
-    window.addEventListener('deviceorientation', handleOrientation, { passive: false });
-    document.addEventListener('deviceorientation', handleOrientation, { passive: false });
-    console.log('Device orientation listener added for non-iOS device');
-  }
+  // Add event listeners (permissions should already be granted)
+  window.addEventListener('deviceorientation', handleOrientation, { passive: false });
+  document.addEventListener('deviceorientation', handleOrientation, { passive: false });
+  console.log('Device orientation listener added');
 }
 
 // Clean up orientation listeners
@@ -629,6 +644,11 @@ export function enterGallery() {
     previewAnimationId = null;
   }
 
+  // Request device orientation permission when entering gallery (user interaction)
+  if (isMobile) {
+    requestDeviceOrientationPermission();
+  }
+
   // Move instructions to body for fullscreen
   const instructionsGroup = document.getElementById("instructions-group");
   if (instructionsGroup) {
@@ -666,20 +686,6 @@ export function enterGallery() {
     resetToInitialState();
   });
 
-  // Ensure device orientation permission on mobile
-  if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && 
-      typeof DeviceOrientationEvent.requestPermission === 'function') {
-      
-    DeviceOrientationEvent.requestPermission()
-      .then(permission => {
-        if (permission === 'granted') {
-          setupDeviceOrientationControls();
-        }
-      })
-      .catch(error => {
-        console.warn('Error requesting device orientation permission in enterGallery:', error);
-      });
-  }
 
   // Clean up any existing click-to-lock handler
   if (clickToLockHandler) {
