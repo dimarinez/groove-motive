@@ -1,14 +1,27 @@
 export default function HamburgerMenu() {
   const handleExit = () => {
-    // Simulate ESC key press functionality
-    const escEvent = new KeyboardEvent('keydown', {
-      key: 'Escape',
-      keyCode: 27,
-      which: 27,
-      code: 'Escape',
-      bubbles: true
-    });
-    document.dispatchEvent(escEvent);
+    // Exit gallery mode by unlocking controls
+    // This will trigger the unlock event listener which resets to initial state
+    try {
+      // First try to access controls from global scope
+      if (window.controls && window.controls.unlock) {
+        window.controls.unlock();
+      } else {
+        // Fallback: dispatch escape event
+        const escEvent = new KeyboardEvent('keydown', {
+          key: 'Escape',
+          keyCode: 27,
+          which: 27,
+          code: 'Escape',
+          bubbles: true
+        });
+        document.dispatchEvent(escEvent);
+      }
+    } catch (error) {
+      console.warn('Could not exit gallery:', error);
+      // Last resort: reload page to exit gallery
+      window.location.reload();
+    }
   };
 
   return (

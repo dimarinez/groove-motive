@@ -307,6 +307,16 @@ export function initScene() {
   renderer.outputEncoding = THREE.sRGBEncoding;
 
   controls = new PointerLockControls(camera, galleryCanvas);
+  
+  // Expose controls to global scope for hamburger menu access
+  try {
+    if (globalThis.window) {
+      window.controls = controls;
+    }
+  } catch (error) {
+    console.warn("Could not expose controls to global scope:", error);
+  }
+  
   controls.addEventListener("lock", () => {
     document.body.style.cursor = "none";
     ui.style.display = "none";
@@ -340,14 +350,12 @@ export function initScene() {
   totalAssets = 1 + 1 + albums.length; // logo + record player + album covers
   updateLoadingProgress();
   
-  // Initialize orientation status
-  if (isMobile) {
-    updateOrientationStatus('not-requested', 'Orientation: Not requested');
-  } else {
-    // Hide orientation status on desktop
-    if (orientationStatus) {
-      orientationStatus.style.display = 'none';
-    }
+  // Hide orientation status and values on all devices
+  if (orientationStatus) {
+    orientationStatus.style.display = 'none';
+  }
+  if (orientationValues) {
+    orientationValues.style.display = 'none';
   }
 
   // Materials
@@ -649,9 +657,9 @@ function setupDeviceOrientationControls() {
   previousSmoothedOrientation = { yaw: 0, pitch: 0 };
   orientationHistory = { alpha: [], beta: [], gamma: [] };
 
-  // Show orientation values UI for debugging
+  // Keep orientation values hidden
   if (orientationValues) {
-    orientationValues.style.display = 'block';
+    orientationValues.style.display = 'none';
   }
 
   /**
@@ -755,45 +763,29 @@ function updateCameraFromOrientation() {
   const yawSpeed = Math.abs(yawDiff);
   const pitchSpeed = Math.abs(targetPitch - smoothedOrientation.pitch);
   
-  // Adaptive smoothing - faster for quick movements, slower for small adjustments
-  // Increased base smoothing to reduce jitter when stationary
-  const yawSmoothingFactor = Math.min(0.25, 0.02 + yawSpeed * 0.3);
-  const pitchSmoothingFactor = Math.min(0.3, 0.03 + pitchSpeed * 0.5);
+  // Simplified smoothing - reduce complexity that was causing issues
+  // Faster horizontal, responsive vertical
+  const yawSmoothingFactor = 0.2; // Increased for faster horizontal response
+  const pitchSmoothingFactor = 0.4; // Higher for responsive vertical movement
   
-  // Apply deadzone - only update if movement is significant enough
-  let newYaw = smoothedOrientation.yaw;
-  let newPitch = smoothedOrientation.pitch;
+  // Apply smoothing with minimal deadzone
+  const minMovement = 0.001; // Reduced deadzone threshold
   
-  if (Math.abs(yawDiff) > deadZoneThreshold) {
-    newYaw = THREE.MathUtils.lerp(
+  if (Math.abs(yawDiff) > minMovement) {
+    smoothedOrientation.yaw = THREE.MathUtils.lerp(
       smoothedOrientation.yaw, 
       targetYaw, 
       yawSmoothingFactor
     );
   }
   
-  if (Math.abs(targetPitch - smoothedOrientation.pitch) > deadZoneThreshold) {
-    newPitch = THREE.MathUtils.lerp(
+  if (Math.abs(targetPitch - smoothedOrientation.pitch) > minMovement) {
+    smoothedOrientation.pitch = THREE.MathUtils.lerp(
       smoothedOrientation.pitch, 
       targetPitch, 
       pitchSmoothingFactor
     );
   }
-  
-  // Additional stability check - only update if change is meaningful
-  const yawChange = Math.abs(newYaw - previousSmoothedOrientation.yaw);
-  const pitchChange = Math.abs(newPitch - previousSmoothedOrientation.pitch);
-  
-  if (yawChange > deadZoneThreshold * 0.5) {
-    smoothedOrientation.yaw = newYaw;
-  }
-  if (pitchChange > deadZoneThreshold * 0.5) {
-    smoothedOrientation.pitch = newPitch;
-  }
-  
-  // Store previous values for next frame
-  previousSmoothedOrientation.yaw = smoothedOrientation.yaw;
-  previousSmoothedOrientation.pitch = smoothedOrientation.pitch;
 
   // Apply the smoothed orientation to the camera using quaternions for stability
   // Create rotation quaternion to avoid gimbal lock
@@ -953,6 +945,15 @@ function resetToInitialState() {
   // Reset controls
   controls.dispose();
   controls = new PointerLockControls(camera, renderer.domElement);
+  
+  // Re-expose controls to global scope
+  try {
+    if (globalThis.window) {
+      window.controls = controls;
+    }
+  } catch (error) {
+    console.warn("Could not re-expose controls to global scope:", error);
+  }
 
   // Re-add control event listeners
   controls.addEventListener("lock", () => {
@@ -1045,6 +1046,15 @@ export function enterGallery() {
   }
   controls.dispose();
   controls = new PointerLockControls(camera, renderer.domElement);
+  
+  // Re-expose controls to global scope
+  try {
+    if (globalThis.window) {
+      window.controls = controls;
+    }
+  } catch (error) {
+    console.warn("Could not re-expose controls to global scope:", error);
+  }
 
   // Add unlock event listener
   controls.addEventListener("unlock", () => {
