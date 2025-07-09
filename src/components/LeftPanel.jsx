@@ -71,7 +71,7 @@ export default function LeftPanel() {
       <h2 className="exhibitions-title">Current and past events</h2>
       <ul className="exhibitions-list">
         <li className="exhibition-item"><span>6.28</span> - <span>Groove Motive x Tikis</span> <a href="https://www.youtube.com/watch?v=rGYFKKNghoE" className="exhibition-link">View</a></li>
-        <li className="exhibition-item"><span>8.31</span> - <span>Spotlight LA</span> <a href="https://thespotlight.la/events/" className="exhibition-link">View</a></li>
+        <li className="exhibition-item"><span>8.31</span> - <span>Spotlight LA</span> <a href="https://shotgun.live/en/events/groovemotive" className="exhibition-link">View</a></li>
       </ul>
       <div className="social-links">
         <a href="https://www.instagram.com/groovemotive" target="_blank" rel="noopener noreferrer" className="social-link">Instagram</a>
