@@ -660,7 +660,16 @@ function setupDeviceOrientationControls() {
       }
     }
   });
+
+  // Add recalibration option (press 'R' to reset initial orientation when phone is upright)
+  window.addEventListener('keydown', (event) => {
+    if (event.code === 'KeyR' && isMobile) {
+      initialOrientation = { ...deviceOrientation };
+      console.log('Recalibrated upright orientation:', initialOrientation);
+    }
+  });
   
+  console.log('scene.js loaded - Version: 2025-07-08-head-eyes');
   console.log('Device orientation listener added');
   
   // Test if we're getting events after 2 seconds
@@ -673,7 +682,6 @@ function setupDeviceOrientationControls() {
     }
   }, 2000);
 }
-
 
 // Clean up orientation listeners
 function cleanupDeviceOrientation() {
@@ -1262,10 +1270,16 @@ export function animate() {
     const relativeAlpha = alpha - initialOrientation.alpha;
     const relativeBeta = beta - initialOrientation.beta;
 
-    // Convert to radians with slight scaling for smoother control
-    const yaw = THREE.MathUtils.degToRad(relativeAlpha) * 0.8; // Left/right rotation, scaled
-    const pitch = THREE.MathUtils.degToRad(relativeBeta) * 0.8; // Up/down tilt, scaled
-    const roll = 0; // Ignore roll for stable view
+    // Convert to radians with smoothing
+    const targetYaw = THREE.MathUtils.degToRad(relativeAlpha); // Left/right rotation
+    const targetPitch = THREE.MathUtils.degToRad(relativeBeta); // Up/down tilt
+    const targetRoll = 0; // Ignore roll for stable view
+
+    // Smoothly interpolate rotations
+    const smoothingFactor = 0.1;
+    const yaw = camera.rotation.y + (targetYaw - camera.rotation.y) * smoothingFactor;
+    const pitch = camera.rotation.x + (targetPitch - camera.rotation.x) * smoothingFactor;
+    const roll = targetRoll;
 
     // Log orientation values for debugging
     console.log('Orientation data:', {
@@ -1289,10 +1303,7 @@ export function animate() {
       }
     }
 
-    // Reset camera rotation to avoid cumulative effects
-    camera.rotation.set(0, 0, 0);
-
-    // Apply rotation to match phone tilting from upright position
+    // Apply rotation to match head/eyes movement
     camera.rotation.x = pitch;   // Beta: Tilt forward (positive) = look down (positive), tilt backward (negative) = look up (negative)
     camera.rotation.y = -yaw;    // Alpha: Rotate left (positive) = turn left (negative), rotate right (negative) = turn right (positive)
     camera.rotation.z = roll;    // Gamma: Ignore (set to 0)
