@@ -67,6 +67,8 @@ let mainAnimationId = null;
 let assetsLoaded = 0;
 let totalAssets = 0;
 let loadingIndicator = null;
+let progressBar = null;
+let progressText = null;
 let orientationStatus = null;
 let orientationIndicator = null;
 let orientationText = null;
@@ -76,6 +78,16 @@ function updateLoadingProgress() {
   if (loadingIndicator) {
     const progress = (assetsLoaded / totalAssets) * 100;
     console.log(`Loading progress: ${assetsLoaded}/${totalAssets} (${progress.toFixed(1)}%)`);
+    
+    // Update progress bar
+    if (progressBar) {
+      progressBar.style.width = `${progress}%`;
+    }
+    
+    // Update progress text
+    if (progressText) {
+      progressText.textContent = `${Math.round(progress)}%`;
+    }
     
     if (assetsLoaded >= totalAssets) {
       loadingIndicator.style.display = 'none';
@@ -155,6 +167,8 @@ export function initScene() {
   moveLeftButton = document.getElementById("move-left");
   moveRightButton = document.getElementById("move-right");
   loadingIndicator = document.getElementById("loading-indicator");
+  progressBar = document.getElementById("progress-bar");
+  progressText = document.getElementById("progress-text");
   orientationStatus = document.getElementById("orientation-status");
   orientationIndicator = document.getElementById("orientation-indicator");
   orientationText = document.getElementById("orientation-text");
@@ -493,40 +507,70 @@ export function initScene() {
 
 // Request device orientation permission with user interaction
 async function requestDeviceOrientationPermission() {
-  try {
-    updateOrientationStatus('not-requested', 'Requesting permission...');
+  // Check if we already have permission
+  if (typeof DeviceOrientationEvent !== 'undefined' && 
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
     
-    // Request orientation permission
-    if (typeof DeviceOrientationEvent !== 'undefined' && 
-        typeof DeviceOrientationEvent.requestPermission === 'function') {
-      console.log('Requesting device orientation permission...');
-      const orientationPermission = await DeviceOrientationEvent.requestPermission();
-      console.log('Device orientation permission:', orientationPermission);
-      
-      if (orientationPermission === 'granted') {
-        updateOrientationStatus('granted', 'Orientation: Granted');
-        setupDeviceOrientationControls();
-      } else {
-        updateOrientationStatus('denied', 'Orientation: Denied');
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
+      try {
+        updateOrientationStatus('not-requested', 'Requesting permission...');
+        console.log(`Requesting device orientation permission... (attempt ${attempts + 1}/${maxAttempts})`);
+        
+        const orientationPermission = await DeviceOrientationEvent.requestPermission();
+        console.log('Device orientation permission:', orientationPermission);
+        
+        if (orientationPermission === 'granted') {
+          updateOrientationStatus('granted', 'Orientation: Granted');
+          setupDeviceOrientationControls();
+          break; // Success, exit loop
+        } else if (orientationPermission === 'denied') {
+          updateOrientationStatus('denied', 'Orientation: Denied');
+          console.log('User denied orientation permission');
+          break; // User explicitly denied, exit loop
+        } else {
+          // Permission state is 'prompt' or undefined, retry
+          attempts++;
+          if (attempts < maxAttempts) {
+            updateOrientationStatus('not-requested', 'Tap to retry permission...');
+            console.log('Permission prompt dismissed, will retry...');
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+          } else {
+            updateOrientationStatus('denied', 'Orientation: Failed');
+            console.log('Max attempts reached for orientation permission');
+          }
+        }
+      } catch (error) {
+        console.warn('Error requesting device permissions:', error);
+        attempts++;
+        if (attempts < maxAttempts) {
+          updateOrientationStatus('not-requested', 'Retrying permission...');
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait before retry
+        } else {
+          updateOrientationStatus('denied', 'Orientation: Error');
+          // Fallback to regular orientation setup for older devices
+          setupDeviceOrientationControls();
+        }
       }
-    } else {
-      // Android or older iOS
-      updateOrientationStatus('granted', 'Orientation: Available');
-      setupDeviceOrientationControls();
     }
+  } else {
+    // Android or older iOS - no permission required
+    updateOrientationStatus('granted', 'Orientation: Available');
+    setupDeviceOrientationControls();
+  }
 
-    // Request motion permission
-    if (typeof DeviceMotionEvent !== 'undefined' && 
-        typeof DeviceMotionEvent.requestPermission === 'function') {
+  // Request motion permission if available
+  if (typeof DeviceMotionEvent !== 'undefined' && 
+      typeof DeviceMotionEvent.requestPermission === 'function') {
+    try {
       console.log('Requesting device motion permission...');
       const motionPermission = await DeviceMotionEvent.requestPermission();
       console.log('Device motion permission:', motionPermission);
+    } catch (error) {
+      console.warn('Error requesting device motion permission:', error);
     }
-  } catch (error) {
-    console.warn('Error requesting device permissions:', error);
-    updateOrientationStatus('denied', 'Orientation: Error');
-    // Fallback to regular orientation setup
-    setupDeviceOrientationControls();
   }
 }
 
