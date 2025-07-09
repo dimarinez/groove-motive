@@ -1262,62 +1262,21 @@ export function animate() {
   }
   
   // Mobile device orientation control - force camera movement
-  if (isMobile && controls.isLocked && deviceOrientation) {
-    if (!orientationDebugLogged) {
-      console.log('✅ Device orientation control active!');
-      console.log('Controls object:', controls);
-      console.log('Camera object:', controls.getObject());
-      orientationDebugLogged = true;
-    }
-    
-    // Get current orientation values
-    const alpha = deviceOrientation.alpha || 0;  // Compass heading (0-360)
-    const beta = deviceOrientation.beta || 0;    // Front-to-back tilt (-180 to 180)
-    const gamma = deviceOrientation.gamma || 0;  // Left-to-right tilt (-90 to 90)
-    
-    // Get camera from controls
-    const camera = controls.getObject();
-    
-    // Force camera rotation - try multiple approaches
+  if (isMobile && controls.isLocked && deviceOrientation && initialOrientation) {
+    const alpha = deviceOrientation.alpha || 0;
+    const beta = deviceOrientation.beta || 0;
+
+    const deltaAlpha = alpha - initialOrientation.alpha;
+    const deltaBeta = beta - initialOrientation.beta;
+
     const sensitivity = 0.02;
-    
-    // Calculate target rotations
-    let yaw = THREE.MathUtils.degToRad(alpha * sensitivity);
-    let pitch = THREE.MathUtils.degToRad(beta * sensitivity);
-    
-    // Clamp pitch
-    pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch));
-    
-    // Method 1: Direct rotation setting
-    camera.rotation.order = 'YXZ';
-    camera.rotation.y = yaw;
-    camera.rotation.x = pitch;
-    
-    // Method 2: Try setting quaternion directly
+
+    const yaw = THREE.MathUtils.degToRad(deltaAlpha * sensitivity);
+    const pitch = THREE.MathUtils.degToRad(deltaBeta * sensitivity);
+
     const euler = new THREE.Euler(pitch, yaw, 0, 'YXZ');
-    camera.quaternion.setFromEuler(euler);
-    
-    // Method 3: Try updating the controls internal state
-    if (controls.getObject) {
-      const obj = controls.getObject();
-      obj.rotation.y = yaw;
-      obj.rotation.x = pitch;
-    }
-    
-    // Force update
-    camera.updateMatrix();
-    camera.updateMatrixWorld();
-    
-    // Debug logging - show every time to see if values are changing
-    console.log('ORIENTATION DEBUG:', {
-      alpha: alpha.toFixed(1),
-      beta: beta.toFixed(1),
-      gamma: gamma.toFixed(1),
-      calculatedYaw: (yaw * 180 / Math.PI).toFixed(1),
-      calculatedPitch: (pitch * 180 / Math.PI).toFixed(1),
-      actualCameraY: (camera.rotation.y * 180 / Math.PI).toFixed(1),
-      actualCameraX: (camera.rotation.x * 180 / Math.PI).toFixed(1)
-    });
+
+    controls.getObject().quaternion.setFromEuler(euler);
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
