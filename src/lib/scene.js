@@ -182,9 +182,9 @@ export function initScene() {
     previewInstruction = document.createElement("div");
     previewInstruction.id = "preview-instruction";
     previewInstruction.style.cssText =
-      'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0, 0, 0, 0.9); padding: 20px 30px; border-radius: 12px; font-size: 18px; font-weight: 600; text-align: center; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.2); z-index: 1000; display: none; font-family: "Suisse", -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: 0.5px;';
+      'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0, 0, 0, 0.9); padding: 20px 30px; border-radius: 12px; font-size: 18px; font-weight: 600; text-align: center; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.2); z-index: 1000; display: none; font-family: "Suisse", -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: 0.5px; white-space: nowrap; max-width: 90vw; overflow: hidden;';
     previewInstruction.innerHTML =
-      'Press <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700;">G</span> to stop the music';
+      'Press <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">G</span> to stop the music';
     document.body.appendChild(previewInstruction);
   }
 
@@ -755,14 +755,16 @@ function updateCameraFromOrientation() {
   if (relativeAlpha > 180) relativeAlpha -= 360;
   if (relativeAlpha < -180) relativeAlpha += 360;
 
-  // Simple phone-tilt mapping without excessive filtering
+  // Phone-tilt mapping with anti-whiplash filtering
   const previousYaw = smoothedOrientation.yaw;
   
   // Gamma controls horizontal rotation (left/right tilt)
   let targetYaw = THREE.MathUtils.degToRad(relativeGamma) * orientationSensitivity;
   
-  // Beta controls vertical rotation (forward/back tilt)
-  let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
+  // Beta controls vertical rotation with anti-whiplash filtering
+  // Clamp beta to prevent extreme movements that cause whiplash
+  const clampedBeta = THREE.MathUtils.clamp(relativeBeta, -60, 60); // Limit range
+  let targetPitch = THREE.MathUtils.degToRad(clampedBeta) * orientationSensitivity * 0.7; // Reduce sensitivity
   
   // Handle 360° wraparound jumps for yaw
   const yawDiff = targetYaw - previousYaw;
@@ -772,22 +774,28 @@ function updateCameraFromOrientation() {
     targetYaw += 2 * Math.PI;
   }
 
-  // Responsive smoothing that allows movement
-  const yawSmoothingFactor = 0.15; // More responsive horizontal movement
-  const pitchSmoothingFactor = 0.2; // More responsive vertical movement
+  // Much higher smoothing to eliminate vertical jitter
+  const yawSmoothingFactor = 0.08; // Smooth horizontal movement
+  const pitchSmoothingFactor = 0.04; // Very smooth vertical movement to reduce whiplash
   
-  // Apply smoothing with axis isolation
+  // Apply smoothing with anti-jitter logic
   smoothedOrientation.yaw = THREE.MathUtils.lerp(
     smoothedOrientation.yaw, 
     targetYaw, 
     yawSmoothingFactor
   );
   
-  smoothedOrientation.pitch = THREE.MathUtils.lerp(
-    smoothedOrientation.pitch, 
-    targetPitch, 
-    pitchSmoothingFactor
-  );
+  // Special handling for vertical movement to prevent jitter
+  const pitchDiff = Math.abs(targetPitch - smoothedOrientation.pitch);
+  const pitchDeadzone = 0.01; // Small deadzone for vertical micro-movements
+  
+  if (pitchDiff > pitchDeadzone) {
+    smoothedOrientation.pitch = THREE.MathUtils.lerp(
+      smoothedOrientation.pitch, 
+      targetPitch, 
+      pitchSmoothingFactor
+    );
+  }
 
   // Apply the smoothed orientation to the camera using quaternions for stability
   // Create rotation quaternion to avoid gimbal lock
@@ -1263,43 +1271,81 @@ function startPreview(album) {
         putVinylAction.reset();
         putVinylAction.play();
       }
-      // Set audio source and ensure it's loaded before playing
+      // Improved audio loading and playback
+      console.log('Setting up audio for:', album.title);
+      
+      // Reset audio to ensure clean state
+      audio.pause();
+      audio.currentTime = 0;
       audio.src = album.previewUrl;
+      
+      // Force load the audio
+      audio.load();
       
       // Function to play audio once it's ready
       const playAudio = () => {
         if (isPreviewing) {
+          console.log('Attempting to play audio, readyState:', audio.readyState);
           audio.play().catch(error => {
-            console.warn('Audio play failed:', error);
-            // Retry once more after a short delay
+            console.warn('Audio play failed, retrying...', error);
+            // Retry with a longer delay
             setTimeout(() => {
               if (isPreviewing) {
                 audio.play().catch(e => console.warn('Audio retry failed:', e));
               }
-            }, 100);
+            }, 500);
           });
         }
       };
       
-      // Check if audio can be played, or wait for it to load
-      if (audio.readyState >= 2) { // HAVE_CURRENT_DATA or better
-        audioTimeout = setTimeout(playAudio, 4800);
-      } else {
-        // Wait for audio to be ready, then set timeout
-        const onCanPlay = () => {
-          audio.removeEventListener('canplay', onCanPlay);
+      // Multiple strategies to ensure audio plays
+      const setupAudioPlayback = () => {
+        // Strategy 1: If already loaded, play after animation
+        if (audio.readyState >= 3) { // HAVE_FUTURE_DATA
+          console.log('Audio already loaded, scheduling playback');
           audioTimeout = setTimeout(playAudio, 4800);
-        };
-        audio.addEventListener('canplay', onCanPlay);
+          return;
+        }
         
-        // Fallback timeout in case canplay never fires
-        setTimeout(() => {
-          audio.removeEventListener('canplay', onCanPlay);
-          if (!audioTimeout) {
+        // Strategy 2: Wait for audio to load
+        let hasScheduled = false;
+        
+        const onCanPlayThrough = () => {
+          if (!hasScheduled) {
+            hasScheduled = true;
+            console.log('Audio can play through, scheduling playback');
+            audio.removeEventListener('canplaythrough', onCanPlayThrough);
+            audio.removeEventListener('loadeddata', onLoadedData);
             audioTimeout = setTimeout(playAudio, 4800);
           }
-        }, 2000);
-      }
+        };
+        
+        const onLoadedData = () => {
+          if (!hasScheduled) {
+            hasScheduled = true;
+            console.log('Audio loaded data, scheduling playback');
+            audio.removeEventListener('canplaythrough', onCanPlayThrough);
+            audio.removeEventListener('loadeddata', onLoadedData);
+            audioTimeout = setTimeout(playAudio, 4800);
+          }
+        };
+        
+        audio.addEventListener('canplaythrough', onCanPlayThrough);
+        audio.addEventListener('loadeddata', onLoadedData);
+        
+        // Strategy 3: Fallback timer
+        setTimeout(() => {
+          if (!hasScheduled) {
+            hasScheduled = true;
+            console.log('Fallback timer triggered, attempting playback anyway');
+            audio.removeEventListener('canplaythrough', onCanPlayThrough);
+            audio.removeEventListener('loadeddata', onLoadedData);
+            audioTimeout = setTimeout(playAudio, 4800);
+          }
+        }, 3000);
+      };
+      
+      setupAudioPlayback();
       previewInstruction.style.display = "block";
 
       // Animate camera to face record player from further back

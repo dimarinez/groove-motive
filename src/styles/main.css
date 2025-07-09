@@ -653,7 +653,7 @@ body {
   
   /* Adjust UI positioning on mobile to avoid conflicts with mobile controls */
   #ui {
-    top: 20px;
+    top: 80px;
     bottom: auto;
     max-width: 280px;
     font-size: 0.9em;
