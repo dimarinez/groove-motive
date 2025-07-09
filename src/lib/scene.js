@@ -1252,50 +1252,55 @@ export function animate() {
   }
 
   // Mobile device orientation control - direct camera rotation
-  if (isMobile && controls.isLocked && initialOrientation && deviceOrientation) {
+  if (isMobile && controls.isLocked && deviceOrientation) {
     if (!orientationDebugLogged) {
       console.log('✅ Device orientation control active!');
-      console.log('Initial orientation:', initialOrientation);
       console.log('Current orientation:', deviceOrientation);
       orientationDebugLogged = true;
     }
     
     // Get current orientation values
-    const alpha = deviceOrientation.alpha || 0;  // Yaw (left/right)
-    const beta = deviceOrientation.beta || 0;    // Pitch (up/down)
-    const gamma = deviceOrientation.gamma || 0;  // Roll (tilt)
+    const alpha = deviceOrientation.alpha || 0;  // Compass heading (0-360)
+    const beta = deviceOrientation.beta || 0;    // Front-to-back tilt (-180 to 180)
+    const gamma = deviceOrientation.gamma || 0;  // Left-to-right tilt (-90 to 90)
     
-    // Calculate change from initial position
-    let deltaAlpha = alpha - initialOrientation.alpha;
-    let deltaBeta = beta - initialOrientation.beta;
-    
-    // Handle alpha wraparound (0-360 degrees)
-    if (deltaAlpha > 180) deltaAlpha -= 360;
-    if (deltaAlpha < -180) deltaAlpha += 360;
-    
-    // Convert to radians with sensitivity
-    const sensitivity = 1.0; // Increase sensitivity for more responsive movement
-    const yawRadians = THREE.MathUtils.degToRad(-deltaAlpha * sensitivity); // Negative for natural movement
-    const pitchRadians = THREE.MathUtils.degToRad(-deltaBeta * sensitivity); // Negative for natural movement
-    
-    // Apply rotation directly to camera using PointerLockControls
+    // Apply rotation directly to camera
     const camera = controls.getObject();
     
-    // Set euler angles directly - this mimics mouse movement
-    camera.rotation.order = 'YXZ';
-    camera.rotation.y = yawRadians;   // Horizontal rotation (left/right)
-    camera.rotation.x = pitchRadians; // Vertical rotation (up/down)
+    // Map device orientation to camera rotation
+    // Beta: -90 = looking up at ceiling, 0 = looking forward, 90 = looking down at floor
+    // Alpha: 0 = north, 90 = east, 180 = south, 270 = west
+    // Gamma: -90 = tilted left, 0 = upright, 90 = tilted right
     
-    // Clamp vertical rotation to prevent flipping
-    camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
+    // Direct mapping approach
+    // Beta: tilt phone down = look down, tilt phone up = look up
+    // Alpha: turn phone left = look left, turn phone right = look right
+    
+    // Map beta directly to pitch (vertical looking)
+    // Normal phone position (vertical) should look forward
+    // Tilt down (positive beta) = look down
+    // Tilt up (negative beta) = look up
+    let pitch = THREE.MathUtils.degToRad(beta * 0.01); // Small multiplier for smooth movement
+    
+    // Map alpha directly to yaw (horizontal looking)
+    let yaw = THREE.MathUtils.degToRad(alpha * 0.01);
+    
+    // Clamp pitch to prevent flipping
+    pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch));
+    
+    // Apply rotation directly
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = yaw;
+    camera.rotation.x = pitch;
     
     // Debug logging
     if (Math.random() < 0.01) {
-      console.log('Camera rotation:', {
-        yaw: (camera.rotation.y * 180 / Math.PI).toFixed(1),
-        pitch: (camera.rotation.x * 180 / Math.PI).toFixed(1),
-        deltaAlpha: deltaAlpha.toFixed(1),
-        deltaBeta: deltaBeta.toFixed(1)
+      console.log('Orientation → Camera:', {
+        alpha: alpha.toFixed(1),
+        beta: beta.toFixed(1),
+        gamma: gamma.toFixed(1),
+        yaw: (yaw * 180 / Math.PI).toFixed(1),
+        pitch: (pitch * 180 / Math.PI).toFixed(1)
       });
     }
   }

@@ -775,9 +775,23 @@ body {
 }
 
 @media (max-width: 768px) {
+  .loading-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
   .loading-content {
     max-width: 250px;
     padding: 30px;
+    position: relative;
   }
   
   .vinyl-loader {
