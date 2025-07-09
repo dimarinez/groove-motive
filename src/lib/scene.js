@@ -1262,9 +1262,9 @@ export function animate() {
     const relativeAlpha = alpha - initialOrientation.alpha;
     const relativeBeta = beta - initialOrientation.beta;
 
-    // Convert to radians
-    const yaw = THREE.MathUtils.degToRad(relativeAlpha); // Left/right rotation
-    const pitch = THREE.MathUtils.degToRad(relativeBeta); // Up/down tilt
+    // Convert to radians with slight scaling for smoother control
+    const yaw = THREE.MathUtils.degToRad(relativeAlpha) * 0.8; // Left/right rotation, scaled
+    const pitch = THREE.MathUtils.degToRad(relativeBeta) * 0.8; // Up/down tilt, scaled
     const roll = 0; // Ignore roll for stable view
 
     // Log orientation values for debugging
@@ -1294,7 +1294,7 @@ export function animate() {
 
     // Apply rotation to match phone tilting from upright position
     camera.rotation.x = pitch;   // Beta: Tilt forward (positive) = look down (positive), tilt backward (negative) = look up (negative)
-    camera.rotation.y = -yaw;    // Alpha: Rotate left (positive) = turn left (positive), rotate right (negative) = turn right (negative)
+    camera.rotation.y = -yaw;    // Alpha: Rotate left (positive) = turn left (negative), rotate right (negative) = turn right (positive)
     camera.rotation.z = roll;    // Gamma: Ignore (set to 0)
 
     // Log camera rotation after update
