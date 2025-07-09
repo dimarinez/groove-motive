@@ -296,6 +296,15 @@ export function initScene() {
     1000
   );
   camera.position.set(0, 1.6, -2);
+  
+  // Set initial camera orientation for mobile devices
+  if (isMobile) {
+    // Start with slight downward tilt for natural viewing
+    const initialPitch = THREE.MathUtils.degToRad(-15);
+    camera.rotation.x = initialPitch;
+    camera.rotation.y = 0;
+    camera.rotation.z = 0;
+  }
 
   renderer = new THREE.WebGLRenderer({
     canvas: galleryCanvas,
@@ -681,10 +690,27 @@ function setupDeviceOrientationControls() {
           beta: deviceOrientation.beta + 15, // Offset for natural downward tilt
           gamma: deviceOrientation.gamma
         };
+        
+        // Set initial camera orientation to match device position
+        const initialYaw = THREE.MathUtils.degToRad(0); // Start facing forward
+        const initialPitch = THREE.MathUtils.degToRad(-15); // Slight downward tilt for natural view
+        
+        smoothedOrientation.yaw = initialYaw;
+        smoothedOrientation.pitch = initialPitch;
+        
+        // Apply initial orientation to camera
+        if (camera) {
+          const quaternion = new THREE.Quaternion();
+          quaternion.setFromEuler(new THREE.Euler(initialPitch, initialYaw, 0, 'YXZ'));
+          camera.quaternion.copy(quaternion);
+        }
+        
         console.log('Initial orientation calibrated with natural tilt offset:', {
           alpha: initialOrientation.alpha.toFixed(1),
           beta: initialOrientation.beta.toFixed(1),
-          gamma: initialOrientation.gamma.toFixed(1)
+          gamma: initialOrientation.gamma.toFixed(1),
+          cameraYaw: THREE.MathUtils.radToDeg(initialYaw).toFixed(1),
+          cameraPitch: THREE.MathUtils.radToDeg(initialPitch).toFixed(1)
         });
       }
     }
@@ -724,10 +750,10 @@ function updateCameraFromOrientation() {
   const previousYaw = smoothedOrientation.yaw;
   
   // Gamma controls horizontal rotation (tilt phone left/right to look around)
-  let targetYaw = THREE.MathUtils.degToRad(-relativeGamma) * orientationSensitivity * 2; // Inverted and amplified
+  let targetYaw = THREE.MathUtils.degToRad(relativeGamma) * orientationSensitivity; // Direct mapping, no amplification
   
   // Beta controls vertical rotation (tilt phone forward = look down, tilt back = look up)
-  let targetPitch = THREE.MathUtils.degToRad(-relativeBeta) * orientationSensitivity; // Inverted for natural feel
+  let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity; // Direct mapping for correct direction
   
   // Handle 360° wraparound jumps for yaw
   const yawDiff = targetYaw - previousYaw;
@@ -737,9 +763,9 @@ function updateCameraFromOrientation() {
     targetYaw += 2 * Math.PI;
   }
 
-  // Higher smoothing to reduce jitter
-  const yawSmoothingFactor = 0.08; // Lower for much smoother horizontal movement
-  const pitchSmoothingFactor = 0.1; // Lower for much smoother vertical movement
+  // Even higher smoothing to reduce jitter, especially for side-to-side
+  const yawSmoothingFactor = 0.05; // Much lower for very smooth horizontal movement
+  const pitchSmoothingFactor = 0.08; // Lower for smooth vertical movement
   
   // Always apply smoothing - no deadzone to maintain responsiveness
   smoothedOrientation.yaw = THREE.MathUtils.lerp(
@@ -876,8 +902,17 @@ function resetToInitialState() {
 
   // Reset camera to initial position
   camera.position.set(0, 1.6, -2);
-  camera.rotation.set(0, 0, 0);
-  camera.lookAt(0, 1.6, -6);
+  
+  // Set proper initial orientation for mobile
+  if (isMobile) {
+    // Reset with natural downward tilt
+    const initialPitch = THREE.MathUtils.degToRad(-15);
+    camera.rotation.set(initialPitch, 0, 0);
+    smoothedOrientation = { yaw: 0, pitch: initialPitch };
+  } else {
+    camera.rotation.set(0, 0, 0);
+    camera.lookAt(0, 1.6, -6);
+  }
 
   // Reset device orientation
   if (isMobile) {
