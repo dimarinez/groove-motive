@@ -693,7 +693,7 @@ function setupDeviceOrientationControls() {
 
 /**
  * Updates camera rotation based on device orientation for smooth navigation
- * Designed for portrait mode with proper left/right and up/down mapping
+ * Designed for portrait mode with full 360° horizontal and vertical range
  */
 function updateCameraFromOrientation() {
   if (!deviceOrientation || !initialOrientation) return;
@@ -707,52 +707,52 @@ function updateCameraFromOrientation() {
   if (relativeAlpha > 180) relativeAlpha -= 360;
   if (relativeAlpha < -180) relativeAlpha += 360;
 
-  // For portrait mode, map device orientation to camera rotation:
-  // - Gamma (left/right tilt) controls yaw (horizontal camera rotation)
+  // For portrait mode with full 360° rotation:
+  // - Alpha (compass) controls yaw (horizontal camera rotation) for full 360°
   // - Beta (forward/back tilt) controls pitch (vertical camera rotation)
   
-  // Gamma controls yaw (left/right look) - direct mapping for intuitive control
-  const clampedGamma = THREE.MathUtils.clamp(relativeGamma, -60, 60);
-  const targetYaw = THREE.MathUtils.degToRad(clampedGamma) * orientationSensitivity;
+  // Alpha controls yaw (left/right look) - full 360° rotation
+  // Use alpha instead of gamma for full room rotation
+  const targetYaw = THREE.MathUtils.degToRad(relativeAlpha) * orientationSensitivity;
   
-  // Beta controls pitch (up/down look) - inverted for natural feel
-  const clampedBeta = THREE.MathUtils.clamp(relativeBeta, -45, 45);
-  const targetPitch = -THREE.MathUtils.degToRad(clampedBeta) * orientationSensitivity;
+  // Beta controls pitch (up/down look) - extended range for better vertical movement
+  // Remove clamps to allow full vertical range, but use a more responsive approach
+  const targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
 
   // Apply exponential smoothing to reduce jitter
-  // Use different smoothing factors for yaw and pitch if needed
+  // Use higher smoothing for yaw to handle compass jitter, lower for pitch for responsiveness
   smoothedOrientation.yaw = THREE.MathUtils.lerp(
     smoothedOrientation.yaw, 
     targetYaw, 
-    orientationSmoothingFactor
+    0.15 // Lower smoothing for yaw to handle compass noise
   );
   
   smoothedOrientation.pitch = THREE.MathUtils.lerp(
     smoothedOrientation.pitch, 
     targetPitch, 
-    orientationSmoothingFactor
+    0.4 // Higher smoothing for pitch for more responsive up/down
   );
 
   // Apply the smoothed orientation to the camera
   // Use PointerLockControls object for compatibility if available
   if (controls && controls.getObject) {
     const cameraObject = controls.getObject();
-    cameraObject.rotation.y = smoothedOrientation.yaw;   // Yaw: horizontal rotation
-    cameraObject.rotation.x = smoothedOrientation.pitch; // Pitch: vertical rotation
+    cameraObject.rotation.y = smoothedOrientation.yaw;   // Yaw: horizontal rotation (360°)
+    cameraObject.rotation.x = smoothedOrientation.pitch; // Pitch: vertical rotation (full range)
     cameraObject.rotation.z = 0; // Roll: keep level for comfort
   } else {
     // Fallback to direct camera rotation
-    camera.rotation.y = smoothedOrientation.yaw;   // Yaw: horizontal rotation
-    camera.rotation.x = smoothedOrientation.pitch; // Pitch: vertical rotation
+    camera.rotation.y = smoothedOrientation.yaw;   // Yaw: horizontal rotation (360°)
+    camera.rotation.x = smoothedOrientation.pitch; // Pitch: vertical rotation (full range)
     camera.rotation.z = 0; // Roll: keep level for comfort
   }
 
   // Optional: Log orientation data for debugging (remove for production)
   if (Math.random() < 0.01) { // Log occasionally to avoid spam
-    console.log('Portrait orientation update:', {
-      rawGamma: deviceOrientation.gamma.toFixed(1),
+    console.log('Full 360° orientation update:', {
+      rawAlpha: deviceOrientation.alpha.toFixed(1),
       rawBeta: deviceOrientation.beta.toFixed(1),
-      relativeGamma: relativeGamma.toFixed(1),
+      relativeAlpha: relativeAlpha.toFixed(1),
       relativeBeta: relativeBeta.toFixed(1),
       targetYaw: THREE.MathUtils.radToDeg(targetYaw).toFixed(1),
       targetPitch: THREE.MathUtils.radToDeg(targetPitch).toFixed(1),
