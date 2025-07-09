@@ -297,24 +297,27 @@ export function initScene() {
   renderer.setSize(canvasWidth, canvasHeight);
   renderer.outputEncoding = THREE.sRGBEncoding;
 
-  // Initialize controls only for non-mobile devices
-  if (!isMobile) {
-    controls = new PointerLockControls(camera, galleryCanvas);
-    controls.addEventListener("lock", () => {
-      document.body.style.cursor = "none";
-      ui.style.display = "none";
-    });
-    controls.addEventListener("unlock", () => {
-      document.body.style.cursor = "auto";
-      const container = document.getElementById("container");
-      if (container) container.style.display = "flex";
-      if (isMobile)
-        document.getElementById("mobile-controls").style.display = "none";
-    });
-  } else {
-    // For mobile, initialize without PointerLockControls
-    controls = { isLocked: true }; // Simulate locked state for mobile
-}
+  controls = new PointerLockControls(camera, galleryCanvas);
+  controls.addEventListener("lock", () => {
+    document.body.style.cursor = "none";
+    ui.style.display = "none";
+    if (isMobile) {
+      const mobileControls = document.getElementById("mobile-controls");
+      if (mobileControls) {
+        mobileControls.style.display = "flex";
+        console.log("Mobile controls shown");
+      } else {
+        console.warn("Mobile controls element not found");
+      }
+    }
+  });
+  controls.addEventListener("unlock", () => {
+    document.body.style.cursor = "auto";
+    const container = document.getElementById("container");
+    if (container) container.style.display = "flex";
+    if (isMobile)
+      document.getElementById("mobile-controls").style.display = "none";
+  });
 
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
@@ -590,12 +593,6 @@ async function requestDeviceOrientationPermission() {
         // Wait a bit then setup controls
         setTimeout(() => {
           setupDeviceOrientationControls();
-          // Prompt user to calibrate
-          alert('Please point your device toward the record player and wait a moment to calibrate.');
-          setTimeout(() => {
-            // Reset initial orientation after a delay to allow user to point device
-            initialOrientation = null; // Force re-capture of initial orientation
-          }, 3000); // 3-second delay for user to align device
         }, 500);
       } else if (permissionResult === 'denied') {
         updateOrientationStatus('denied', 'Orientation: Denied');
@@ -848,12 +845,12 @@ export function enterGallery() {
     previewAnimationId = null;
   }
 
-  // Request device orientation permission when entering gallery
+  // Request device orientation permission when entering gallery (user interaction)
   if (isMobile) {
     requestDeviceOrientationPermission();
   }
-
-  // Start preloading audio files
+  
+  // Start preloading audio files after entering gallery
   preloadAudioFiles();
 
   // Move instructions to body for fullscreen
@@ -875,60 +872,64 @@ export function enterGallery() {
   } catch (error) {
     console.warn("Could not resize renderer for fullscreen:", error);
   }
+  controls.dispose();
+  controls = new PointerLockControls(camera, renderer.domElement);
 
-  if (!isMobile) {
-    // Only use PointerLockControls for non-mobile
-    controls.dispose();
-    controls = new PointerLockControls(camera, renderer.domElement);
+  // Add unlock event listener
+  controls.addEventListener("unlock", () => {
+    // Clean up click-to-lock handler
+    if (clickToLockHandler) {
+      document.removeEventListener("click", clickToLockHandler);
+      clickToLockHandler = null;
+    }
 
-    // Add unlock event listener
-    controls.addEventListener("unlock", () => {
-      if (clickToLockHandler) {
-        document.removeEventListener("click", clickToLockHandler);
-        clickToLockHandler = null;
-      }
-      cleanupDeviceOrientation();
-      resetToInitialState();
-    });
+    // Clean up orientation listeners
+    cleanupDeviceOrientation();
 
-    // Enable click-to-lock
-    clickToLockHandler = (event) => {
-      if (event.target.id !== "enter-button" && !controls.isLocked) {
-        try {
-          controls.lock();
-        } catch (error) {
-          console.warn("Pointer lock failed:", error);
-        }
-      }
-    };
-    document.addEventListener("click", clickToLockHandler);
+    // Reset to initial state
+    resetToInitialState();
+  });
 
-    // Initial lock
-    setTimeout(() => {
-      if (!controls.isLocked) {
-        try {
-          controls.lock();
-        } catch (error) {
-          console.warn("Initial pointer lock failed:", error);
-        }
-      }
-    }, 100);
-  } else {
-    // For mobile, ensure controls is in "locked" state
-    controls = { isLocked: true };
+
+  // Clean up any existing click-to-lock handler
+  if (clickToLockHandler) {
+    document.removeEventListener("click", clickToLockHandler);
   }
+
+  // Enable click-to-lock
+  clickToLockHandler = (event) => {
+    if (event.target.id !== "enter-button" && !controls.isLocked) {
+      try {
+        controls.lock();
+      } catch (error) {
+        console.warn("Pointer lock failed:", error);
+      }
+    }
+  };
+  document.addEventListener("click", clickToLockHandler);
 
   // Force render
   renderer.render(scene, camera);
 
-  // Ensure mobile controls visible
-  if (isMobile) {
-    const mobileControls = document.getElementById("mobile-controls");
-    if (mobileControls) {
-      mobileControls.style.display = "flex";
-      console.log("Mobile controls ensured visible in enterGallery");
+  // Initial lock
+  setTimeout(() => {
+    if (!controls.isLocked) {
+      try {
+        controls.lock();
+      } catch (error) {
+        console.warn("Initial pointer lock failed:", error);
+      }
     }
-  }
+
+    // Ensure mobile controls visible
+    if (isMobile) {
+      const mobileControls = document.getElementById("mobile-controls");
+      if (mobileControls) {
+        mobileControls.style.display = "flex";
+        console.log("Mobile controls ensured visible in enterGallery");
+      }
+    }
+  }, 100);
 }
 
 function findVinylMesh(object) {
@@ -1250,56 +1251,42 @@ export function animate() {
     controls.moveForward(velocity.z * delta);
   }
 
-  // Debug: Check if we're reaching the orientation control
-  if (isMobile) {
-    console.log('Mobile detected, checking conditions:', {
-      isMobile: isMobile,
-      controlsLocked: controls.isLocked,
-      deviceOrientation: !!deviceOrientation,
-      deviceOrientationValues: deviceOrientation
-    });
-  }
-  
-  // Mobile device orientation control - force camera movement
+  // Mobile device orientation control - apply rotation to camera
   if (isMobile && controls.isLocked && deviceOrientation && initialOrientation) {
     const alpha = deviceOrientation.alpha || 0;
     const beta = deviceOrientation.beta || 0;
     const gamma = deviceOrientation.gamma || 0;
 
-    // Convert degrees to radians and adjust for initial orientation
-    const yaw = THREE.MathUtils.degToRad(alpha - initialOrientation.alpha);
-    const pitch = THREE.MathUtils.degToRad(beta - initialOrientation.beta);
+    // Calculate relative rotation from initial orientation
+    const relativeAlpha = alpha - initialOrientation.alpha;
+    const relativeBeta = beta - initialOrientation.beta;
+    const relativeGamma = gamma - initialOrientation.gamma;
 
-    // Create a quaternion for orientation
-    const quaternion = new THREE.Quaternion();
-    const euler = new THREE.Euler(pitch, yaw, 0, 'YXZ');
-    quaternion.setFromEuler(euler);
+    // Convert to radians and create rotation angles
+    const yaw = THREE.MathUtils.degToRad(relativeAlpha);
+    const pitch = THREE.MathUtils.degToRad(relativeBeta);
+    const roll = THREE.MathUtils.degToRad(relativeGamma);
 
-    // Apply quaternion to camera
-    camera.quaternion.copy(quaternion);
+    // Create euler rotation with proper order for mobile orientation
+    const euler = new THREE.Euler(
+      -pitch * 0.5,  // Invert and dampen pitch (tilt forward/backward)
+      yaw * 0.5,     // Dampen yaw (rotate left/right)
+      roll * 0.2,    // Minimal roll (tilt left/right)
+      'YXZ'          // Order: yaw, pitch, roll
+    );
 
-    // Debug logging
-    console.log('Camera orientation update:', {
-      alpha: alpha.toFixed(1),
-      beta: beta.toFixed(1),
-      gamma: gamma.toFixed(1),
-      yaw: yaw.toFixed(2),
-      pitch: pitch.toFixed(2),
-      cameraRotation: {
-        x: camera.rotation.x.toFixed(2),
-        y: camera.rotation.y.toFixed(2),
-        z: camera.rotation.z.toFixed(2)
-      },
-      cameraQuaternion: {
-        x: camera.quaternion.x.toFixed(2),
-        y: camera.quaternion.y.toFixed(2),
-        z: camera.quaternion.z.toFixed(2),
-        w: camera.quaternion.w.toFixed(2)
-      }
-    });
+    // Apply rotation to camera
+    camera.rotation.copy(euler);
 
-    camera.updateMatrix();
-    camera.updateMatrixWorld();
+    // Log for debugging (only once to avoid spam)
+    if (!orientationDebugLogged) {
+      console.log('Device orientation applied:', { 
+        alpha, beta, gamma,
+        relativeAlpha, relativeBeta, relativeGamma,
+        yaw, pitch, roll 
+      });
+      orientationDebugLogged = true;
+    }
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
