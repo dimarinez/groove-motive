@@ -34,6 +34,11 @@ export default function RightPanel() {
             <span id="orientation-indicator" className="orientation-indicator">⚠️</span>
             <span id="orientation-text">Orientation: Not requested</span>
           </div>
+          <div id="orientation-values" className="orientation-values" style={{ display: 'none' }}>
+            <div>α: <span id="alpha-value">0</span>°</div>
+            <div>β: <span id="beta-value">0</span>°</div>
+            <div>γ: <span id="gamma-value">0</span>°</div>
+          </div>
         </div>
       </div>
     </div>

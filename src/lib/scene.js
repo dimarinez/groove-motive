@@ -72,6 +72,10 @@ let progressText = null;
 let orientationStatus = null;
 let orientationIndicator = null;
 let orientationText = null;
+let orientationValues = null;
+let alphaValue = null;
+let betaValue = null;
+let gammaValue = null;
 let audioPreloaded = false;
 let orientationDebugLogged = false;
 
@@ -193,6 +197,10 @@ export function initScene() {
   orientationStatus = document.getElementById("orientation-status");
   orientationIndicator = document.getElementById("orientation-indicator");
   orientationText = document.getElementById("orientation-text");
+  orientationValues = document.getElementById("orientation-values");
+  alphaValue = document.getElementById("alpha-value");
+  betaValue = document.getElementById("beta-value");
+  gammaValue = document.getElementById("gamma-value");
 
   if (!galleryCanvas || !enterButton) {
     console.error("Required DOM elements not found.");
@@ -626,12 +634,25 @@ function setupDeviceOrientationControls() {
   deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
   initialOrientation = null;
 
-  const handleOrientation = (event) => {
+  // Show orientation values UI
+  if (orientationValues) {
+    orientationValues.style.display = 'block';
+  }
+
+  window.addEventListener('deviceorientation', function(event) {
+    console.log(event.alpha + ' : ' + event.beta + ' : ' + event.gamma);
+    
+    // Update UI values
+    if (alphaValue) alphaValue.textContent = event.alpha ? event.alpha.toFixed(1) : '0';
+    if (betaValue) betaValue.textContent = event.beta ? event.beta.toFixed(1) : '0';
+    if (gammaValue) gammaValue.textContent = event.gamma ? event.gamma.toFixed(1) : '0';
+    
+    // Update device orientation for camera control
     if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
       deviceOrientation = {
-        alpha: event.alpha, // Rotation around Z-axis (yaw)
-        beta: event.beta,   // Rotation around X-axis (pitch)
-        gamma: event.gamma  // Rotation around Y-axis (roll)
+        alpha: event.alpha,
+        beta: event.beta,
+        gamma: event.gamma
       };
 
       if (!initialOrientation) {
@@ -639,23 +660,9 @@ function setupDeviceOrientationControls() {
         console.log('Initial orientation set:', initialOrientation);
         console.log('Device orientation tracking enabled');
       }
-      
-      // Debug logging every 60 frames (~1 second)
-      if (Math.random() < 0.016) {
-        console.log('Device orientation:', {
-          alpha: event.alpha?.toFixed(1),
-          beta: event.beta?.toFixed(1),
-          gamma: event.gamma?.toFixed(1)
-        });
-      }
-    } else {
-      console.warn('Device orientation event missing values:', event);
     }
-  };
-
-  // Add event listeners (permissions should already be granted)
-  window.addEventListener('deviceorientation', handleOrientation, { passive: false });
-  document.addEventListener('deviceorientation', handleOrientation, { passive: false });
+  });
+  
   console.log('Device orientation listener added');
   
   // Test if we're getting events after 2 seconds
@@ -1253,47 +1260,40 @@ export function animate() {
       orientationDebugLogged = true;
     }
     
+    // Simple direct mapping approach
+    const alpha = deviceOrientation.alpha || 0;
+    const beta = deviceOrientation.beta || 0;
+    const gamma = deviceOrientation.gamma || 0;
+    
     // Calculate relative changes from initial orientation
-    const deltaAlpha = deviceOrientation.alpha - initialOrientation.alpha;
-    const deltaBeta = deviceOrientation.beta - initialOrientation.beta;
-    const deltaGamma = deviceOrientation.gamma - initialOrientation.gamma;
+    const deltaAlpha = alpha - initialOrientation.alpha;
+    const deltaBeta = beta - initialOrientation.beta;
     
     // Handle alpha wraparound (0-360 degrees)
     let normalizedAlpha = deltaAlpha;
     if (normalizedAlpha > 180) normalizedAlpha -= 360;
     if (normalizedAlpha < -180) normalizedAlpha += 360;
     
-    // Convert to radians with sensitivity
-    const sensitivity = 0.5;
-    const alphaRad = THREE.MathUtils.degToRad(normalizedAlpha * sensitivity);
-    const betaRad = THREE.MathUtils.degToRad(deltaBeta * sensitivity);
-    const gammaRad = THREE.MathUtils.degToRad(deltaGamma * sensitivity);
-
-    // Create rotation quaternion
-    const quaternion = new THREE.Quaternion();
-    const euler = new THREE.Euler();
+    // Convert to radians and apply sensitivity
+    const sensitivity = 0.3;
+    const yaw = THREE.MathUtils.degToRad(normalizedAlpha * sensitivity);
+    const pitch = THREE.MathUtils.degToRad(deltaBeta * sensitivity);
     
-    // Adjust for screen orientation
-    const screenOrientation = window.orientation || 0;
-    const screenAdjustment = new THREE.Quaternion();
-    screenAdjustment.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -THREE.MathUtils.degToRad(screenOrientation));
-
-    // Set euler angles (order matters for device orientation)
-    euler.set(betaRad, alphaRad, -gammaRad, 'YXZ');
-    quaternion.setFromEuler(euler);
-    quaternion.multiply(screenAdjustment);
-
-    // Apply to camera with damping
-    const damping = 0.05;
-    const currentQuaternion = controls.getObject().quaternion;
-    currentQuaternion.slerp(quaternion, damping);
+    // Apply rotation to camera
+    const camera = controls.getObject();
+    const euler = new THREE.Euler(pitch, yaw, 0, 'YXZ');
+    
+    // Apply with damping
+    const targetQuaternion = new THREE.Quaternion().setFromEuler(euler);
+    camera.quaternion.slerp(targetQuaternion, 0.1);
     
     // Log occasionally for debugging
-    if (Math.random() < 0.01) {
-      console.log('Orientation deltas:', {
+    if (Math.random() < 0.005) {
+      console.log('Orientation mapping:', {
         alpha: normalizedAlpha.toFixed(1),
         beta: deltaBeta.toFixed(1),
-        gamma: deltaGamma.toFixed(1)
+        yaw: (yaw * 180 / Math.PI).toFixed(1),
+        pitch: (pitch * 180 / Math.PI).toFixed(1)
       });
     }
   }

@@ -673,8 +673,8 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -682,12 +682,17 @@ body {
   color: white;
   z-index: 100;
   backdrop-filter: blur(10px);
+  box-sizing: border-box;
 }
 
 .loading-content {
   text-align: center;
   max-width: 300px;
   padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .loading-content h3 {
@@ -825,9 +830,24 @@ body {
   color: #ff9800;
 }
 
+.orientation-values {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #888;
+  font-family: monospace;
+}
+
+.orientation-values div {
+  margin: 2px 0;
+}
+
 @media (max-width: 768px) {
   .orientation-status {
     font-size: 11px;
+  }
+  
+  .orientation-values {
+    font-size: 10px;
   }
 }
 
