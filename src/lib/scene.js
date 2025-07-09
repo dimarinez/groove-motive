@@ -109,7 +109,7 @@ function updateLoadingProgress() {
         enterButton.style.opacity = '1';
       }
     } else {
-      loadingIndicator.style.display = 'block';
+      loadingIndicator.style.display = 'flex';
       if (enterButton) {
         enterButton.disabled = true;
         enterButton.style.opacity = '0.5';
@@ -724,7 +724,6 @@ function updateCameraFromOrientation() {
   const previousYaw = smoothedOrientation.yaw;
   
   // Gamma controls horizontal rotation (tilt phone left/right to look around)
-  const relativeGamma = deviceOrientation.gamma - initialOrientation.gamma;
   let targetYaw = THREE.MathUtils.degToRad(-relativeGamma) * orientationSensitivity * 2; // Inverted and amplified
   
   // Beta controls vertical rotation (tilt phone forward = look down, tilt back = look up)
