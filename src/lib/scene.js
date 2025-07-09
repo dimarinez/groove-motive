@@ -298,9 +298,24 @@ export function initScene() {
     setupDeviceOrientationControls();
   }
 
-  // Initialize asset loading (count: logo texture, record player GLB, album covers)
-  totalAssets = 1 + 1 + albums.length; // logo + record player + album covers
+  // Initialize asset loading (count: logo texture, record player GLB, album covers, preview audio)
+  totalAssets = 1 + 1 + albums.length + albums.length; // logo + record player + album covers + preview audio
   updateLoadingProgress();
+  
+  // Preload audio files
+  albums.forEach((album, index) => {
+    const audio = new Audio();
+    audio.addEventListener('canplaythrough', () => {
+      console.log(`Preview audio loaded: ${album.title}`);
+      onAssetLoaded();
+    });
+    audio.addEventListener('error', (error) => {
+      console.error(`Error loading preview audio for ${album.title}:`, error);
+      onAssetLoaded(); // Still count as loaded even if failed
+    });
+    audio.preload = 'auto';
+    audio.src = album.previewUrl;
+  });
   
   // Initialize orientation status
   if (isMobile) {
@@ -507,56 +522,76 @@ export function initScene() {
 
 // Request device orientation permission with user interaction
 async function requestDeviceOrientationPermission() {
-  // Check if we already have permission
+  console.log('=== Starting orientation permission request ===');
+  console.log('User agent:', navigator.userAgent);
+  console.log('DeviceOrientationEvent available:', typeof DeviceOrientationEvent !== 'undefined');
+  console.log('DeviceOrientationEvent.requestPermission available:', typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function');
+  
+  // Check if we need to request permission (iOS 13+)
   if (typeof DeviceOrientationEvent !== 'undefined' && 
       typeof DeviceOrientationEvent.requestPermission === 'function') {
     
-    let attempts = 0;
-    const maxAttempts = 3;
-    
-    while (attempts < maxAttempts) {
-      try {
-        updateOrientationStatus('not-requested', 'Requesting permission...');
-        console.log(`Requesting device orientation permission... (attempt ${attempts + 1}/${maxAttempts})`);
-        
-        const orientationPermission = await DeviceOrientationEvent.requestPermission();
-        console.log('Device orientation permission:', orientationPermission);
-        
-        if (orientationPermission === 'granted') {
-          updateOrientationStatus('granted', 'Orientation: Granted');
-          setupDeviceOrientationControls();
-          break; // Success, exit loop
-        } else if (orientationPermission === 'denied') {
-          updateOrientationStatus('denied', 'Orientation: Denied');
-          console.log('User denied orientation permission');
-          break; // User explicitly denied, exit loop
-        } else {
-          // Permission state is 'prompt' or undefined, retry
-          attempts++;
-          if (attempts < maxAttempts) {
-            updateOrientationStatus('not-requested', 'Tap to retry permission...');
-            console.log('Permission prompt dismissed, will retry...');
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
-          } else {
-            updateOrientationStatus('denied', 'Orientation: Failed');
-            console.log('Max attempts reached for orientation permission');
+    try {
+      updateOrientationStatus('not-requested', 'Requesting permission...');
+      console.log('Requesting device orientation permission...');
+      
+      // Create a user interaction button that triggers permission request
+      const permissionButton = document.createElement('button');
+      permissionButton.textContent = 'Enable Device Orientation';
+      permissionButton.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10000;
+        background: #007AFF;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+      `;
+      
+      document.body.appendChild(permissionButton);
+      
+      // Wait for user to click the button
+      const permissionResult = await new Promise((resolve) => {
+        permissionButton.addEventListener('click', async () => {
+          try {
+            console.log('User clicked permission button, requesting...');
+            const result = await DeviceOrientationEvent.requestPermission();
+            console.log('Permission result:', result);
+            resolve(result);
+          } catch (error) {
+            console.error('Error in permission request:', error);
+            resolve('error');
           }
-        }
-      } catch (error) {
-        console.warn('Error requesting device permissions:', error);
-        attempts++;
-        if (attempts < maxAttempts) {
-          updateOrientationStatus('not-requested', 'Retrying permission...');
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait before retry
-        } else {
-          updateOrientationStatus('denied', 'Orientation: Error');
-          // Fallback to regular orientation setup for older devices
-          setupDeviceOrientationControls();
-        }
+        });
+      });
+      
+      // Remove the button
+      document.body.removeChild(permissionButton);
+      
+      if (permissionResult === 'granted') {
+        updateOrientationStatus('granted', 'Orientation: Granted');
+        setupDeviceOrientationControls();
+        console.log('Device orientation permission granted');
+      } else if (permissionResult === 'denied') {
+        updateOrientationStatus('denied', 'Orientation: Denied');
+        console.log('Device orientation permission denied');
+      } else {
+        updateOrientationStatus('denied', 'Orientation: Error - ' + permissionResult);
+        console.log('Device orientation permission error:', permissionResult);
       }
+      
+    } catch (error) {
+      console.error('Error requesting device orientation permission:', error);
+      updateOrientationStatus('denied', 'Orientation: Error');
     }
   } else {
     // Android or older iOS - no permission required
+    console.log('No permission required for device orientation');
     updateOrientationStatus('granted', 'Orientation: Available');
     setupDeviceOrientationControls();
   }
@@ -981,15 +1016,15 @@ function startPreview(album) {
       }, 4800);
       previewInstruction.style.display = "block";
 
-      // Animate camera to face record player
+      // Animate camera to face record player from further back
       gsap.to(camera.position, {
         x: 0,
-        y: 1.6,
-        z: -3,
+        y: 1.8,
+        z: -1.5, // Further back to see both record player and album
         duration: 1,
         ease: "power2.inOut",
         onUpdate: () => {
-          camera.lookAt(0, 0, -6);
+          camera.lookAt(0, 1.2, -6); // Look slightly down at the record player
         },
         onComplete: () => {
           controls.update();
