@@ -323,7 +323,8 @@ export function initScene() {
   directionalLight.castShadow = true;
   directionalLight.shadow.mapSize.set(1024, 1024);
   scene.add(directionalLight);
-  const windowLight = new THREE.PointLight(0x87ceeb,  windowLight.x.setPosition(0, 2.2, 3, 10);
+  const windowLight = new THREE.PointLight(0x87ceeb, 1.0, 10);
+  windowLight.position.set(0, 2.2, 3);
   scene.add(windowLight);
   const pointLight = new THREE.PointLight(0xfff5e6, 20, 1.0);
   pointLight.position.set(0, 3, -8);
@@ -796,9 +797,9 @@ function applyCoverTexture(album, onComplete) {
             const aspectGeometry = width / height;
             const shrinkFactor = 1.95;
             let repeatX = shrinkFactor;
-            let repeatY = shrinkFactor * (geometryAspect / textureAspect);
-            if (textureAspect > geometryAspect) {
-              repeatX = shrinkFactor * (textureAspect / geometryAspect);
+            let repeatY = shrinkFactor * (aspectGeometry / aspectTexture);
+            if (aspectTexture > aspectGeometry) {
+              repeatX = shrinkFactor * (aspectTexture / aspectGeometry);
               repeatY = shrinkFactor;
             }
             texture.offset.set((1.1 - repeatX) / 2, (2.8 - repeatY) / 2);
@@ -945,7 +946,7 @@ function onWindowResize() {
       if (rightPanel) {
         const canvasWidth = rightPanel.clientWidth;
         const canvasHeight = rightPanel.clientHeight;
-        camera.aspectWidth = canvasWidth / canvasHeight;
+        camera.aspect = canvasWidth / canvasHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(canvasWidth, canvasHeight);
       }
@@ -970,7 +971,7 @@ function checkCollision(newPosition) {
     const intersects = raycaster.intersectObjects(
       scene.children.filter((obj) => obj.userData.isWall)
     );
-    if (intersects.length > 0 && intersects[0].point.distance < 0.5) {
+    if (intersects.length > 0 && intersects[0].distance < 0.5) {
       canMove = false;
     }
   });
