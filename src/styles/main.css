@@ -676,38 +676,127 @@ body {
   right: 0;
   bottom: 0;
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
-  text-align: center;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.95);
   color: white;
-  font-size: 16px;
   z-index: 100;
   backdrop-filter: blur(10px);
 }
 
+.loading-content {
+  text-align: center;
+  max-width: 300px;
+  padding: 40px;
+}
+
+.loading-content h3 {
+  margin: 20px 0 30px 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: white;
+  letter-spacing: 0.5px;
+}
+
+.loading-icon {
+  margin-bottom: 20px;
+}
+
+.vinyl-loader {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+  animation: spin 2s linear infinite;
+}
+
+.vinyl-disc {
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle, #1a1a1a 0%, #000 30%, #1a1a1a 35%, #000 70%, #1a1a1a 100%);
+  border-radius: 50%;
+  position: relative;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.vinyl-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  background: #333;
+  border-radius: 50%;
+  border: 2px solid #666;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .progress-container {
-  width: 200px;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  width: 250px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
   overflow: hidden;
-  margin: 15px auto;
+  margin: 20px auto;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, #4CAF50, #45a049);
-  border-radius: 4px;
+  background: linear-gradient(90deg, #4CAF50, #66BB6A, #4CAF50);
+  background-size: 200% 100%;
+  border-radius: 3px;
   width: 0%;
-  transition: width 0.3s ease;
+  transition: width 0.4s ease;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 .progress-text {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
-  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 15px;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 768px) {
+  .loading-content {
+    max-width: 250px;
+    padding: 30px;
+  }
+  
+  .vinyl-loader {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .vinyl-disc {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .vinyl-center {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .progress-container {
+    width: 200px;
+  }
+  
+  .loading-content h3 {
+    font-size: 16px;
+  }
 }
 
 /* Orientation status styles */

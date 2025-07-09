@@ -72,6 +72,7 @@ let progressText = null;
 let orientationStatus = null;
 let orientationIndicator = null;
 let orientationText = null;
+let audioPreloaded = false;
 
 // Asset loading helpers
 function updateLoadingProgress() {
@@ -128,6 +129,25 @@ function updateOrientationStatus(status, text) {
         break;
     }
   }
+}
+
+// Preload audio files after entering gallery
+function preloadAudioFiles() {
+  if (audioPreloaded) return;
+  audioPreloaded = true;
+  
+  console.log('Starting audio preloading...');
+  albums.forEach((album, index) => {
+    const audio = new Audio();
+    audio.addEventListener('canplaythrough', () => {
+      console.log(`Preview audio loaded: ${album.title}`);
+    });
+    audio.addEventListener('error', (error) => {
+      console.error(`Error loading preview audio for ${album.title}:`, error);
+    });
+    audio.preload = 'auto';
+    audio.src = album.previewUrl;
+  });
 }
 
 export function initScene() {
@@ -298,24 +318,9 @@ export function initScene() {
     setupDeviceOrientationControls();
   }
 
-  // Initialize asset loading (count: logo texture, record player GLB, album covers, preview audio)
-  totalAssets = 1 + 1 + albums.length + albums.length; // logo + record player + album covers + preview audio
+  // Initialize asset loading (count: logo texture, record player GLB, album covers)
+  totalAssets = 1 + 1 + albums.length; // logo + record player + album covers
   updateLoadingProgress();
-  
-  // Preload audio files
-  albums.forEach((album, index) => {
-    const audio = new Audio();
-    audio.addEventListener('canplaythrough', () => {
-      console.log(`Preview audio loaded: ${album.title}`);
-      onAssetLoaded();
-    });
-    audio.addEventListener('error', (error) => {
-      console.error(`Error loading preview audio for ${album.title}:`, error);
-      onAssetLoaded(); // Still count as loaded even if failed
-    });
-    audio.preload = 'auto';
-    audio.src = album.previewUrl;
-  });
   
   // Initialize orientation status
   if (isMobile) {
@@ -811,6 +816,9 @@ export function enterGallery() {
   if (isMobile) {
     requestDeviceOrientationPermission();
   }
+  
+  // Start preloading audio files after entering gallery
+  preloadAudioFiles();
 
   // Move instructions to body for fullscreen
   const instructionsGroup = document.getElementById("instructions-group");

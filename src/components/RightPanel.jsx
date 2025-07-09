@@ -3,11 +3,19 @@ export default function RightPanel() {
     <div id="right-panel">
       <canvas id="gallery-canvas"></canvas>
       <div id="loading-indicator" className="loading-indicator" style={{ display: 'none' }}>
-        <p>Loading gallery assets...</p>
-        <div className="progress-container">
-          <div id="progress-bar" className="progress-bar"></div>
+        <div className="loading-content">
+          <div className="loading-icon">
+            <div className="vinyl-loader">
+              <div className="vinyl-disc"></div>
+              <div className="vinyl-center"></div>
+            </div>
+          </div>
+          <h3>Loading gallery assets...</h3>
+          <div className="progress-container">
+            <div id="progress-bar" className="progress-bar"></div>
+          </div>
+          <div id="progress-text" className="progress-text">0%</div>
         </div>
-        <div id="progress-text" className="progress-text">0%</div>
       </div>
       <button id="enter-button">Click to enter the listening room</button>
       <div id="instructions-group" className="instructions-group">
