@@ -729,10 +729,18 @@ function updateCameraFromOrientation() {
   );
 
   // Apply the smoothed orientation to the camera
-  // We use the camera's rotation directly for immediate response
-  camera.rotation.y = smoothedOrientation.yaw;   // Yaw: horizontal rotation
-  camera.rotation.x = smoothedOrientation.pitch; // Pitch: vertical rotation
-  camera.rotation.z = 0; // Roll: keep level for comfort
+  // Use PointerLockControls object for compatibility if available
+  if (controls && controls.getObject) {
+    const cameraObject = controls.getObject();
+    cameraObject.rotation.y = smoothedOrientation.yaw;   // Yaw: horizontal rotation
+    cameraObject.rotation.x = smoothedOrientation.pitch; // Pitch: vertical rotation
+    cameraObject.rotation.z = 0; // Roll: keep level for comfort
+  } else {
+    // Fallback to direct camera rotation
+    camera.rotation.y = smoothedOrientation.yaw;   // Yaw: horizontal rotation
+    camera.rotation.x = smoothedOrientation.pitch; // Pitch: vertical rotation
+    camera.rotation.z = 0; // Roll: keep level for comfort
+  }
 
   // Optional: Log orientation data for debugging (remove for production)
   if (Math.random() < 0.01) { // Log occasionally to avoid spam
@@ -1347,7 +1355,7 @@ export function animate() {
   }
 
   // Apply device orientation for mobile camera control (portrait mode)
-  if (isMobile && deviceOrientation && initialOrientation && controls.isLocked) {
+  if (isMobile && deviceOrientation && initialOrientation) {
     updateCameraFromOrientation();
   }
 
