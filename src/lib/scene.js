@@ -674,6 +674,15 @@ function setupDeviceOrientationControls() {
    * Maps phone orientation to camera rotation for intuitive navigation
    */
   window.addEventListener('deviceorientation', function(event) {
+    // Debug: Log when orientation events are received
+    if (Math.random() < 0.005) {
+      console.log('Device orientation event received:', {
+        alpha: event.alpha,
+        beta: event.beta,
+        gamma: event.gamma
+      });
+    }
+    
     // Process orientation data for camera control
     if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
       // Store raw orientation values - no filtering to reduce complexity
@@ -706,13 +715,17 @@ function setupDeviceOrientationControls() {
           camera.quaternion.copy(quaternion);
         }
         
-        console.log('Initial orientation calibrated with natural tilt offset:', {
+        console.log('✅ Initial orientation calibrated:', {
           alpha: initialOrientation.alpha.toFixed(1),
           beta: initialOrientation.beta.toFixed(1),
           gamma: initialOrientation.gamma.toFixed(1),
           cameraYaw: THREE.MathUtils.radToDeg(initialYaw).toFixed(1),
           cameraPitch: THREE.MathUtils.radToDeg(initialPitch).toFixed(1)
         });
+      }
+    } else {
+      if (Math.random() < 0.001) {
+        console.log('⚠️ Device orientation event with null values:', event);
       }
     }
   });
@@ -1499,8 +1512,21 @@ export function animate() {
   }
 
   // Apply device orientation for mobile camera control (portrait mode)
-  if (isMobile && deviceOrientation && initialOrientation) {
-    updateCameraFromOrientation();
+  if (isMobile) {
+    // Debug: Check orientation state
+    if (Math.random() < 0.01) {
+      console.log('Orientation check:', {
+        isMobile,
+        hasDeviceOrientation: !!(deviceOrientation && (deviceOrientation.alpha !== 0 || deviceOrientation.beta !== 0 || deviceOrientation.gamma !== 0)),
+        hasInitialOrientation: !!initialOrientation,
+        deviceOrientation,
+        initialOrientation
+      });
+    }
+    
+    if (deviceOrientation && initialOrientation) {
+      updateCameraFromOrientation();
+    }
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
