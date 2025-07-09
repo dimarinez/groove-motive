@@ -272,51 +272,40 @@ function addOrientationButton() {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('🚀 Trying enhanced orientation detection');
-    
-    // First try the library approach
     testButton.textContent = '⏳ Trying Library...';
     testButton.style.background = '#FF9500';
     
-    // Request permissions first
     let permissionGranted = false;
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
       try {
         const permission = await DeviceOrientationEvent.requestPermission();
         permissionGranted = permission === 'granted';
-        console.log('🚀 Permission result:', permission);
       } catch (error) {
-        console.warn('Permission error:', error);
+        // Silently fail
       }
     } else {
-      permissionGranted = true; // No permission needed
+      permissionGranted = true;
     }
     
     if (permissionGranted) {
-      // Try the enhanced library approach
       const libraryWorking = enableDeviceOrientationLibrary();
       
-      // Test for 3 seconds
       await new Promise(resolve => setTimeout(resolve, 3000));
       
       if (deviceOrientation.alpha !== null && deviceOrientation.alpha !== 0) {
         testButton.textContent = '✅ Orientation Working';
         testButton.style.background = '#34C759';
       } else {
-        // Fallback to touch rotation
-        console.log('🚀 Falling back to touch rotation');
         enableTouchRotation();
         testButton.textContent = '✅ Touch Rotation';
         testButton.style.background = '#34C759';
       }
     } else {
-      // No permission, use touch rotation
       enableTouchRotation();
       testButton.textContent = '✅ Touch Rotation';
       testButton.style.background = '#34C759';
     }
     
-    // Hide button after 2 seconds
     setTimeout(() => {
       testButton.style.opacity = '0';
       setTimeout(() => testButton.remove(), 300);
@@ -339,68 +328,12 @@ if (isMobile) {
   setTimeout(() => {
     addOrientationButton();
     
-    // Add live orientation debug display
-    const debugDiv = document.createElement('div');
-    debugDiv.id = 'orientation-debug';
-    debugDiv.style.cssText = `
-      position: fixed;
-      top: 80px;
-      left: 10px;
-      background: rgba(0,0,0,0.9);
-      color: white;
-      padding: 15px;
-      border-radius: 8px;
-      font-size: 14px;
-      z-index: 9999;
-      max-width: 350px;
-      font-family: monospace;
-    `;
-    debugDiv.innerHTML = `
-      <strong>Orientation Debug:</strong><br>
-      Alpha: <span id="alpha-value">--</span><br>
-      Beta: <span id="beta-value">--</span><br>
-      Gamma: <span id="gamma-value">--</span><br>
-      Delta Alpha: <span id="delta-alpha">--</span><br>
-      Delta Beta: <span id="delta-beta">--</span><br>
-      In Gallery: <span id="in-gallery">--</span><br>
-      Controls Locked: <span id="controls-locked">--</span>
-    `;
-    document.body.appendChild(debugDiv);
-    
-    // Update debug display continuously
-    setInterval(() => {
-      const alphaEl = document.getElementById('alpha-value');
-      const betaEl = document.getElementById('beta-value');
-      const gammaEl = document.getElementById('gamma-value');
-      const deltaAlphaEl = document.getElementById('delta-alpha');
-      const deltaBetaEl = document.getElementById('delta-beta');
-      const inGalleryEl = document.getElementById('in-gallery');
-      const controlsLockedEl = document.getElementById('controls-locked');
-      
-      if (alphaEl) {
-        alphaEl.textContent = deviceOrientation.alpha ? deviceOrientation.alpha.toFixed(1) : 'null';
-        betaEl.textContent = deviceOrientation.beta ? deviceOrientation.beta.toFixed(1) : 'null';
-        gammaEl.textContent = deviceOrientation.gamma ? deviceOrientation.gamma.toFixed(1) : 'null';
-        
-        if (initialOrientation) {
-          deltaAlphaEl.textContent = (deviceOrientation.alpha - initialOrientation.alpha).toFixed(1);
-          deltaBetaEl.textContent = (deviceOrientation.beta - initialOrientation.beta).toFixed(1);
-        }
-        
-        inGalleryEl.textContent = controls ? (controls.isLocked ? 'YES' : 'NO') : 'NO';
-        controlsLockedEl.textContent = controls ? (controls.isLocked ? 'YES' : 'NO') : 'NO';
-      }
-    }, 100);
   }, 1000);
 }
 
 // Device orientation using a more reliable approach
 function enableDeviceOrientationLibrary() {
-  console.log('📱 Setting up device orientation with library approach');
-  
-  // Use a more robust orientation detection
   const orientationHandler = (event) => {
-    // Try multiple event sources
     const alpha = event.alpha || event.webkitCompassHeading || 0;
     const beta = event.beta || 0;
     const gamma = event.gamma || 0;
@@ -410,16 +343,13 @@ function enableDeviceOrientationLibrary() {
       
       if (!initialOrientation) {
         initialOrientation = { ...deviceOrientation };
-        console.log('📍 Library orientation set:', initialOrientation);
       }
       
-      console.log('📱 Library orientation:', deviceOrientation);
       return true;
     }
     return false;
   };
   
-  // Try multiple event registration methods
   const events = ['deviceorientation', 'deviceorientationabsolute', 'compassneedscalibration'];
   let successCount = 0;
   
@@ -428,34 +358,10 @@ function enableDeviceOrientationLibrary() {
       window.addEventListener(eventName, orientationHandler);
       document.addEventListener(eventName, orientationHandler);
       successCount++;
-      console.log(`✅ Added ${eventName} listener`);
     } catch (error) {
-      console.warn(`❌ Failed to add ${eventName}:`, error);
+      // Silently fail
     }
   });
-  
-  // Fallback to gyroscope if available
-  if ('Gyroscope' in window) {
-    try {
-      const gyroscope = new Gyroscope({ frequency: 30 });
-      gyroscope.addEventListener('reading', () => {
-        deviceOrientation = {
-          alpha: gyroscope.z * 57.2958, // Convert rad/s to degrees
-          beta: gyroscope.x * 57.2958,
-          gamma: gyroscope.y * 57.2958
-        };
-        
-        if (!initialOrientation) {
-          initialOrientation = { ...deviceOrientation };
-          console.log('📍 Gyroscope orientation set:', initialOrientation);
-        }
-      });
-      gyroscope.start();
-      console.log('✅ Gyroscope API enabled');
-    } catch (error) {
-      console.warn('❌ Gyroscope API failed:', error);
-    }
-  }
   
   return successCount > 0;
 }
@@ -463,8 +369,6 @@ function enableDeviceOrientationLibrary() {
 // Touch rotation system for mobile (fallback when orientation doesn't work)
 function enableTouchRotation() {
   if (!isMobile) return;
-  
-  console.log('📱 Setting up touch rotation');
   
   let touchRotation = { x: 0, y: 0 };
   let lastTouch = { x: 0, y: 0 };
@@ -477,7 +381,6 @@ function enableTouchRotation() {
     lastTouch.x = touch.clientX;
     lastTouch.y = touch.clientY;
     
-    // Store initial rotation
     if (!initialOrientation) {
       initialOrientation = { alpha: 0, beta: 0, gamma: 0 };
     }
@@ -491,24 +394,19 @@ function enableTouchRotation() {
     const deltaX = touch.clientX - lastTouch.x;
     const deltaY = touch.clientY - lastTouch.y;
     
-    // Update rotation based on touch movement
     touchRotation.y += deltaX * 0.01;
     touchRotation.x += deltaY * 0.01;
     
-    // Clamp vertical rotation
     touchRotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, touchRotation.x));
     
-    // Update device orientation simulation
     deviceOrientation = {
-      alpha: touchRotation.y * 57.2958, // Convert to degrees
+      alpha: touchRotation.y * 57.2958,
       beta: touchRotation.x * 57.2958,
       gamma: 0
     };
     
     lastTouch.x = touch.clientX;
     lastTouch.y = touch.clientY;
-    
-    console.log('📱 Touch rotation:', touchRotation, 'Device sim:', deviceOrientation);
   };
   
   const handleTouchEnd = (e) => {
@@ -516,25 +414,18 @@ function enableTouchRotation() {
     touching = false;
   };
   
-  // Add touch listeners to the canvas
   const canvas = document.getElementById('gallery-canvas') || renderer.domElement;
   canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
   canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
   canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
   
-  // Also add to document for fullscreen mode
   document.addEventListener('touchstart', handleTouchStart, { passive: false });
   document.addEventListener('touchmove', handleTouchMove, { passive: false });
   document.addEventListener('touchend', handleTouchEnd, { passive: false });
-  
-  console.log('✅ Touch rotation enabled');
 }
 
 // Simple orientation tracking function
 function startOrientationTracking() {
-  console.log('📱 Starting orientation tracking');
-  
-  // Clear any existing listeners
   if (window.orientationHandler) {
     window.removeEventListener('deviceorientation', window.orientationHandler);
   }
@@ -542,10 +433,7 @@ function startOrientationTracking() {
     window.removeEventListener('devicemotion', window.motionHandler);
   }
   
-  // Try the exact same approach as working sites
   const handleOrientation = (event) => {
-    console.log('📱 Raw orientation event:', event);
-    
     if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
       deviceOrientation = {
         alpha: event.alpha,
@@ -553,57 +441,41 @@ function startOrientationTracking() {
         gamma: event.gamma
       };
       
-      // Set initial orientation on first reading
       if (!initialOrientation) {
         initialOrientation = { ...deviceOrientation };
-        console.log('📍 Initial orientation set:', initialOrientation);
       }
-      
-      console.log('📱 Orientation values:', deviceOrientation);
     }
   };
   
   const handleMotion = (event) => {
-    console.log('📱 Raw motion event:', event);
-    
     if (event.rotationRate) {
       const { alpha, beta, gamma } = event.rotationRate;
       if (alpha !== null && beta !== null && gamma !== null) {
-        // Use rotation rate as backup
         deviceOrientation = {
-          alpha: alpha * 10, // Scale up rotation rate
+          alpha: alpha * 10,
           beta: beta * 10,
           gamma: gamma * 10
         };
         
         if (!initialOrientation) {
           initialOrientation = { ...deviceOrientation };
-          console.log('📍 Initial motion orientation set:', initialOrientation);
         }
-        
-        console.log('📱 Motion values:', deviceOrientation);
       }
     }
   };
   
-  // Add listeners with different options
   window.orientationHandler = handleOrientation;
   window.motionHandler = handleMotion;
   
-  // Try different event registration methods
   window.addEventListener('deviceorientation', handleOrientation, { passive: false });
   window.addEventListener('devicemotion', handleMotion, { passive: false });
   
-  // Also try without passive
   document.addEventListener('deviceorientation', handleOrientation);
   document.addEventListener('devicemotion', handleMotion);
-  
-  console.log('✅ Multiple orientation listeners added');
 }
 
 // Auto-setup for Android devices (no permission needed)
 if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') {
-  console.log('📱 Android device detected, auto-enabling orientation');
   startOrientationTracking();
 }
 
@@ -712,15 +584,6 @@ if (isMobile && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOr
   pointLight.position.set(0, 3, -8);
   scene.add(pointLight);
 
-  // Add a test cube that rotates with orientation (for debugging)
-  if (isMobile) {
-    const testGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-    const testMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    const testCube = new THREE.Mesh(testGeometry, testMaterial);
-    testCube.position.set(2, 2, -6);
-    testCube.name = 'orientationTestCube';
-    scene.add(testCube);
-  }
 
   // Record player
   const gltfLoader = new GLTFLoader();
@@ -1354,32 +1217,7 @@ export function animate() {
     controls.moveForward(velocity.z * delta);
   }
 
-  // Debug orientation conditions (only log occasionally to avoid spam)
-  if (isMobile && Math.random() < 0.01) { // Log ~1% of the time
-    console.log('🎮 Animate orientation debug:', {
-      isMobile,
-      isLocked: controls.isLocked,
-      hasInitialOrientation: !!initialOrientation,
-      hasAlpha: deviceOrientation.alpha !== null,
-      hasBeta: deviceOrientation.beta !== null,
-      hasGamma: deviceOrientation.gamma !== null,
-      alphaValue: deviceOrientation.alpha,
-      betaValue: deviceOrientation.beta,
-      gammaValue: deviceOrientation.gamma
-    });
-  }
 
-  // Test cube rotation (visual confirmation orientation works)
-  if (isMobile && initialOrientation && deviceOrientation.alpha !== null) {
-    const testCube = scene.getObjectByName('orientationTestCube');
-    if (testCube) {
-      const deltaAlpha = deviceOrientation.alpha - initialOrientation.alpha;
-      const deltaBeta = deviceOrientation.beta - initialOrientation.beta;
-      
-      testCube.rotation.y = THREE.MathUtils.degToRad(deltaAlpha * 0.5);
-      testCube.rotation.x = THREE.MathUtils.degToRad(deltaBeta * 0.5);
-    }
-  }
 
   if (
     isMobile &&
@@ -1394,7 +1232,7 @@ export function animate() {
     const deltaBeta = deviceOrientation.beta - initialOrientation.beta;
 
     // Apply sensitivity and convert to radians
-    const sensitivity = 0.02; // Much lower sensitivity for testing
+    const sensitivity = 0.02;
     const yaw = deltaAlpha * sensitivity;
     const pitch = THREE.MathUtils.clamp(
       deltaBeta * sensitivity,
@@ -1417,16 +1255,6 @@ export function animate() {
     controlsObject.rotation.order = 'YXZ';
     controlsObject.rotation.y = controlsObject.userData.originalRotation.y - yaw;
     controlsObject.rotation.x = controlsObject.userData.originalRotation.x - pitch;
-
-    // Debug log every time for testing
-    console.log('🎯 Camera rotation applied:', {
-      yaw: THREE.MathUtils.radToDeg(-yaw),
-      pitch: THREE.MathUtils.radToDeg(-pitch),
-      deltaAlpha,
-      deltaBeta,
-      controlsY: controlsObject.rotation.y,
-      controlsX: controlsObject.rotation.x
-    });
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
