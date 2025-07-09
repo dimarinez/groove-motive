@@ -1265,18 +1265,20 @@ export function animate() {
   if (isMobile && controls.isLocked && deviceOrientation && initialOrientation) {
     const alpha = deviceOrientation.alpha || 0;
     const beta = deviceOrientation.beta || 0;
+    const gamma = deviceOrientation.gamma || 0;
 
-    const deltaAlpha = alpha - initialOrientation.alpha;
-    const deltaBeta = beta - initialOrientation.beta;
+    // Convert degrees to radians
+    const yaw = THREE.MathUtils.degToRad(alpha - initialOrientation.alpha);
+    const pitch = THREE.MathUtils.degToRad(beta - initialOrientation.beta);
+    const roll = THREE.MathUtils.degToRad(gamma - initialOrientation.gamma);
 
-    const sensitivity = 0.02;
+    // Apply rotation to camera directly (NOT controls)
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = yaw;
+    camera.rotation.x = pitch;
 
-    const yaw = THREE.MathUtils.degToRad(deltaAlpha * sensitivity);
-    const pitch = THREE.MathUtils.degToRad(deltaBeta * sensitivity);
-
-    const euler = new THREE.Euler(pitch, yaw, 0, 'YXZ');
-
-    controls.getObject().quaternion.setFromEuler(euler);
+    camera.updateMatrix();
+    camera.updateMatrixWorld();
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
