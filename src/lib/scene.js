@@ -1250,7 +1250,8 @@ export function animate() {
   }
 
 // Mobile device orientation control - apply rotation to camera
-if (isMobile && controls.isLocked && deviceOrientation && initialOrientation) {
+// Mobile device orientation control - apply rotation to camera
+if (isMobile && deviceOrientation && initialOrientation) {
   const alpha = deviceOrientation.alpha || 0;
   const beta = deviceOrientation.beta || 0;
   const gamma = deviceOrientation.gamma || 0;
@@ -1273,15 +1274,30 @@ if (isMobile && controls.isLocked && deviceOrientation && initialOrientation) {
     'YXZ'   // Order: yaw, pitch, roll
   );
 
-  // Apply rotation to camera
+  // Temporarily disable PointerLockControls to apply orientation
+  if (controls.isLocked) {
+    controls.unlock();
+  }
+
+  // Apply rotation directly to camera
   camera.rotation.copy(euler);
 
-  // Log for debugging (only once to avoid spam)
+  // Re-lock controls if they were locked
+  if (controls.isLocked === false) {
+    controls.lock();
+  }
+
+  // Debug logging to verify values (log once to avoid spam)
   if (!orientationDebugLogged) {
-    console.log('Device orientation applied:', { 
+    console.log('Device orientation applied:', {
       alpha, beta, gamma,
       relativeAlpha, relativeBeta, relativeGamma,
-      yaw, pitch, roll 
+      yaw, pitch, roll,
+      cameraRotation: {
+        x: camera.rotation.x,
+        y: camera.rotation.y,
+        z: camera.rotation.z
+      }
     });
     orientationDebugLogged = true;
   }
