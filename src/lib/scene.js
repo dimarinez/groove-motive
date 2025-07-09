@@ -1208,8 +1208,6 @@ export function animatePreview() {
 }
 
 export function animate() {
-  camera.rotation.x += 0.01; // Test pitch
-  camera.rotation.y += 0.01; // Test yaw
   mainAnimationId = requestAnimationFrame(animate);
   const delta = clock.getDelta();
   if (mixer) mixer.update(delta);
@@ -1254,42 +1252,71 @@ export function animate() {
   }
 
 // Mobile device orientation control - apply rotation to camera
-if (isMobile && controls.isLocked && deviceOrientation && initialOrientation) {
-  const alpha = deviceOrientation.alpha || 0;
-  const beta = deviceOrientation.beta || 0;
-  const gamma = deviceOrientation.gamma || 0;
+  if (isMobile && deviceOrientation && initialOrientation) {
+    const alpha = deviceOrientation.alpha || 0;
+    const beta = deviceOrientation.beta || 0;
+    const gamma = deviceOrientation.gamma || 0;
 
-  // Calculate relative rotation from initial orientation
-  const relativeAlpha = alpha - initialOrientation.alpha;
-  const relativeBeta = beta - initialOrientation.beta;
-  const relativeGamma = gamma - initialOrientation.gamma;
+    // Calculate relative rotation from initial orientation
+    const relativeAlpha = alpha - initialOrientation.alpha;
+    const relativeBeta = beta - initialOrientation.beta;
+    const relativeGamma = gamma - initialOrientation.gamma;
 
-  // Convert to radians
-  const yaw = THREE.MathUtils.degToRad(relativeAlpha);
-  const pitch = THREE.MathUtils.degToRad(relativeBeta);
-  const roll = THREE.MathUtils.degToRad(relativeGamma);
+    // Convert to radians
+    const yaw = THREE.MathUtils.degToRad(relativeAlpha);
+    const pitch = THREE.MathUtils.degToRad(relativeBeta);
+    const roll = THREE.MathUtils.degToRad(relativeGamma);
 
-  // Create euler rotation with proper order for mobile orientation
-  const euler = new THREE.Euler(
-    pitch,  // X-axis (beta) - forward/backward tilt
-    yaw,    // Y-axis (alpha) - left/right rotation
-    roll,   // Z-axis (gamma) - left/right tilt
-    'YXZ'   // Order: yaw, pitch, roll
-  );
-
-  // Apply rotation to camera
-  camera.rotation.copy(euler);
-
-  // Log for debugging (only once to avoid spam)
-  if (!orientationDebugLogged) {
-    console.log('Device orientation applied:', { 
+    // Log orientation values for debugging
+    console.log('Orientation data:', {
       alpha, beta, gamma,
       relativeAlpha, relativeBeta, relativeGamma,
-      yaw, pitch, roll 
+      yaw, pitch, roll,
+      cameraRotationBefore: {
+        x: camera.rotation.x.toFixed(3),
+        y: camera.rotation.y.toFixed(3),
+        z: camera.rotation.z.toFixed(3)
+      }
     });
-    orientationDebugLogged = true;
+
+    // Temporarily disable PointerLockControls to apply orientation
+    const wasLocked = controls.isLocked;
+    if (wasLocked) {
+      try {
+        controls.unlock();
+      } catch (error) {
+        console.warn('Failed to unlock controls:', error);
+      }
+    }
+
+    // Reset camera rotation to avoid cumulative effects
+    camera.rotation.set(0, 0, 0);
+
+    // Apply rotation using Euler angles
+  -camera.rotation.order = 'YXZ'; // Ensure correct rotation order
+    camera.rotation.x = pitch;  // Beta (forward/backward tilt) -> X-axis (pitch)
+    camera.rotation.y = yaw;    // Alpha (left/right rotation) -> Y-axis (yaw)
+    camera.rotation.z = roll;   // Gamma (left/right tilt) -> Z-axis (roll)
+
+    // Log camera rotation after update
+    console.log('Camera rotation after:', {
+      x: camera.rotation.x.toFixed(3),
+      y: camera.rotation.y.toFixed(3),
+      z: camera.rotation.z.toFixed(3)
+    });
+
+    // Re-lock controls if they were previously locked
+    if (wasLocked) {
+      try {
+        controls.lock();
+      } catch (error) {
+        console.warn('Failed to re-lock controls:', error);
+      }
+    }
+
+    // Force render to ensure update
+    renderer.render(scene, camera);
   }
-}
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
   camera.position.z = THREE.MathUtils.clamp(camera.position.z, -8.5, 9);
