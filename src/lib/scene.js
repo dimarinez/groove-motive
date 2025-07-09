@@ -761,10 +761,10 @@ function updateCameraFromOrientation() {
   // Gamma controls horizontal rotation (left/right tilt)
   let targetYaw = THREE.MathUtils.degToRad(relativeGamma) * orientationSensitivity;
   
-  // Beta controls vertical rotation with anti-whiplash filtering
-  // Clamp beta to prevent extreme movements that cause whiplash
-  const clampedBeta = THREE.MathUtils.clamp(relativeBeta, -60, 60); // Limit range
-  let targetPitch = THREE.MathUtils.degToRad(clampedBeta) * orientationSensitivity * 0.7; // Reduce sensitivity
+  // Beta controls vertical rotation - improved mapping for natural feel
+  // Less restrictive clamping for better range
+  const clampedBeta = THREE.MathUtils.clamp(relativeBeta, -45, 45); // Better range
+  let targetPitch = THREE.MathUtils.degToRad(-clampedBeta) * orientationSensitivity; // Invert and use full sensitivity
   
   // Handle 360° wraparound jumps for yaw
   const yawDiff = targetYaw - previousYaw;
@@ -774,9 +774,9 @@ function updateCameraFromOrientation() {
     targetYaw += 2 * Math.PI;
   }
 
-  // Much higher smoothing to eliminate vertical jitter
+  // Balanced smoothing for good responsiveness
   const yawSmoothingFactor = 0.08; // Smooth horizontal movement
-  const pitchSmoothingFactor = 0.04; // Very smooth vertical movement to reduce whiplash
+  const pitchSmoothingFactor = 0.1; // More responsive vertical movement
   
   // Apply smoothing with anti-jitter logic
   smoothedOrientation.yaw = THREE.MathUtils.lerp(
@@ -785,9 +785,9 @@ function updateCameraFromOrientation() {
     yawSmoothingFactor
   );
   
-  // Special handling for vertical movement to prevent jitter
+  // More responsive vertical movement
   const pitchDiff = Math.abs(targetPitch - smoothedOrientation.pitch);
-  const pitchDeadzone = 0.01; // Small deadzone for vertical micro-movements
+  const pitchDeadzone = 0.005; // Smaller deadzone for better responsiveness
   
   if (pitchDiff > pitchDeadzone) {
     smoothedOrientation.pitch = THREE.MathUtils.lerp(
