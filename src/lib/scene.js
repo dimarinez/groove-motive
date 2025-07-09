@@ -60,8 +60,8 @@ let isMobile = false;
 let deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
 let initialOrientation = null;
 let smoothedOrientation = { yaw: 0, pitch: 0 };
-let orientationSmoothingFactor = 0.1; // Lower = smoother but more lag
-let orientationSensitivity = 0.8; // Sensitivity multiplier for orientation input
+let orientationSmoothingFactor = 0.3; // Increased for faster response, especially pitch
+let orientationSensitivity = 1.0; // Increased sensitivity for better response
 let clickToLockHandler = null;
 let previewInstruction = null;
 let previewAnimationId = null;
@@ -693,7 +693,7 @@ function setupDeviceOrientationControls() {
 
 /**
  * Updates camera rotation based on device orientation for smooth navigation
- * Designed for portrait mode with anti-jitter smoothing
+ * Designed for portrait mode with proper left/right and up/down mapping
  */
 function updateCameraFromOrientation() {
   if (!deviceOrientation || !initialOrientation) return;
@@ -701,21 +701,26 @@ function updateCameraFromOrientation() {
   // Calculate relative rotation from initial upright portrait position
   let relativeAlpha = deviceOrientation.alpha - initialOrientation.alpha;
   let relativeBeta = deviceOrientation.beta - initialOrientation.beta;
+  let relativeGamma = deviceOrientation.gamma - initialOrientation.gamma;
 
   // Handle 360° wraparound for alpha (compass heading)
   if (relativeAlpha > 180) relativeAlpha -= 360;
   if (relativeAlpha < -180) relativeAlpha += 360;
 
-  // Convert to target rotation values (in radians)
-  // Alpha controls yaw (left/right look) - inverted for intuitive control
-  const targetYaw = -THREE.MathUtils.degToRad(relativeAlpha) * orientationSensitivity;
+  // For portrait mode, map device orientation to camera rotation:
+  // - Gamma (left/right tilt) controls yaw (horizontal camera rotation)
+  // - Beta (forward/back tilt) controls pitch (vertical camera rotation)
   
-  // Beta controls pitch (up/down look) - for portrait mode
-  // Clamp beta to prevent over-rotation (comfortable head movement range)
+  // Gamma controls yaw (left/right look) - direct mapping for intuitive control
+  const clampedGamma = THREE.MathUtils.clamp(relativeGamma, -60, 60);
+  const targetYaw = THREE.MathUtils.degToRad(clampedGamma) * orientationSensitivity;
+  
+  // Beta controls pitch (up/down look) - inverted for natural feel
   const clampedBeta = THREE.MathUtils.clamp(relativeBeta, -45, 45);
-  const targetPitch = THREE.MathUtils.degToRad(clampedBeta) * orientationSensitivity;
+  const targetPitch = -THREE.MathUtils.degToRad(clampedBeta) * orientationSensitivity;
 
   // Apply exponential smoothing to reduce jitter
+  // Use different smoothing factors for yaw and pitch if needed
   smoothedOrientation.yaw = THREE.MathUtils.lerp(
     smoothedOrientation.yaw, 
     targetYaw, 
@@ -744,10 +749,10 @@ function updateCameraFromOrientation() {
 
   // Optional: Log orientation data for debugging (remove for production)
   if (Math.random() < 0.01) { // Log occasionally to avoid spam
-    console.log('Orientation update:', {
-      rawAlpha: deviceOrientation.alpha.toFixed(1),
+    console.log('Portrait orientation update:', {
+      rawGamma: deviceOrientation.gamma.toFixed(1),
       rawBeta: deviceOrientation.beta.toFixed(1),
-      relativeAlpha: relativeAlpha.toFixed(1),
+      relativeGamma: relativeGamma.toFixed(1),
       relativeBeta: relativeBeta.toFixed(1),
       targetYaw: THREE.MathUtils.radToDeg(targetYaw).toFixed(1),
       targetPitch: THREE.MathUtils.radToDeg(targetPitch).toFixed(1),
