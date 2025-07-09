@@ -570,6 +570,15 @@ async function requestDeviceOrientationPermission() {
       typeof DeviceOrientationEvent.requestPermission === 'function') {
     
     try {
+      // First check if permission is already granted
+      const currentPermission = await DeviceOrientationEvent.requestPermission();
+      
+      if (currentPermission === 'granted') {
+        console.log('Device orientation permission already granted');
+        setupDeviceOrientationControls();
+        return;
+      }
+      
       updateOrientationStatus('not-requested', 'Requesting permission...');
       console.log('Requesting device orientation permission...');
       
@@ -612,28 +621,20 @@ async function requestDeviceOrientationPermission() {
       document.body.removeChild(permissionButton);
       
       if (permissionResult === 'granted') {
-        updateOrientationStatus('granted', 'Orientation: Granted');
         console.log('Device orientation permission granted');
-        // Wait a bit then setup controls
-        setTimeout(() => {
-          setupDeviceOrientationControls();
-        }, 500);
+        setupDeviceOrientationControls();
       } else if (permissionResult === 'denied') {
-        updateOrientationStatus('denied', 'Orientation: Denied');
         console.log('Device orientation permission denied');
       } else {
-        updateOrientationStatus('denied', 'Orientation: Error - ' + permissionResult);
         console.log('Device orientation permission error:', permissionResult);
       }
       
     } catch (error) {
       console.error('Error requesting device orientation permission:', error);
-      updateOrientationStatus('denied', 'Orientation: Error');
     }
   } else {
     // Android or older iOS - no permission required
     console.log('No permission required for device orientation');
-    updateOrientationStatus('granted', 'Orientation: Available');
     setupDeviceOrientationControls();
   }
 
@@ -746,14 +747,19 @@ function updateCameraFromOrientation() {
   if (relativeAlpha > 180) relativeAlpha -= 360;
   if (relativeAlpha < -180) relativeAlpha += 360;
 
-  // Phone-tilt based orientation mapping for portrait mode
+  // Improved phone-tilt mapping with better axis separation
   const previousYaw = smoothedOrientation.yaw;
   
-  // Gamma controls horizontal rotation (tilt phone left/right to look around)
-  let targetYaw = THREE.MathUtils.degToRad(relativeGamma) * orientationSensitivity; // Direct mapping, no amplification
+  // Gamma controls horizontal rotation with deadzone to reduce jitter
+  const gammaDeadzone = 2; // degrees
+  const adjustedGamma = Math.abs(relativeGamma) > gammaDeadzone ? relativeGamma : 0;
+  let targetYaw = THREE.MathUtils.degToRad(adjustedGamma) * orientationSensitivity;
   
-  // Beta controls vertical rotation (tilt phone forward = look down, tilt back = look up)
-  let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity; // Direct mapping for correct direction
+  // Beta controls vertical rotation with isolation from horizontal movement
+  // Apply additional filtering for pure vertical tilt
+  const betaDeadzone = 1; // degrees
+  const adjustedBeta = Math.abs(relativeBeta) > betaDeadzone ? relativeBeta : 0;
+  let targetPitch = THREE.MathUtils.degToRad(adjustedBeta) * orientationSensitivity;
   
   // Handle 360° wraparound jumps for yaw
   const yawDiff = targetYaw - previousYaw;
@@ -763,11 +769,11 @@ function updateCameraFromOrientation() {
     targetYaw += 2 * Math.PI;
   }
 
-  // Even higher smoothing to reduce jitter, especially for side-to-side
-  const yawSmoothingFactor = 0.05; // Much lower for very smooth horizontal movement
-  const pitchSmoothingFactor = 0.08; // Lower for smooth vertical movement
+  // Different smoothing for each axis to reduce cross-axis interference
+  const yawSmoothingFactor = 0.04; // Very smooth horizontal movement
+  const pitchSmoothingFactor = 0.06; // Slightly more responsive vertical
   
-  // Always apply smoothing - no deadzone to maintain responsiveness
+  // Apply smoothing with axis isolation
   smoothedOrientation.yaw = THREE.MathUtils.lerp(
     smoothedOrientation.yaw, 
     targetYaw, 
@@ -1022,6 +1028,27 @@ export function enterGallery() {
   // Request device orientation permission when entering gallery (user interaction)
   if (isMobile) {
     requestDeviceOrientationPermission();
+    
+    // Calibrate orientation to match current camera position after a short delay
+    setTimeout(() => {
+      if (deviceOrientation.alpha !== 0 || deviceOrientation.beta !== 0 || deviceOrientation.gamma !== 0) {
+        console.log('Calibrating orientation to match current camera position');
+        initialOrientation = {
+          alpha: deviceOrientation.alpha,
+          beta: deviceOrientation.beta + 15, // Account for natural tilt
+          gamma: deviceOrientation.gamma
+        };
+        
+        // Set smoothed values to current camera rotation
+        smoothedOrientation.yaw = camera.rotation.y;
+        smoothedOrientation.pitch = camera.rotation.x;
+        
+        console.log('Orientation calibrated after entering gallery:', {
+          cameraYaw: THREE.MathUtils.radToDeg(camera.rotation.y).toFixed(1),
+          cameraPitch: THREE.MathUtils.radToDeg(camera.rotation.x).toFixed(1)
+        });
+      }
+    }, 1000);
   }
   
   // Start preloading audio files after entering gallery
