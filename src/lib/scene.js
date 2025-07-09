@@ -761,7 +761,7 @@ function updateCameraFromOrientation() {
   // Gamma controls horizontal rotation (left/right tilt)
   let targetYaw = THREE.MathUtils.degToRad(relativeGamma) * orientationSensitivity;
   
-  // Beta controls vertical rotation (forward/back tilt)
+  // Beta controls vertical rotation (forward/back tilt) - same as horizontal
   let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
   
   // Handle 360° wraparound jumps for yaw
@@ -772,9 +772,9 @@ function updateCameraFromOrientation() {
     targetYaw += 2 * Math.PI;
   }
 
-  // Higher smoothing to reduce jitter
+  // Same smoothing for both axes - what worked for horizontal
   const yawSmoothingFactor = 0.05; // Very smooth horizontal movement  
-  const pitchSmoothingFactor = 0.05; // Very smooth vertical movement
+  const pitchSmoothingFactor = 0.05; // Same smoothing as horizontal
   
   // Apply smoothing with anti-jitter logic
   smoothedOrientation.yaw = THREE.MathUtils.lerp(
