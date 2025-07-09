@@ -534,7 +534,7 @@ export function initScene() {
   }, 100);
 }
 
-// Modified orientation permission request to incorporate new code
+// Request device orientation permission with user interaction
 async function requestDeviceOrientationPermission() {
   console.log('=== Starting orientation permission request ===');
   console.log('User agent:', navigator.userAgent);
@@ -593,8 +593,6 @@ async function requestDeviceOrientationPermission() {
         // Wait a bit then setup controls
         setTimeout(() => {
           setupDeviceOrientationControls();
-          // Add new orientation listener
-          window.addEventListener('deviceorientation', handleOrientation);
         }, 500);
       } else if (permissionResult === 'denied') {
         updateOrientationStatus('denied', 'Orientation: Denied');
@@ -613,8 +611,6 @@ async function requestDeviceOrientationPermission() {
     console.log('No permission required for device orientation');
     updateOrientationStatus('granted', 'Orientation: Available');
     setupDeviceOrientationControls();
-    // Add new orientation listener
-    window.addEventListener('deviceorientation', handleOrientation);
   }
 
   // Request motion permission if available
@@ -630,29 +626,6 @@ async function requestDeviceOrientationPermission() {
   }
 }
 
-// New orientation handler integrated with existing system
-function handleOrientation(event) {
-  if (!isMobile || !controls.isLocked) return;
-
-  const alpha = event.alpha || 0; // Z-axis rotation (0 to 360)
-  const beta = event.beta || 0;   // X-axis rotation (-180 to 180)
-  const gamma = event.gamma || 0; // Y-axis rotation (-90 to 90)
-
-  // Update existing device orientation object
-  deviceOrientation = { alpha, beta, gamma };
-
-  // Update UI values
-  if (alphaValue) alphaValue.textContent = alpha.toFixed(1);
-  if (betaValue) betaValue.textContent = beta.toFixed(1);
-  if (gammaValue) gammaValue.textContent = gamma.toFixed(1);
-
-  // Set initial orientation if not set
-  if (!initialOrientation && alpha !== null && beta !== null && gamma !== null) {
-    initialOrientation = { alpha, beta, gamma };
-    console.log('Initial orientation set in handleOrientation:', initialOrientation);
-  }
-}
-
 // Device orientation handling for mobile camera control
 function setupDeviceOrientationControls() {
   if (!isMobile) return;
@@ -665,6 +638,30 @@ function setupDeviceOrientationControls() {
   if (orientationValues) {
     orientationValues.style.display = 'block';
   }
+
+  window.addEventListener('deviceorientation', function(event) {
+    console.log(event.alpha + ' : ' + event.beta + ' : ' + event.gamma);
+    
+    // Update UI values
+    if (alphaValue) alphaValue.textContent = event.alpha ? event.alpha.toFixed(1) : '0';
+    if (betaValue) betaValue.textContent = event.beta ? event.beta.toFixed(1) : '0';
+    if (gammaValue) gammaValue.textContent = event.gamma ? event.gamma.toFixed(1) : '0';
+    
+    // Update device orientation for camera control
+    if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
+      deviceOrientation = {
+        alpha: event.alpha,
+        beta: event.beta,
+        gamma: event.gamma
+      };
+
+      if (!initialOrientation) {
+        initialOrientation = { ...deviceOrientation };
+        console.log('Initial orientation set:', initialOrientation);
+        console.log('Device orientation tracking enabled');
+      }
+    }
+  });
   
   console.log('Device orientation listener added');
   
@@ -681,7 +678,7 @@ function setupDeviceOrientationControls() {
 
 // Clean up orientation listeners
 function cleanupDeviceOrientation() {
-  window.removeEventListener('deviceorientation', handleOrientation);
+  window.removeEventListener('deviceorientation', () => {});
   document.removeEventListener('deviceorientation', () => {});
   window.removeEventListener('devicemotion', () => {});
   document.removeEventListener('devicemotion', () => {});
@@ -892,6 +889,7 @@ export function enterGallery() {
     // Reset to initial state
     resetToInitialState();
   });
+
 
   // Clean up any existing click-to-lock handler
   if (clickToLockHandler) {
