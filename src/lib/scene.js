@@ -747,19 +747,14 @@ function updateCameraFromOrientation() {
   if (relativeAlpha > 180) relativeAlpha -= 360;
   if (relativeAlpha < -180) relativeAlpha += 360;
 
-  // Improved phone-tilt mapping with better axis separation
+  // Simple phone-tilt mapping without excessive filtering
   const previousYaw = smoothedOrientation.yaw;
   
-  // Gamma controls horizontal rotation with deadzone to reduce jitter
-  const gammaDeadzone = 2; // degrees
-  const adjustedGamma = Math.abs(relativeGamma) > gammaDeadzone ? relativeGamma : 0;
-  let targetYaw = THREE.MathUtils.degToRad(adjustedGamma) * orientationSensitivity;
+  // Gamma controls horizontal rotation (left/right tilt)
+  let targetYaw = THREE.MathUtils.degToRad(relativeGamma) * orientationSensitivity;
   
-  // Beta controls vertical rotation with isolation from horizontal movement
-  // Apply additional filtering for pure vertical tilt
-  const betaDeadzone = 1; // degrees
-  const adjustedBeta = Math.abs(relativeBeta) > betaDeadzone ? relativeBeta : 0;
-  let targetPitch = THREE.MathUtils.degToRad(adjustedBeta) * orientationSensitivity;
+  // Beta controls vertical rotation (forward/back tilt)
+  let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
   
   // Handle 360° wraparound jumps for yaw
   const yawDiff = targetYaw - previousYaw;
@@ -769,9 +764,9 @@ function updateCameraFromOrientation() {
     targetYaw += 2 * Math.PI;
   }
 
-  // Different smoothing for each axis to reduce cross-axis interference
-  const yawSmoothingFactor = 0.04; // Very smooth horizontal movement
-  const pitchSmoothingFactor = 0.06; // Slightly more responsive vertical
+  // Responsive smoothing that allows movement
+  const yawSmoothingFactor = 0.15; // More responsive horizontal movement
+  const pitchSmoothingFactor = 0.2; // More responsive vertical movement
   
   // Apply smoothing with axis isolation
   smoothedOrientation.yaw = THREE.MathUtils.lerp(
@@ -799,19 +794,18 @@ function updateCameraFromOrientation() {
     camera.quaternion.copy(quaternion);
   }
 
-  // Optional: Log orientation data for debugging (remove for production)
-  if (Math.random() < 0.01) { // Log occasionally to avoid spam
-    console.log('Stable 360° orientation update:', {
-      rawAlpha: deviceOrientation.alpha.toFixed(1),
+  // Debug logging to check if orientation is working
+  if (Math.random() < 0.02) { // Log occasionally to check movement
+    console.log('Orientation update:', {
+      rawGamma: deviceOrientation.gamma.toFixed(1),
       rawBeta: deviceOrientation.beta.toFixed(1),
-      relativeAlpha: relativeAlpha.toFixed(1),
+      relativeGamma: relativeGamma.toFixed(1),
       relativeBeta: relativeBeta.toFixed(1),
       targetYaw: THREE.MathUtils.radToDeg(targetYaw).toFixed(1),
       targetPitch: THREE.MathUtils.radToDeg(targetPitch).toFixed(1),
       smoothedYaw: THREE.MathUtils.radToDeg(smoothedOrientation.yaw).toFixed(1),
       smoothedPitch: THREE.MathUtils.radToDeg(smoothedOrientation.pitch).toFixed(1),
-      yawSpeed: yawSpeed.toFixed(3),
-      pitchSpeed: pitchSpeed.toFixed(3)
+      hasInitial: !!initialOrientation
     });
   }
 }
