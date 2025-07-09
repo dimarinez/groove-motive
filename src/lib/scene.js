@@ -297,27 +297,24 @@ export function initScene() {
   renderer.setSize(canvasWidth, canvasHeight);
   renderer.outputEncoding = THREE.sRGBEncoding;
 
-  controls = new PointerLockControls(camera, galleryCanvas);
-  controls.addEventListener("lock", () => {
-    document.body.style.cursor = "none";
-    ui.style.display = "none";
-    if (isMobile) {
-      const mobileControls = document.getElementById("mobile-controls");
-      if (mobileControls) {
-        mobileControls.style.display = "flex";
-        console.log("Mobile controls shown");
-      } else {
-        console.warn("Mobile controls element not found");
-      }
-    }
-  });
-  controls.addEventListener("unlock", () => {
-    document.body.style.cursor = "auto";
-    const container = document.getElementById("container");
-    if (container) container.style.display = "flex";
-    if (isMobile)
-      document.getElementById("mobile-controls").style.display = "none";
-  });
+  // Initialize controls only for non-mobile devices
+  if (!isMobile) {
+    controls = new PointerLockControls(camera, galleryCanvas);
+    controls.addEventListener("lock", () => {
+      document.body.style.cursor = "none";
+      ui.style.display = "none";
+    });
+    controls.addEventListener("unlock", () => {
+      document.body.style.cursor = "auto";
+      const container = document.getElementById("container");
+      if (container) container.style.display = "flex";
+      if (isMobile)
+        document.getElementById("mobile-controls").style.display = "none";
+    });
+  } else {
+    // For mobile, initialize without PointerLockControls
+    controls = { isLocked: true }; // Simulate locked state for mobile
+}
 
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
@@ -593,6 +590,12 @@ async function requestDeviceOrientationPermission() {
         // Wait a bit then setup controls
         setTimeout(() => {
           setupDeviceOrientationControls();
+          // Prompt user to calibrate
+          alert('Please point your device toward the record player and wait a moment to calibrate.');
+          setTimeout(() => {
+            // Reset initial orientation after a delay to allow user to point device
+            initialOrientation = null; // Force re-capture of initial orientation
+          }, 3000); // 3-second delay for user to align device
         }, 500);
       } else if (permissionResult === 'denied') {
         updateOrientationStatus('denied', 'Orientation: Denied');
@@ -845,12 +848,12 @@ export function enterGallery() {
     previewAnimationId = null;
   }
 
-  // Request device orientation permission when entering gallery (user interaction)
+  // Request device orientation permission when entering gallery
   if (isMobile) {
     requestDeviceOrientationPermission();
   }
-  
-  // Start preloading audio files after entering gallery
+
+  // Start preloading audio files
   preloadAudioFiles();
 
   // Move instructions to body for fullscreen
@@ -872,64 +875,60 @@ export function enterGallery() {
   } catch (error) {
     console.warn("Could not resize renderer for fullscreen:", error);
   }
-  controls.dispose();
-  controls = new PointerLockControls(camera, renderer.domElement);
 
-  // Add unlock event listener
-  controls.addEventListener("unlock", () => {
-    // Clean up click-to-lock handler
-    if (clickToLockHandler) {
-      document.removeEventListener("click", clickToLockHandler);
-      clickToLockHandler = null;
-    }
+  if (!isMobile) {
+    // Only use PointerLockControls for non-mobile
+    controls.dispose();
+    controls = new PointerLockControls(camera, renderer.domElement);
 
-    // Clean up orientation listeners
-    cleanupDeviceOrientation();
-
-    // Reset to initial state
-    resetToInitialState();
-  });
-
-
-  // Clean up any existing click-to-lock handler
-  if (clickToLockHandler) {
-    document.removeEventListener("click", clickToLockHandler);
-  }
-
-  // Enable click-to-lock
-  clickToLockHandler = (event) => {
-    if (event.target.id !== "enter-button" && !controls.isLocked) {
-      try {
-        controls.lock();
-      } catch (error) {
-        console.warn("Pointer lock failed:", error);
+    // Add unlock event listener
+    controls.addEventListener("unlock", () => {
+      if (clickToLockHandler) {
+        document.removeEventListener("click", clickToLockHandler);
+        clickToLockHandler = null;
       }
-    }
-  };
-  document.addEventListener("click", clickToLockHandler);
+      cleanupDeviceOrientation();
+      resetToInitialState();
+    });
+
+    // Enable click-to-lock
+    clickToLockHandler = (event) => {
+      if (event.target.id !== "enter-button" && !controls.isLocked) {
+        try {
+          controls.lock();
+        } catch (error) {
+          console.warn("Pointer lock failed:", error);
+        }
+      }
+    };
+    document.addEventListener("click", clickToLockHandler);
+
+    // Initial lock
+    setTimeout(() => {
+      if (!controls.isLocked) {
+        try {
+          controls.lock();
+        } catch (error) {
+          console.warn("Initial pointer lock failed:", error);
+        }
+      }
+    }, 100);
+  } else {
+    // For mobile, ensure controls is in "locked" state
+    controls = { isLocked: true };
+  }
 
   // Force render
   renderer.render(scene, camera);
 
-  // Initial lock
-  setTimeout(() => {
-    if (!controls.isLocked) {
-      try {
-        controls.lock();
-      } catch (error) {
-        console.warn("Initial pointer lock failed:", error);
-      }
+  // Ensure mobile controls visible
+  if (isMobile) {
+    const mobileControls = document.getElementById("mobile-controls");
+    if (mobileControls) {
+      mobileControls.style.display = "flex";
+      console.log("Mobile controls ensured visible in enterGallery");
     }
-
-    // Ensure mobile controls visible
-    if (isMobile) {
-      const mobileControls = document.getElementById("mobile-controls");
-      if (mobileControls) {
-        mobileControls.style.display = "flex";
-        console.log("Mobile controls ensured visible in enterGallery");
-      }
-    }
-  }, 100);
+  }
 }
 
 function findVinylMesh(object) {
@@ -1267,15 +1266,37 @@ export function animate() {
     const beta = deviceOrientation.beta || 0;
     const gamma = deviceOrientation.gamma || 0;
 
-    // Convert degrees to radians
+    // Convert degrees to radians and adjust for initial orientation
     const yaw = THREE.MathUtils.degToRad(alpha - initialOrientation.alpha);
     const pitch = THREE.MathUtils.degToRad(beta - initialOrientation.beta);
-    const roll = THREE.MathUtils.degToRad(gamma - initialOrientation.gamma);
 
-    // Apply rotation to camera directly (NOT controls)
-    camera.rotation.order = 'YXZ';
-    camera.rotation.y = yaw;
-    camera.rotation.x = pitch;
+    // Create a quaternion for orientation
+    const quaternion = new THREE.Quaternion();
+    const euler = new THREE.Euler(pitch, yaw, 0, 'YXZ');
+    quaternion.setFromEuler(euler);
+
+    // Apply quaternion to camera
+    camera.quaternion.copy(quaternion);
+
+    // Debug logging
+    console.log('Camera orientation update:', {
+      alpha: alpha.toFixed(1),
+      beta: beta.toFixed(1),
+      gamma: gamma.toFixed(1),
+      yaw: yaw.toFixed(2),
+      pitch: pitch.toFixed(2),
+      cameraRotation: {
+        x: camera.rotation.x.toFixed(2),
+        y: camera.rotation.y.toFixed(2),
+        z: camera.rotation.z.toFixed(2)
+      },
+      cameraQuaternion: {
+        x: camera.quaternion.x.toFixed(2),
+        y: camera.quaternion.y.toFixed(2),
+        z: camera.quaternion.z.toFixed(2),
+        w: camera.quaternion.w.toFixed(2)
+      }
+    });
 
     camera.updateMatrix();
     camera.updateMatrixWorld();
