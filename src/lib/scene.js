@@ -1251,7 +1251,7 @@ export function animate() {
     controls.moveForward(velocity.z * delta);
   }
 
-  // Mobile device orientation control
+  // Mobile device orientation control - direct camera rotation
   if (isMobile && controls.isLocked && initialOrientation && deviceOrientation) {
     if (!orientationDebugLogged) {
       console.log('✅ Device orientation control active!');
@@ -1260,40 +1260,42 @@ export function animate() {
       orientationDebugLogged = true;
     }
     
-    // Simple direct mapping approach
-    const alpha = deviceOrientation.alpha || 0;
-    const beta = deviceOrientation.beta || 0;
-    const gamma = deviceOrientation.gamma || 0;
+    // Get current orientation values
+    const alpha = deviceOrientation.alpha || 0;  // Yaw (left/right)
+    const beta = deviceOrientation.beta || 0;    // Pitch (up/down)
+    const gamma = deviceOrientation.gamma || 0;  // Roll (tilt)
     
-    // Calculate relative changes from initial orientation
-    const deltaAlpha = alpha - initialOrientation.alpha;
-    const deltaBeta = beta - initialOrientation.beta;
+    // Calculate change from initial position
+    let deltaAlpha = alpha - initialOrientation.alpha;
+    let deltaBeta = beta - initialOrientation.beta;
     
     // Handle alpha wraparound (0-360 degrees)
-    let normalizedAlpha = deltaAlpha;
-    if (normalizedAlpha > 180) normalizedAlpha -= 360;
-    if (normalizedAlpha < -180) normalizedAlpha += 360;
+    if (deltaAlpha > 180) deltaAlpha -= 360;
+    if (deltaAlpha < -180) deltaAlpha += 360;
     
-    // Convert to radians and apply sensitivity
-    const sensitivity = 0.3;
-    const yaw = THREE.MathUtils.degToRad(normalizedAlpha * sensitivity);
-    const pitch = THREE.MathUtils.degToRad(deltaBeta * sensitivity);
+    // Convert to radians with sensitivity
+    const sensitivity = 1.0; // Increase sensitivity for more responsive movement
+    const yawRadians = THREE.MathUtils.degToRad(-deltaAlpha * sensitivity); // Negative for natural movement
+    const pitchRadians = THREE.MathUtils.degToRad(-deltaBeta * sensitivity); // Negative for natural movement
     
-    // Apply rotation to camera
+    // Apply rotation directly to camera using PointerLockControls
     const camera = controls.getObject();
-    const euler = new THREE.Euler(pitch, yaw, 0, 'YXZ');
     
-    // Apply with damping
-    const targetQuaternion = new THREE.Quaternion().setFromEuler(euler);
-    camera.quaternion.slerp(targetQuaternion, 0.1);
+    // Set euler angles directly - this mimics mouse movement
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = yawRadians;   // Horizontal rotation (left/right)
+    camera.rotation.x = pitchRadians; // Vertical rotation (up/down)
     
-    // Log occasionally for debugging
-    if (Math.random() < 0.005) {
-      console.log('Orientation mapping:', {
-        alpha: normalizedAlpha.toFixed(1),
-        beta: deltaBeta.toFixed(1),
-        yaw: (yaw * 180 / Math.PI).toFixed(1),
-        pitch: (pitch * 180 / Math.PI).toFixed(1)
+    // Clamp vertical rotation to prevent flipping
+    camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
+    
+    // Debug logging
+    if (Math.random() < 0.01) {
+      console.log('Camera rotation:', {
+        yaw: (camera.rotation.y * 180 / Math.PI).toFixed(1),
+        pitch: (camera.rotation.x * 180 / Math.PI).toFixed(1),
+        deltaAlpha: deltaAlpha.toFixed(1),
+        deltaBeta: deltaBeta.toFixed(1)
       });
     }
   }
