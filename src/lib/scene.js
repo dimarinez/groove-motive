@@ -640,6 +640,8 @@ function setupDeviceOrientationControls() {
   }
 
   window.addEventListener('deviceorientation', function(event) {
+    console.log(event.alpha + ' : ' + event.beta + ' : ' + event.gamma);
+    
     // Update UI values
     if (alphaValue) alphaValue.textContent = event.alpha ? event.alpha.toFixed(1) : '0';
     if (betaValue) betaValue.textContent = event.beta ? event.beta.toFixed(1) : '0';
@@ -1206,6 +1208,8 @@ export function animatePreview() {
 }
 
 export function animate() {
+  camera.rotation.x += 0.01; // Test pitch
+  camera.rotation.y += 0.01; // Test yaw
   mainAnimationId = requestAnimationFrame(animate);
   const delta = clock.getDelta();
   if (mixer) mixer.update(delta);
@@ -1250,8 +1254,7 @@ export function animate() {
   }
 
 // Mobile device orientation control - apply rotation to camera
-// Mobile device orientation control - apply rotation to camera
-if (isMobile && deviceOrientation && initialOrientation) {
+if (isMobile && controls.isLocked && deviceOrientation && initialOrientation) {
   const alpha = deviceOrientation.alpha || 0;
   const beta = deviceOrientation.beta || 0;
   const gamma = deviceOrientation.gamma || 0;
@@ -1274,30 +1277,15 @@ if (isMobile && deviceOrientation && initialOrientation) {
     'YXZ'   // Order: yaw, pitch, roll
   );
 
-  // Temporarily disable PointerLockControls to apply orientation
-  if (controls.isLocked) {
-    controls.unlock();
-  }
-
-  // Apply rotation directly to camera
+  // Apply rotation to camera
   camera.rotation.copy(euler);
 
-  // Re-lock controls if they were locked
-  if (controls.isLocked === false) {
-    controls.lock();
-  }
-
-  // Debug logging to verify values (log once to avoid spam)
+  // Log for debugging (only once to avoid spam)
   if (!orientationDebugLogged) {
-    console.log('Device orientation applied:', {
+    console.log('Device orientation applied:', { 
       alpha, beta, gamma,
       relativeAlpha, relativeBeta, relativeGamma,
-      yaw, pitch, roll,
-      cameraRotation: {
-        x: camera.rotation.x,
-        y: camera.rotation.y,
-        z: camera.rotation.z
-      }
+      yaw, pitch, roll 
     });
     orientationDebugLogged = true;
   }
