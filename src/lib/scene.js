@@ -1254,25 +1254,19 @@ export function animate() {
   }
 
   // Mobile device orientation control - apply rotation to camera
-  if (isMobile && deviceOrientation && initialOrientation) {
+  if (isMobile && deviceOrientation) {
     const alpha = deviceOrientation.alpha || 0;
     const beta = deviceOrientation.beta || 0;
     const gamma = deviceOrientation.gamma || 0;
 
-    // Calculate relative rotation from initial orientation
-    const relativeAlpha = alpha - initialOrientation.alpha;
-    const relativeBeta = beta - initialOrientation.beta;
-    const relativeGamma = gamma - initialOrientation.gamma;
-
     // Convert to radians
-    const yaw = THREE.MathUtils.degToRad(relativeAlpha);
-    const pitch = THREE.MathUtils.degToRad(relativeBeta);
-    const roll = THREE.MathUtils.degToRad(relativeGamma);
+    const yaw = THREE.MathUtils.degToRad(alpha); // Left/right rotation
+    const pitch = THREE.MathUtils.degToRad(beta); // Forward/backward tilt
+    const roll = 0; // Ignore roll for natural first-person view (or use THREE.MathUtils.degToRad(gamma * 0.2) for slight roll)
 
     // Log orientation values for debugging
     console.log('Orientation data:', {
       alpha, beta, gamma,
-      relativeAlpha, relativeBeta, relativeGamma,
       yaw, pitch, roll,
       cameraRotationBefore: {
         x: camera.rotation.x.toFixed(3),
@@ -1294,10 +1288,10 @@ export function animate() {
     // Reset camera rotation to avoid cumulative effects
     camera.rotation.set(0, 0, 0);
 
-    // Apply rotation using direct assignment (mimicking manual test)
-    camera.rotation.x = pitch;  // Beta (forward/backward tilt) -> X-axis (pitch)
-    camera.rotation.y = yaw;    // Alpha (left/right rotation) -> Y-axis (yaw)
-    camera.rotation.z = roll;   // Gamma (left/right tilt) -> Z-axis (roll)
+    // Apply rotation to match phone camera orientation
+    camera.rotation.x = pitch;   // Beta: Tilt down (positive) = look down, tilt up (negative) = look up
+    camera.rotation.y = -yaw;    // Alpha: Rotate left (positive) = turn left, rotate right (negative) = turn right
+    camera.rotation.z = roll;    // Gamma: Ignore or minimize roll
 
     // Log camera rotation after update
     console.log('Camera rotation after:', {
