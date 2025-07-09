@@ -640,8 +640,6 @@ function setupDeviceOrientationControls() {
   }
 
   window.addEventListener('deviceorientation', function(event) {
-    console.log(event.alpha + ' : ' + event.beta + ' : ' + event.gamma);
-    
     // Update UI values
     if (alphaValue) alphaValue.textContent = event.alpha ? event.alpha.toFixed(1) : '0';
     if (betaValue) betaValue.textContent = event.beta ? event.beta.toFixed(1) : '0';
@@ -1251,43 +1249,43 @@ export function animate() {
     controls.moveForward(velocity.z * delta);
   }
 
-  // Mobile device orientation control - apply rotation to camera
-  if (isMobile && controls.isLocked && deviceOrientation && initialOrientation) {
-    const alpha = deviceOrientation.alpha || 0;
-    const beta = deviceOrientation.beta || 0;
-    const gamma = deviceOrientation.gamma || 0;
+// Mobile device orientation control - apply rotation to camera
+if (isMobile && controls.isLocked && deviceOrientation && initialOrientation) {
+  const alpha = deviceOrientation.alpha || 0;
+  const beta = deviceOrientation.beta || 0;
+  const gamma = deviceOrientation.gamma || 0;
 
-    // Calculate relative rotation from initial orientation
-    const relativeAlpha = alpha - initialOrientation.alpha;
-    const relativeBeta = beta - initialOrientation.beta;
-    const relativeGamma = gamma - initialOrientation.gamma;
+  // Calculate relative rotation from initial orientation
+  const relativeAlpha = alpha - initialOrientation.alpha;
+  const relativeBeta = beta - initialOrientation.beta;
+  const relativeGamma = gamma - initialOrientation.gamma;
 
-    // Convert to radians and create rotation angles
-    const yaw = THREE.MathUtils.degToRad(relativeAlpha);
-    const pitch = THREE.MathUtils.degToRad(relativeBeta);
-    const roll = THREE.MathUtils.degToRad(relativeGamma);
+  // Convert to radians
+  const yaw = THREE.MathUtils.degToRad(relativeAlpha);
+  const pitch = THREE.MathUtils.degToRad(relativeBeta);
+  const roll = THREE.MathUtils.degToRad(relativeGamma);
 
-    // Create euler rotation with proper order for mobile orientation
-    const euler = new THREE.Euler(
-      -pitch * 0.5,  // Invert and dampen pitch (tilt forward/backward)
-      yaw * 0.5,     // Dampen yaw (rotate left/right)
-      roll * 0.2,    // Minimal roll (tilt left/right)
-      'YXZ'          // Order: yaw, pitch, roll
-    );
+  // Create euler rotation with proper order for mobile orientation
+  const euler = new THREE.Euler(
+    pitch,  // X-axis (beta) - forward/backward tilt
+    yaw,    // Y-axis (alpha) - left/right rotation
+    roll,   // Z-axis (gamma) - left/right tilt
+    'YXZ'   // Order: yaw, pitch, roll
+  );
 
-    // Apply rotation to camera
-    camera.rotation.copy(euler);
+  // Apply rotation to camera
+  camera.rotation.copy(euler);
 
-    // Log for debugging (only once to avoid spam)
-    if (!orientationDebugLogged) {
-      console.log('Device orientation applied:', { 
-        alpha, beta, gamma,
-        relativeAlpha, relativeBeta, relativeGamma,
-        yaw, pitch, roll 
-      });
-      orientationDebugLogged = true;
-    }
+  // Log for debugging (only once to avoid spam)
+  if (!orientationDebugLogged) {
+    console.log('Device orientation applied:', { 
+      alpha, beta, gamma,
+      relativeAlpha, relativeBeta, relativeGamma,
+      yaw, pitch, roll 
+    });
+    orientationDebugLogged = true;
   }
+}
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
   camera.position.z = THREE.MathUtils.clamp(camera.position.z, -8.5, 9);
