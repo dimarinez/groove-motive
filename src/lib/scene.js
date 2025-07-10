@@ -57,7 +57,6 @@ let isMobile = false;
 // Device orientation controls
 let deviceOrientationControls = null;
 let deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
-let initialOrientation = null;
 let clickToLockHandler = null;
 let previewInstruction = null;
 let previewAnimationId = null;
@@ -150,12 +149,8 @@ function checkOrientation() {
         container.style.display = "flex";
       }
       
-      // Recalibrate orientation controls after rotation
-      setTimeout(() => {
-        if (deviceOrientationControls && deviceOrientationControls.enabled) {
-          recalibrateOrientation();
-        }
-      }, 500);
+      // Orientation controls automatically adjust to new position
+      console.log('Orientation controls will adapt to new portrait position');
     } else {
       // Switched to landscape - show warning regardless of mode
       createPortraitWarning();
@@ -774,12 +769,6 @@ function setupDeviceOrientationControls() {
         beta: event.beta,
         gamma: event.gamma
       };
-      
-      // Set initial orientation on first reading
-      if (!initialOrientation) {
-        initialOrientation = { ...deviceOrientation };
-        console.log('Initial orientation set:', initialOrientation);
-      }
     }
   };
 
@@ -801,21 +790,17 @@ function setupDeviceOrientationControls() {
 
 
 /**
- * Recalibrates device orientation to current position
- * Useful for resetting the "center" position during navigation
+ * No longer needed with absolute orientation positioning
+ * Keeping function for compatibility but it does nothing
  */
 function recalibrateOrientation() {
-  if (isMobile && deviceOrientation) {
-    initialOrientation = { ...deviceOrientation };
-    console.log('Orientation recalibrated:', initialOrientation);
-  }
+  console.log('Recalibration not needed with absolute orientation controls');
 }
 
 // Clean up orientation controls
 function cleanupDeviceOrientation() {
   window.removeEventListener('deviceorientation', () => {});
   deviceOrientationControls = null;
-  initialOrientation = null;
   deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
   console.log('Device orientation controls cleaned up');
 }
@@ -1022,21 +1007,16 @@ export function enterGallery() {
     
     requestDeviceOrientationPermission();
     
-    // Calibrate orientation for portrait mode after a short delay
+    // Set initial camera position for portrait mode
     setTimeout(() => {
       if (deviceOrientationControls && deviceOrientationControls.enabled) {
-        console.log('Calibrating for portrait mode - phone upright should look at wall');
+        console.log('Setting up absolute orientation controls');
         
-        // Ensure camera is positioned and oriented correctly for portrait mode
+        // Ensure camera is positioned correctly for portrait mode
         camera.position.set(0, 1.6, -2); // Standard viewing position
         camera.rotation.order = 'YXZ';
-        camera.rotation.set(0, 0, 0); // Reset rotation
-        camera.lookAt(0, 1.6, -6); // Point directly at the wall
         
-        // Recalibrate with current device orientation
-        recalibrateOrientation();
-        
-        console.log('Portrait mode calibration complete');
+        console.log('Absolute orientation controls ready');
       }
     }, 1000);
   }
@@ -1559,43 +1539,33 @@ export function animate() {
     controls.moveForward(velocity.z * delta);
   }
 
-  // Apply simple device orientation for mobile camera control
-  if (isMobile && deviceOrientationControls && deviceOrientationControls.enabled && initialOrientation) {
-    // Calculate orientation changes
-    const deltaAlpha = deviceOrientation.alpha - initialOrientation.alpha;
-    const deltaBeta = deviceOrientation.beta - initialOrientation.beta;
-    const deltaGamma = deviceOrientation.gamma - initialOrientation.gamma;
+  // Apply absolute device orientation for mobile camera control
+  if (isMobile && deviceOrientationControls && deviceOrientationControls.enabled && deviceOrientation) {
+    // Use absolute device orientation values
+    const alpha = deviceOrientation.alpha || 0; // Compass heading (0-360°)
+    const beta = deviceOrientation.beta || 0;   // Front-back tilt (-180 to 180°)
+    const gamma = deviceOrientation.gamma || 0; // Left-right tilt (-90 to 90°)
     
-    // Handle alpha wraparound
-    let normalizedDeltaAlpha = deltaAlpha;
-    if (Math.abs(deltaAlpha) > 180) {
-      normalizedDeltaAlpha = deltaAlpha > 0 ? deltaAlpha - 360 : deltaAlpha + 360;
-    }
-    
-    // Apply rotations with proper mobile orientation mapping
-    // For portrait mode: phone upright should look straight ahead
-    const sensitivity = 1.0;
     camera.rotation.order = 'YXZ';
     
-    // Map device orientation to camera rotation for portrait mode
-    // Alpha (compass heading) - tilting phone left/right should turn camera left/right
-    camera.rotation.y = THREE.MathUtils.degToRad(normalizedDeltaAlpha) * sensitivity;
+    // Map absolute beta to camera pitch:
+    // Beta 0° = phone upright → camera looks straight ahead  
+    // Beta 90° = phone flat down → camera looks down
+    // Beta -90° = phone flat up → camera looks up
+    const pitchSensitivity = 0.8;
+    camera.rotation.x = THREE.MathUtils.degToRad(beta) * pitchSensitivity;
     
-    // Beta (front-back tilt) - handle portrait mode properly
-    // In portrait mode, beta 0° = phone upright, beta 90° = phone flat down, beta -90° = phone flat up
-    // We want: phone pointing down = look down, phone pointing up = look up
-    let pitchDelta = deltaBeta;
+    // Alpha controls yaw (left/right turning) - normalize to -180 to 180 range
+    const yawSensitivity = 0.8;
+    let normalizedAlpha = alpha;
+    if (normalizedAlpha > 180) normalizedAlpha -= 360;
+    camera.rotation.y = THREE.MathUtils.degToRad(normalizedAlpha) * yawSensitivity;
     
-    // Clamp beta values to prevent extreme rotations that cause spinning
-    pitchDelta = THREE.MathUtils.clamp(pitchDelta, -60, 60);
+    // Gamma (roll) - minimal effect for stability
+    camera.rotation.z = THREE.MathUtils.degToRad(gamma) * 0.05;
     
-    camera.rotation.x = THREE.MathUtils.degToRad(pitchDelta) * sensitivity * 0.6;
-    
-    // Gamma (left-right tilt) - rolling phone should have minimal effect
-    camera.rotation.z = THREE.MathUtils.degToRad(deltaGamma) * 0.05;
-    
-    // Final clamp for comfortable viewing range
-    camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -Math.PI/3, Math.PI/3);
+    // Clamp rotations for comfortable viewing
+    camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -Math.PI/2, Math.PI/2);
     camera.rotation.z = THREE.MathUtils.clamp(camera.rotation.z, -Math.PI/12, Math.PI/12);
   }
 
