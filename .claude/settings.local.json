@@ -6,7 +6,8 @@
       "Bash(rg:*)",
       "WebFetch(domain:shutdown.gallery)",
       "Bash(npm run build:*)",
-      "WebFetch(domain:www.dropbox.com)"
+      "WebFetch(domain:www.dropbox.com)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

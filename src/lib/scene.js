@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { SimpleDeviceOrientationControls } from "./SimpleDeviceOrientationControls.js";
 import gsap from "gsap";
 
 const albums = [
@@ -58,7 +57,9 @@ let ui, albumTitle, enterButton, galleryCanvas, galleryScreen;
 let moveUpButton, moveDownButton, moveLeftButton, moveRightButton;
 let isMobile = false;
 // Simple device orientation controls
-let simpleOrientationControls = null;
+let deviceOrientationControls = null;
+let deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
+let initialOrientation = null;
 let clickToLockHandler = null;
 let previewInstruction = null;
 let previewAnimationId = null;
@@ -145,8 +146,8 @@ function checkOrientation() {
       
       // Recalibrate orientation controls after rotation
       setTimeout(() => {
-        if (simpleOrientationControls && simpleOrientationControls.isEnabled) {
-          simpleOrientationControls.calibrate();
+        if (deviceOrientationControls && deviceOrientationControls.enabled) {
+          recalibrateOrientation();
         }
       }, 500);
     } else {
@@ -436,9 +437,9 @@ export function initScene() {
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
 
-  // Setup simple device orientation for mobile
+  // Setup device orientation for mobile
   if (isMobile) {
-    setupSimpleDeviceOrientation();
+    setupDeviceOrientationControls();
   }
 
   // Initialize asset loading (count: logo texture, record player GLB, album covers)
@@ -735,9 +736,8 @@ async function requestDeviceOrientationPermission() {
 
 /**
  * Simple device orientation handling for mobile camera control
- * Simplified alternative to Three.js DeviceOrientationControls
  */
-function setupSimpleDeviceOrientation() {
+function setupDeviceOrientationControls() {
   if (!isMobile) {
     console.log('Not mobile device, skipping orientation setup');
     return;
@@ -745,36 +745,34 @@ function setupSimpleDeviceOrientation() {
 
   console.log('🚀 Setting up Simple Device Orientation Controls...');
 
-  // Create SimpleDeviceOrientationControls
-  simpleOrientationControls = new SimpleDeviceOrientationControls(camera);
+  // Add device orientation event listener
+  const handleDeviceOrientation = (event) => {
+    if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
+      deviceOrientation = {
+        alpha: event.alpha,
+        beta: event.beta,
+        gamma: event.gamma
+      };
+      
+      // Set initial orientation on first reading
+      if (!initialOrientation) {
+        initialOrientation = { ...deviceOrientation };
+        console.log('Initial orientation set:', initialOrientation);
+      }
+    }
+  };
+
+  // Add event listener
+  window.addEventListener('deviceorientation', handleDeviceOrientation, false);
+  deviceOrientationControls = { enabled: true };
   
-  // Configure enhanced settings for immediate, natural response
-  simpleOrientationControls.setEnhancedSensitivity(1.6, 1.5, 1.8); // High sensitivity: gyro, tilt, pitch
-  simpleOrientationControls.setSmoothing(0.05); // Very responsive
-  simpleOrientationControls.setPitchLimits(-75, 75); // Wide range
-  simpleOrientationControls.setRollLimits(35); // Allow natural roll
-  simpleOrientationControls.setOrientationModes(true, true); // Enable both gyro and tilt
-  simpleOrientationControls.setDirectMode(true); // Enable direct tracking for immediate response
+  console.log('Simple device orientation controls initialized');
+  updateOrientationStatus('granted', 'Orientation: Ready');
   
-  // Connect the controls
-  const connected = simpleOrientationControls.connect();
-  
-  if (connected) {
-    console.log('Simple device orientation controls connected');
-    updateOrientationStatus('granted', 'Orientation: Ready');
-  } else {
-    console.warn('Simple device orientation controls failed to connect');
-    updateOrientationStatus('denied', 'Orientation: Failed');
-  }
-  
-  // Verify controls are working after a delay
   setTimeout(() => {
-    if (simpleOrientationControls.isEnabled) {
+    if (deviceOrientationControls.enabled) {
       console.log('Simple device orientation controls active');
       updateOrientationStatus('granted', 'Orientation: Active');
-    } else {
-      console.warn('Simple device orientation controls not active');
-      updateOrientationStatus('not-requested', 'Orientation: Waiting');
     }
   }, 2000);
 }
@@ -786,18 +784,19 @@ function setupSimpleDeviceOrientation() {
  * Useful for resetting the "center" position during navigation
  */
 function recalibrateOrientation() {
-  if (isMobile && simpleOrientationControls) {
-    simpleOrientationControls.calibrate();
-    console.log('Simple orientation controls recalibrated');
+  if (isMobile && deviceOrientation) {
+    initialOrientation = { ...deviceOrientation };
+    console.log('Orientation recalibrated:', initialOrientation);
   }
 }
 
 // Clean up orientation controls
 function cleanupDeviceOrientation() {
-  if (simpleOrientationControls) {
-    simpleOrientationControls.disconnect();
-    console.log('Simple orientation controls disconnected');
-  }
+  window.removeEventListener('deviceorientation', () => {});
+  deviceOrientationControls = null;
+  initialOrientation = null;
+  deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
+  console.log('Device orientation controls cleaned up');
 }
 
 function resetToInitialState() {
@@ -987,24 +986,18 @@ export function enterGallery() {
     
     // Calibrate orientation for portrait mode after a short delay
     setTimeout(() => {
-      if (simpleOrientationControls && simpleOrientationControls.isEnabled) {
+      if (deviceOrientationControls && deviceOrientationControls.enabled) {
         console.log('Calibrating for portrait mode - phone upright should look at wall');
         
         // Ensure camera is positioned and oriented correctly for portrait mode
         camera.position.set(0, 1.6, -2); // Standard viewing position
         camera.rotation.order = 'YXZ';
+        camera.rotation.set(0, 0, 0); // Reset rotation
         
-        // Calibrate with phone upright = looking straight at wall
-        simpleOrientationControls.calibrate();
+        // Recalibrate with current device orientation
+        recalibrateOrientation();
         
-        console.log('Portrait mode calibration complete:', {
-          cameraPosition: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
-          cameraRotation: { 
-            yaw: THREE.MathUtils.radToDeg(camera.rotation.y).toFixed(1),
-            pitch: THREE.MathUtils.radToDeg(camera.rotation.x).toFixed(1),
-            roll: THREE.MathUtils.radToDeg(camera.rotation.z).toFixed(1)
-          }
-        });
+        console.log('Portrait mode calibration complete');
       }
     }, 1000);
   }
@@ -1514,8 +1507,28 @@ export function animate() {
   }
 
   // Apply simple device orientation for mobile camera control
-  if (isMobile && simpleOrientationControls) {
-    simpleOrientationControls.update();
+  if (isMobile && deviceOrientationControls && deviceOrientationControls.enabled && initialOrientation) {
+    // Calculate orientation changes
+    const deltaAlpha = deviceOrientation.alpha - initialOrientation.alpha;
+    const deltaBeta = deviceOrientation.beta - initialOrientation.beta;
+    const deltaGamma = deviceOrientation.gamma - initialOrientation.gamma;
+    
+    // Handle alpha wraparound
+    let normalizedDeltaAlpha = deltaAlpha;
+    if (Math.abs(deltaAlpha) > 180) {
+      normalizedDeltaAlpha = deltaAlpha > 0 ? deltaAlpha - 360 : deltaAlpha + 360;
+    }
+    
+    // Apply rotations with high sensitivity
+    const sensitivity = 1.5;
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = THREE.MathUtils.degToRad(normalizedDeltaAlpha) * sensitivity;
+    camera.rotation.x = -THREE.MathUtils.degToRad(deltaBeta) * sensitivity;
+    camera.rotation.z = -THREE.MathUtils.degToRad(deltaGamma) * 0.3;
+    
+    // Clamp rotations
+    camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -Math.PI/3, Math.PI/3);
+    camera.rotation.z = THREE.MathUtils.clamp(camera.rotation.z, -Math.PI/6, Math.PI/6);
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
