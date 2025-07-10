@@ -13,15 +13,24 @@ export class SimpleDeviceOrientationControls {
     // Orientation state
     this.deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
     this.initialOrientation = null;
-    this.smoothedOrientation = { yaw: 0, pitch: 0 };
+    this.smoothedOrientation = { yaw: 0, pitch: 0, roll: 0 };
     
-    // Smoothing settings
-    this.smoothingFactor = 0.15;
-    this.sensitivity = 1.0;
+    // Enhanced gyro and tilt settings
+    this.smoothingFactor = 0.08; // More responsive
+    this.sensitivity = 1.2; // Higher sensitivity for better response
+    this.tiltSensitivity = 0.8; // Separate sensitivity for tilt (gamma)
+    this.gyroSensitivity = 1.0; // Separate sensitivity for yaw rotation
     
-    // Limits for pitch (up/down rotation)
-    this.minPitch = THREE.MathUtils.degToRad(-60);
-    this.maxPitch = THREE.MathUtils.degToRad(60);
+    // Limits for pitch and roll
+    this.minPitch = THREE.MathUtils.degToRad(-75);
+    this.maxPitch = THREE.MathUtils.degToRad(75);
+    this.maxRoll = THREE.MathUtils.degToRad(30); // Allow some roll for natural feel
+    
+    // Enhanced response settings
+    this.enableTiltResponse = true; // Enable gamma (left/right tilt) response
+    this.enableGyroResponse = true; // Enable alpha (compass/yaw) response
+    this.invertPitch = false; // Option to invert pitch direction
+    this.invertYaw = false; // Option to invert yaw direction
     
     // Bind methods
     this.onDeviceOrientationChange = this.onDeviceOrientationChange.bind(this);
@@ -30,9 +39,11 @@ export class SimpleDeviceOrientationControls {
     // Check if device orientation is available
     this.isAvailable = typeof DeviceOrientationEvent !== 'undefined';
     
-    console.log('SimpleDeviceOrientationControls initialized', {
+    console.log('Enhanced SimpleDeviceOrientationControls initialized', {
       available: this.isAvailable,
-      userAgent: navigator.userAgent
+      userAgent: navigator.userAgent,
+      tiltEnabled: this.enableTiltResponse,
+      gyroEnabled: this.enableGyroResponse
     });
   }
   
@@ -110,20 +121,22 @@ export class SimpleDeviceOrientationControls {
     this.initialOrientation = { ...this.deviceOrientation };
     this.smoothedOrientation = {
       yaw: this.camera.rotation.y,
-      pitch: this.camera.rotation.x
+      pitch: this.camera.rotation.x,
+      roll: this.camera.rotation.z
     };
     
-    console.log('Orientation calibrated:', {
+    console.log('Enhanced orientation calibrated:', {
       initial: this.initialOrientation,
       camera: {
         yaw: THREE.MathUtils.radToDeg(this.camera.rotation.y).toFixed(1),
-        pitch: THREE.MathUtils.radToDeg(this.camera.rotation.x).toFixed(1)
+        pitch: THREE.MathUtils.radToDeg(this.camera.rotation.x).toFixed(1),
+        roll: THREE.MathUtils.radToDeg(this.camera.rotation.z).toFixed(1)
       }
     });
   }
   
   /**
-   * Update camera rotation based on device orientation
+   * Update camera rotation based on device orientation with enhanced gyro and tilt
    */
   update() {
     if (!this.enabled || !this.initialOrientation) return;
@@ -139,11 +152,34 @@ export class SimpleDeviceOrientationControls {
       normalizedDeltaAlpha = deltaAlpha > 0 ? deltaAlpha - 360 : deltaAlpha + 360;
     }
     
-    // Convert to radians and apply sensitivity
-    const targetYaw = -THREE.MathUtils.degToRad(normalizedDeltaAlpha) * this.sensitivity;
-    const targetPitch = THREE.MathUtils.degToRad(deltaBeta) * this.sensitivity;
+    // Calculate target rotations with individual sensitivities
+    let targetYaw = 0;
+    let targetPitch = 0;
+    let targetRoll = 0;
     
-    // Apply smoothing
+    // Gyro response (compass/yaw rotation - alpha)
+    if (this.enableGyroResponse) {
+      targetYaw = -THREE.MathUtils.degToRad(normalizedDeltaAlpha) * this.gyroSensitivity;
+      if (this.invertYaw) targetYaw = -targetYaw;
+    }
+    
+    // Pitch response (up/down tilt - beta)
+    targetPitch = THREE.MathUtils.degToRad(deltaBeta) * this.sensitivity;
+    if (this.invertPitch) targetPitch = -targetPitch;
+    
+    // Tilt response (left/right tilt - gamma)
+    if (this.enableTiltResponse) {
+      // Use gamma for subtle roll effect and also influence yaw for natural feel
+      const tiltInfluence = THREE.MathUtils.degToRad(deltaGamma) * this.tiltSensitivity;
+      
+      // Add tilt to roll for natural camera movement
+      targetRoll = tiltInfluence * 0.3; // Subtle roll effect
+      
+      // Add tilt influence to yaw for more natural turning
+      targetYaw += tiltInfluence * 0.5;
+    }
+    
+    // Apply enhanced smoothing with different rates for each axis
     this.smoothedOrientation.yaw = THREE.MathUtils.lerp(
       this.smoothedOrientation.yaw,
       targetYaw,
@@ -153,20 +189,33 @@ export class SimpleDeviceOrientationControls {
     this.smoothedOrientation.pitch = THREE.MathUtils.lerp(
       this.smoothedOrientation.pitch,
       targetPitch,
-      this.smoothingFactor
+      this.smoothingFactor * 1.2 // Slightly faster pitch response
     );
     
-    // Clamp pitch to prevent over-rotation
+    this.smoothedOrientation.roll = THREE.MathUtils.lerp(
+      this.smoothedOrientation.roll,
+      targetRoll,
+      this.smoothingFactor * 0.8 // Slower roll for stability
+    );
+    
+    // Apply limits
     this.smoothedOrientation.pitch = THREE.MathUtils.clamp(
       this.smoothedOrientation.pitch,
       this.minPitch,
       this.maxPitch
     );
     
-    // Apply rotation to camera
+    this.smoothedOrientation.roll = THREE.MathUtils.clamp(
+      this.smoothedOrientation.roll,
+      -this.maxRoll,
+      this.maxRoll
+    );
+    
+    // Apply rotation to camera with enhanced natural movement
+    this.camera.rotation.order = 'YXZ'; // Proper rotation order for camera
     this.camera.rotation.y = this.smoothedOrientation.yaw;
     this.camera.rotation.x = this.smoothedOrientation.pitch;
-    this.camera.rotation.z = 0; // Keep roll locked
+    this.camera.rotation.z = this.smoothedOrientation.roll;
   }
   
   /**
@@ -196,6 +245,48 @@ export class SimpleDeviceOrientationControls {
   }
   
   /**
+   * Set separate sensitivities for different types of movement
+   * @param {number} gyro - Gyro (yaw) sensitivity
+   * @param {number} tilt - Tilt (gamma) sensitivity
+   * @param {number} pitch - Pitch (beta) sensitivity
+   */
+  setEnhancedSensitivity(gyro = 1.0, tilt = 0.8, pitch = 1.2) {
+    this.gyroSensitivity = Math.max(0.1, Math.min(3.0, gyro));
+    this.tiltSensitivity = Math.max(0.1, Math.min(3.0, tilt));
+    this.sensitivity = Math.max(0.1, Math.min(3.0, pitch));
+  }
+  
+  /**
+   * Enable or disable specific orientation responses
+   * @param {boolean} gyro - Enable gyroscope (yaw) response
+   * @param {boolean} tilt - Enable tilt (roll) response
+   */
+  setOrientationModes(gyro = true, tilt = true) {
+    this.enableGyroResponse = gyro;
+    this.enableTiltResponse = tilt;
+    console.log('Orientation modes updated:', { gyro, tilt });
+  }
+  
+  /**
+   * Set roll limits for tilt response
+   * @param {number} maxDegrees - Maximum roll in degrees
+   */
+  setRollLimits(maxDegrees) {
+    this.maxRoll = THREE.MathUtils.degToRad(Math.abs(maxDegrees));
+  }
+  
+  /**
+   * Invert specific axes
+   * @param {boolean} pitch - Invert pitch direction
+   * @param {boolean} yaw - Invert yaw direction
+   */
+  setInversions(pitch = false, yaw = false) {
+    this.invertPitch = pitch;
+    this.invertYaw = yaw;
+    console.log('Inversions updated:', { pitch, yaw });
+  }
+  
+  /**
    * Get current orientation data for debugging
    */
   getOrientationData() {
@@ -204,12 +295,22 @@ export class SimpleDeviceOrientationControls {
       initial: this.initialOrientation,
       smoothed: {
         yaw: THREE.MathUtils.radToDeg(this.smoothedOrientation.yaw),
-        pitch: THREE.MathUtils.radToDeg(this.smoothedOrientation.pitch)
+        pitch: THREE.MathUtils.radToDeg(this.smoothedOrientation.pitch),
+        roll: THREE.MathUtils.radToDeg(this.smoothedOrientation.roll)
       },
       camera: {
         yaw: THREE.MathUtils.radToDeg(this.camera.rotation.y),
         pitch: THREE.MathUtils.radToDeg(this.camera.rotation.x),
         roll: THREE.MathUtils.radToDeg(this.camera.rotation.z)
+      },
+      settings: {
+        gyroEnabled: this.enableGyroResponse,
+        tiltEnabled: this.enableTiltResponse,
+        gyroSensitivity: this.gyroSensitivity,
+        tiltSensitivity: this.tiltSensitivity,
+        pitchSensitivity: this.sensitivity,
+        invertPitch: this.invertPitch,
+        invertYaw: this.invertYaw
       }
     };
   }
