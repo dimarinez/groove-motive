@@ -1248,45 +1248,64 @@ function startPreview(album) {
     applyVinylTexture(album);
     applyCoverTexture(album, () => {
       
-      // Mobile-friendly audio setup
+      // Unified approach - wait for audio to be ready before starting animation
+      console.log('Setting up audio for:', album.title);
+      
       audio.src = album.previewUrl;
       audio.preload = 'auto';
-      
-      // Clear any previous audio state
       audio.currentTime = 0;
       audio.pause();
-      
-      // Force load for mobile compatibility
       audio.load();
       
-      // Unified audio approach - wait for audio to be ready then play
       let audioPlayAttempted = false;
+      let animationStarted = false;
+      
+      const startAnimation = () => {
+        if (animationStarted) return;
+        animationStarted = true;
+        
+        console.log('Starting record player animation');
+        animatedRecordPlayer.visible = true;
+        if (putVinylAction) {
+          putVinylAction.stop();
+          putVinylAction.setLoop(THREE.LoopOnce);
+          putVinylAction.clampWhenFinished = true;
+          putVinylAction.timeScale = 1;
+          putVinylAction.reset();
+          putVinylAction.play();
+        }
+        
+        // Play audio exactly 4800ms after animation starts
+        setTimeout(() => {
+          if (isPreviewing && !audioPlayAttempted) {
+            tryPlayAudio();
+          }
+        }, 4800);
+      };
       
       const tryPlayAudio = () => {
         if (audioPlayAttempted || !isPreviewing) return;
         audioPlayAttempted = true;
         
-        console.log('Attempting to play audio:', album.title, 'readyState:', audio.readyState);
-        
+        console.log('Attempting to play audio, readyState:', audio.readyState);
         const playPromise = audio.play();
         if (playPromise !== undefined) {
           playPromise.then(() => {
-            console.log('Audio playback started successfully');
+            console.log('Audio started successfully');
           }).catch(error => {
-            console.warn('Audio play failed, will retry:', error);
+            console.warn('Audio play failed:', error);
             audioPlayAttempted = false;
-            
-            // Retry after short delay
+            // Retry once
             setTimeout(() => {
               if (isPreviewing && !audioPlayAttempted) {
                 tryPlayAudio();
               }
-            }, 800);
+            }, 500);
           });
         }
       };
       
-      // Listen for multiple audio ready events
+      // Listen for when audio is ready to play
       const onAudioReady = () => {
         console.log('Audio ready event fired, readyState:', audio.readyState);
         
@@ -1295,23 +1314,8 @@ function startPreview(album) {
         audio.removeEventListener('canplaythrough', onAudioReady);
         audio.removeEventListener('loadeddata', onAudioReady);
         
-        // Start record player animation now that audio is ready
-        animatedRecordPlayer.visible = true;
-        if (putVinylAction) {
-          putVinylAction.stop();
-          putVinylAction.setLoop(THREE.LoopOnce);
-          putVinylAction.clampWhenFinished = true;
-          putVinylAction.timeScale = 1;
-          putVinylAction.reset();
-          putVinylAction.play();
-        }
-        
-        // Start audio timer from when record animation begins
-        setTimeout(() => {
-          if (isPreviewing && !audioPlayAttempted) {
-            tryPlayAudio();
-          }
-        }, 4800); // 4800ms after record animation starts
+        // Start animation now that audio is ready
+        startAnimation();
       };
       
       // Multiple event listeners for better compatibility
@@ -1319,29 +1323,13 @@ function startPreview(album) {
       audio.addEventListener('canplaythrough', onAudioReady);
       audio.addEventListener('loadeddata', onAudioReady);
       
-      // Fallback timer - start animation even if audio not ready
+      // Fallback timer - start animation after 5 seconds even if audio not ready
       audioTimeout = setTimeout(() => {
         console.log('Audio loading timeout - starting animation anyway');
-        
-        // Start animation even if audio isn't ready
-        animatedRecordPlayer.visible = true;
-        if (putVinylAction) {
-          putVinylAction.stop();
-          putVinylAction.setLoop(THREE.LoopOnce);
-          putVinylAction.clampWhenFinished = true;
-          putVinylAction.timeScale = 1;
-          putVinylAction.reset();
-          putVinylAction.play();
+        if (!animationStarted) {
+          startAnimation();
         }
-        
-        // Try to play audio after animation
-        setTimeout(() => {
-          if (isPreviewing && !audioPlayAttempted) {
-            tryPlayAudio();
-          }
-        }, 4800);
-        
-      }, 3000); // Wait max 3 seconds for audio to load
+      }, 5000);
       
       previewInstruction.style.display = "block";
 
