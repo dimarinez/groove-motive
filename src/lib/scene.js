@@ -1574,19 +1574,28 @@ export function animate() {
     
     // Apply rotations with proper mobile orientation mapping
     // For portrait mode: phone upright should look straight ahead
-    const sensitivity = 0.8;
+    const sensitivity = 1.0;
     camera.rotation.order = 'YXZ';
     
     // Map device orientation to camera rotation for portrait mode
     // Alpha (compass heading) - tilting phone left/right should turn camera left/right
     camera.rotation.y = THREE.MathUtils.degToRad(normalizedDeltaAlpha) * sensitivity;
-    // Beta (front-back tilt) - tilting phone top down should look down, bottom up should look up
-    camera.rotation.x = THREE.MathUtils.degToRad(deltaBeta) * sensitivity * 0.8;
-    // Gamma (left-right tilt) - rolling phone should have minimal effect
-    camera.rotation.z = THREE.MathUtils.degToRad(deltaGamma) * 0.1;
     
-    // Clamp rotations for comfortable viewing
-    camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -Math.PI/4, Math.PI/4);
+    // Beta (front-back tilt) - handle portrait mode properly
+    // In portrait mode, beta 0° = phone upright, beta 90° = phone flat down, beta -90° = phone flat up
+    // We want: phone pointing down = look down, phone pointing up = look up
+    let pitchDelta = deltaBeta;
+    
+    // Clamp beta values to prevent extreme rotations that cause spinning
+    pitchDelta = THREE.MathUtils.clamp(pitchDelta, -60, 60);
+    
+    camera.rotation.x = THREE.MathUtils.degToRad(pitchDelta) * sensitivity * 0.6;
+    
+    // Gamma (left-right tilt) - rolling phone should have minimal effect
+    camera.rotation.z = THREE.MathUtils.degToRad(deltaGamma) * 0.05;
+    
+    // Final clamp for comfortable viewing range
+    camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -Math.PI/3, Math.PI/3);
     camera.rotation.z = THREE.MathUtils.clamp(camera.rotation.z, -Math.PI/12, Math.PI/12);
   }
 
