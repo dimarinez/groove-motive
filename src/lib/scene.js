@@ -7,33 +7,33 @@ const albums = [
   {
     title: "Luke Andy x Sophiegrophy",
     cover:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM001%20Cover%20Art-CXMv1jONUAiX4AkqqrnImIYaN0uhvf.jpg",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM001%20Cover%20Art.jpg",
     previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Luke%20Andy%20%26%20Sophiegrophy%20-%20My%20Side%20%28Radio%20Edit%29%5BGroove%20Motive%5D-E7LHlE93liGWo5wye9EkHVvfKOEhP7.wav",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Luke%20Andy%20%26%20Sophiegrophy%20-%20My%20Side%20%28Radio%20Edit%29%5BGroove%20Motive%5D.wav",
     buyUrl: "https://example.com/buy1",
   },
   {
     title: "KiRiK",
     cover:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM002-lGO8mItablUVx5gSDlrIdYGGmGiMvI.jpg",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM002.jpg",
     previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/KiRiK%20-%20Truth_Groove%20Motive%20%5BRadio%20Master%5D-E0A5sRdKPSfAN0yQwpdmC3089krw1t.wav",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/KiRiK%20-%20Truth_Groove%20Motive%20%5BRadio%20Master%5D.wav",
     buyUrl: "https://example.com/buy2",
   },
   {
     title: "Dateless",
     cover:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM003-Z0LtleLGW8Z5SH2h4Zs0dL3OxYklNV.jpg",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM003.jpg",
     previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Dateless%20-%20Like%20Me_Groove%20Motive-cGOfozPVRhjgVUCX41HxEC9gyOaTlS.wav",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Dateless%20-%20Like%20Me_Groove%20Motive.wav",
     buyUrl: "https://example.com/buy3",
   },
   {
     title: "BRN",
     cover:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines-2ZaUOuUQWrb6wmS4jiE8wrSMniij2O.jpg",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg",
     previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/BRN%20-%20Machines%20%28Radio%29%28FW%20MASTER%201%29-BQDu0emCVCpFtyAfLec8GWmTkUmrI1.wav",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/BRN%20-%20Machines%20%28Radio%29%28FW%20MASTER%201%29.wav",
     buyUrl: "https://example.com/buy3",
   },
 ];
@@ -767,18 +767,17 @@ function updateCameraFromOrientation() {
   smoothedOrientation.yaw = targetYaw;
   smoothedOrientation.pitch = targetPitch;
 
-  // Apply orientation directly to camera rotation to avoid gimbal lock
-  // Use separate rotations to prevent diagonal spinning when tilting up
+  // Apply the orientation to the camera using quaternions for stability
+  // Create rotation quaternion to avoid gimbal lock
+  const quaternion = new THREE.Quaternion();
+  quaternion.setFromEuler(new THREE.Euler(smoothedOrientation.pitch, smoothedOrientation.yaw, 0, 'YXZ'));
+
+  // Apply the quaternion rotation to the camera
   if (controls && controls.getObject) {
     const cameraObject = controls.getObject();
-    // Apply rotations separately to avoid coupling
-    cameraObject.rotation.x = smoothedOrientation.pitch;
-    cameraObject.rotation.y = smoothedOrientation.yaw;
-    cameraObject.rotation.z = 0; // No roll rotation
+    cameraObject.quaternion.copy(quaternion);
   } else {
-    camera.rotation.x = smoothedOrientation.pitch;
-    camera.rotation.y = smoothedOrientation.yaw;
-    camera.rotation.z = 0;
+    camera.quaternion.copy(quaternion);
   }
 
   // Debug logging to check if orientation is working
