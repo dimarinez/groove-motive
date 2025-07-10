@@ -78,6 +78,7 @@ let betaValue = null;
 let gammaValue = null;
 let audioPreloaded = false;
 let orientationDebugLogged = false;
+let recordAnimationStarted = false;
 
 // Portrait mode enforcement
 let portraitWarning = null;
@@ -1290,15 +1291,18 @@ function startPreview(album) {
         audio.removeEventListener('canplaythrough', onAudioReady);
         audio.removeEventListener('loadeddata', onAudioReady);
         
-        // Start record player animation now that audio is ready
-        animatedRecordPlayer.visible = true;
-        if (putVinylAction) {
-          putVinylAction.stop();
-          putVinylAction.setLoop(THREE.LoopOnce);
-          putVinylAction.clampWhenFinished = true;
-          putVinylAction.timeScale = 1;
-          putVinylAction.reset();
-          putVinylAction.play();
+        // Start record player animation now that audio is ready (only once)
+        if (!recordAnimationStarted) {
+          recordAnimationStarted = true;
+          animatedRecordPlayer.visible = true;
+          if (putVinylAction) {
+            putVinylAction.stop();
+            putVinylAction.setLoop(THREE.LoopOnce);
+            putVinylAction.clampWhenFinished = true;
+            putVinylAction.timeScale = 1;
+            putVinylAction.reset();
+            putVinylAction.play();
+          }
         }
         
         // Start audio timer from when record animation begins
@@ -1318,15 +1322,18 @@ function startPreview(album) {
       audioTimeout = setTimeout(() => {
         console.log('Audio loading timeout - starting animation anyway');
         
-        // Start animation even if audio isn't ready
-        animatedRecordPlayer.visible = true;
-        if (putVinylAction) {
-          putVinylAction.stop();
-          putVinylAction.setLoop(THREE.LoopOnce);
-          putVinylAction.clampWhenFinished = true;
-          putVinylAction.timeScale = 1;
-          putVinylAction.reset();
-          putVinylAction.play();
+        // Start animation even if audio isn't ready (only once)
+        if (!recordAnimationStarted) {
+          recordAnimationStarted = true;
+          animatedRecordPlayer.visible = true;
+          if (putVinylAction) {
+            putVinylAction.stop();
+            putVinylAction.setLoop(THREE.LoopOnce);
+            putVinylAction.clampWhenFinished = true;
+            putVinylAction.timeScale = 1;
+            putVinylAction.reset();
+            putVinylAction.play();
+          }
         }
         
         // Try to play audio after animation
@@ -1361,6 +1368,7 @@ function startPreview(album) {
 function stopPreview() {
   if (!animatedRecordPlayer) return;
   isPreviewing = false;
+  recordAnimationStarted = false; // Reset animation flag
   audio.pause();
   if (audioTimeout) {
     clearTimeout(audioTimeout);
@@ -1371,6 +1379,9 @@ function stopPreview() {
     putVinylAction.timeScale = -1;
     putVinylAction.paused = false;
     putVinylAction.play();
+  }
+  if (spinAction) {
+    spinAction.stop();
   }
   previewInstruction.style.display = "none";
 }
@@ -1505,6 +1516,7 @@ export function animate() {
   const delta = clock.getDelta();
   if (mixer) mixer.update(delta);
 
+  // Record player animation logic - removed double play
   if (
     putVinylAction &&
     putVinylAction.isRunning() &&
@@ -1512,10 +1524,13 @@ export function animate() {
     putVinylAction.timeScale > 0 &&
     isPreviewing
   ) {
-    putVinylAction.setLoop(THREE.LoopRepeat, Infinity);
-    putVinylAction.clampWhenFinished = false;
-    putVinylAction.time = Math.max(0, putVinylAction.getClip().duration - 2);
-    putVinylAction.play();
+    // Switch to spin animation after put vinyl animation completes
+    if (spinAction && !spinAction.isRunning()) {
+      putVinylAction.stop();
+      spinAction.setLoop(THREE.LoopRepeat, Infinity);
+      spinAction.timeScale = 1;
+      spinAction.play();
+    }
   }
 
   if (!moveForward && !moveBackward && !moveLeft && !moveRight) {
@@ -1559,15 +1574,15 @@ export function animate() {
     
     // Apply rotations with proper mobile orientation mapping
     // For portrait mode: phone upright should look straight ahead
-    const sensitivity = 1.0;
+    const sensitivity = 0.8;
     camera.rotation.order = 'YXZ';
     
     // Map device orientation to camera rotation for portrait mode
-    // When phone is upright (portrait), tilting left/right should turn camera left/right
-    camera.rotation.y = THREE.MathUtils.degToRad(-normalizedDeltaAlpha) * sensitivity;
-    // Tilting phone forward/back should tilt camera up/down
-    camera.rotation.x = THREE.MathUtils.degToRad(deltaBeta - 90) * sensitivity * 0.5;
-    // Rolling phone should have minimal effect
+    // Alpha (compass heading) - tilting phone left/right should turn camera left/right
+    camera.rotation.y = THREE.MathUtils.degToRad(normalizedDeltaAlpha) * sensitivity;
+    // Beta (front-back tilt) - tilting phone up/down should tilt camera up/down
+    camera.rotation.x = THREE.MathUtils.degToRad(-deltaBeta) * sensitivity * 0.8;
+    // Gamma (left-right tilt) - rolling phone should have minimal effect
     camera.rotation.z = THREE.MathUtils.degToRad(deltaGamma) * 0.1;
     
     // Clamp rotations for comfortable viewing
