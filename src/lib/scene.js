@@ -762,9 +762,9 @@ function updateCameraFromOrientation() {
   // Beta controls vertical rotation (forward/back tilt) - fix direction
   let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
   
-  // Clamp pitch to prevent gimbal lock when tilting up
-  const maxPitch = THREE.MathUtils.degToRad(85); // Prevent extreme upward tilt
-  const minPitch = THREE.MathUtils.degToRad(-85); // Prevent extreme downward tilt
+  // Clamp pitch to prevent extreme angles that cause spinning
+  const maxPitch = THREE.MathUtils.degToRad(75); // More restrictive upward limit
+  const minPitch = THREE.MathUtils.degToRad(-85); // Keep downward range
   targetPitch = THREE.MathUtils.clamp(targetPitch, minPitch, maxPitch);
   
   // Apply orientation directly to camera for immediate response
@@ -772,17 +772,20 @@ function updateCameraFromOrientation() {
   smoothedOrientation.yaw = targetYaw;
   smoothedOrientation.pitch = targetPitch;
 
-  // Apply orientation directly to camera rotation to avoid gimbal lock spinning
-  // Use direct rotation assignment instead of quaternions for stability
+  // Apply rotation using lookAt to prevent gimbal lock spiraling
+  // Calculate target position based on orientation
+  const distance = 5; // Virtual distance for lookAt calculation
+  const targetX = Math.sin(smoothedOrientation.yaw) * Math.cos(smoothedOrientation.pitch) * distance;
+  const targetY = Math.sin(smoothedOrientation.pitch) * distance;
+  const targetZ = Math.cos(smoothedOrientation.yaw) * Math.cos(smoothedOrientation.pitch) * distance;
+  
   if (controls && controls.getObject) {
     const cameraObject = controls.getObject();
-    cameraObject.rotation.x = smoothedOrientation.pitch;
-    cameraObject.rotation.y = smoothedOrientation.yaw;
-    cameraObject.rotation.z = 0; // No roll
+    const currentPos = cameraObject.position;
+    cameraObject.lookAt(currentPos.x + targetX, currentPos.y + targetY, currentPos.z + targetZ);
   } else {
-    camera.rotation.x = smoothedOrientation.pitch;
-    camera.rotation.y = smoothedOrientation.yaw;
-    camera.rotation.z = 0;
+    const currentPos = camera.position;
+    camera.lookAt(currentPos.x + targetX, currentPos.y + targetY, currentPos.z + targetZ);
   }
 
   // Debug logging to check if orientation is working
@@ -1235,17 +1238,68 @@ function startPreview(album) {
   if (!isPreviewing && animatedRecordPlayer) {
     isPreviewing = true;
     currentAlbum = album;
+    
+    // Show loading indicator immediately
+    const showPreviewLoader = () => {
+      const existingLoader = document.querySelector('.preview-loading-indicator');
+      if (existingLoader) existingLoader.remove();
+      
+      const loader = document.createElement('div');
+      loader.className = 'preview-loading-indicator';
+      loader.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 12px;
+        z-index: 3000;
+        font-size: 16px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+      `;
+      loader.innerHTML = `
+        <div style="margin-bottom: 15px;">Loading ${album.title}...</div>
+        <div style="width: 200px; height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden;">
+          <div style="width: 100%; height: 100%; background: white; animation: pulse 1.5s ease-in-out infinite;"></div>
+        </div>
+        <style>
+          @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+          }
+        </style>
+      `;
+      document.body.appendChild(loader);
+      return loader;
+    };
+    
+    const hidePreviewLoader = (loader) => {
+      if (loader && loader.parentNode) {
+        loader.parentNode.removeChild(loader);
+      }
+    };
+    
+    const previewLoader = showPreviewLoader();
+    
     applyVinylTexture(album);
     applyCoverTexture(album, () => {
-      animatedRecordPlayer.visible = true;
-      if (putVinylAction) {
-        putVinylAction.stop();
-        putVinylAction.setLoop(THREE.LoopOnce);
-        putVinylAction.clampWhenFinished = true;
-        putVinylAction.timeScale = 1;
-        putVinylAction.reset();
-        putVinylAction.play();
-      }
+      // Wait a moment to show the loading animation
+      setTimeout(() => {
+        hidePreviewLoader(previewLoader);
+        
+        animatedRecordPlayer.visible = true;
+        if (putVinylAction) {
+          putVinylAction.stop();
+          putVinylAction.setLoop(THREE.LoopOnce);
+          putVinylAction.clampWhenFinished = true;
+          putVinylAction.timeScale = 1;
+          putVinylAction.reset();
+          putVinylAction.play();
+        }
+      }, 1500); // Show loading for 1.5 seconds
       
       // Mobile-friendly audio setup
       audio.src = album.previewUrl;
