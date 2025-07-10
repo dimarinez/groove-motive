@@ -29,7 +29,7 @@ export default function RightPanel() {
         </div>
         <div className="instruction-container instruction-container--gyro">
           <img src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Instructions-Gyro.svg" alt="Instruction Gyro" className="gyro"/>
-          <p>Rotate your device<br/>to look around</p>
+          <p>Move your device<br/>to look around</p>
           <div id="orientation-status" className="orientation-status">
             <span id="orientation-indicator" className="orientation-indicator">⚠️</span>
             <span id="orientation-text">Orientation: Not requested</span>

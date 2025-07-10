@@ -1580,8 +1580,8 @@ export function animate() {
     // Map device orientation to camera rotation for portrait mode
     // Alpha (compass heading) - tilting phone left/right should turn camera left/right
     camera.rotation.y = THREE.MathUtils.degToRad(normalizedDeltaAlpha) * sensitivity;
-    // Beta (front-back tilt) - tilting phone up/down should tilt camera up/down
-    camera.rotation.x = THREE.MathUtils.degToRad(-deltaBeta) * sensitivity * 0.8;
+    // Beta (front-back tilt) - tilting phone top down should look down, bottom up should look up
+    camera.rotation.x = THREE.MathUtils.degToRad(deltaBeta) * sensitivity * 0.8;
     // Gamma (left-right tilt) - rolling phone should have minimal effect
     camera.rotation.z = THREE.MathUtils.degToRad(deltaGamma) * 0.1;
     
