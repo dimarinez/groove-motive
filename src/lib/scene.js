@@ -10,7 +10,7 @@ const albums = [
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM001%20Cover%20Art.jpg",
     previewUrl:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Luke%20Andy%20%26%20Sophiegrophy%20-%20My%20Side%20%28Radio%20Edit%29%5BGroove%20Motive%5D.mp3",
-    buyUrl: "https://example.com/buy1",
+    buyUrl: "https://groovemotive.bandcamp.com/track/my-side",
   },
   {
     title: "KiRiK",
@@ -18,7 +18,7 @@ const albums = [
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM002.jpg",
     previewUrl:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/KiRiK%20-%20Truth_Groove%20Motive%20%5BRadio%20Master%5D.mp3",
-    buyUrl: "https://example.com/buy2",
+    buyUrl: "https://groovemotive.bandcamp.com/track/truth",
   },
   {
     title: "Dateless",
@@ -372,10 +372,25 @@ export function initScene() {
         if (currentAlbum) {
           try {
             if (globalThis.window) {
-              window.open(currentAlbum.buyUrl, "_blank");
+              // Create a temporary anchor element for better Safari compatibility
+              const link = document.createElement('a');
+              link.href = currentAlbum.buyUrl;
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+              
+              // Temporarily add to DOM and click
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
             }
           } catch (error) {
             console.warn("Could not open buy URL on mobile:", error);
+            // Fallback: try direct window.open
+            try {
+              window.open(currentAlbum.buyUrl, "_blank");
+            } catch (fallbackError) {
+              console.warn("Fallback window.open also failed:", fallbackError);
+            }
           }
         }
       });
@@ -1416,10 +1431,25 @@ function onKeyDown(event) {
       if (currentAlbum) {
         try {
           if (globalThis.window) {
-            window.open(currentAlbum.buyUrl, "_blank");
+            // Create a temporary anchor element for better Safari compatibility
+            const link = document.createElement('a');
+            link.href = currentAlbum.buyUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            
+            // Temporarily add to DOM and click
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
           }
         } catch (error) {
           console.warn("Could not open buy URL:", error);
+          // Fallback: try direct window.open
+          try {
+            window.open(currentAlbum.buyUrl, "_blank");
+          } catch (fallbackError) {
+            console.warn("Fallback window.open also failed:", fallbackError);
+          }
         }
       }
       break;
