@@ -368,30 +368,11 @@ export function initScene() {
     }
 
     if (mobileBuyButton) {
-      mobileBuyButton.addEventListener("touchstart", () => {
+      mobileBuyButton.addEventListener("touchend", (e) => {
+        e.preventDefault();
         if (currentAlbum) {
-          try {
-            if (globalThis.window) {
-              // Create a temporary anchor element for better Safari compatibility
-              const link = document.createElement('a');
-              link.href = currentAlbum.buyUrl;
-              link.target = '_blank';
-              link.rel = 'noopener noreferrer';
-              
-              // Temporarily add to DOM and click
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }
-          } catch (error) {
-            console.warn("Could not open buy URL on mobile:", error);
-            // Fallback: try direct window.open
-            try {
-              window.open(currentAlbum.buyUrl, "_blank");
-            } catch (fallbackError) {
-              console.warn("Fallback window.open also failed:", fallbackError);
-            }
-          }
+          // Mobile Safari requires navigation to happen immediately in the touch event
+          window.location.href = currentAlbum.buyUrl;
         }
       });
     }
