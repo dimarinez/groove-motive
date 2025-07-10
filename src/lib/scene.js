@@ -772,17 +772,17 @@ function updateCameraFromOrientation() {
   smoothedOrientation.yaw = targetYaw;
   smoothedOrientation.pitch = targetPitch;
 
-  // Apply the orientation to the camera using quaternions for stability
-  // Create rotation quaternion to avoid gimbal lock
-  const quaternion = new THREE.Quaternion();
-  quaternion.setFromEuler(new THREE.Euler(smoothedOrientation.pitch, smoothedOrientation.yaw, 0, 'YXZ'));
-
-  // Apply the quaternion rotation to the camera
+  // Apply orientation directly to camera rotation to avoid gimbal lock spinning
+  // Use direct rotation assignment instead of quaternions for stability
   if (controls && controls.getObject) {
     const cameraObject = controls.getObject();
-    cameraObject.quaternion.copy(quaternion);
+    cameraObject.rotation.x = smoothedOrientation.pitch;
+    cameraObject.rotation.y = smoothedOrientation.yaw;
+    cameraObject.rotation.z = 0; // No roll
   } else {
-    camera.quaternion.copy(quaternion);
+    camera.rotation.x = smoothedOrientation.pitch;
+    camera.rotation.y = smoothedOrientation.yaw;
+    camera.rotation.z = 0;
   }
 
   // Debug logging to check if orientation is working
@@ -1258,50 +1258,62 @@ function startPreview(album) {
       // Force load for mobile compatibility
       audio.load();
       
-      // Mobile requires immediate play attempt after user gesture (G key press)
-      // Don't wait for canplay events on mobile as they're unreliable
-      if (isMobile) {
-        console.log('Mobile detected - attempting immediate audio play');
+      // Unified audio approach - wait for audio to be ready then play
+      let audioPlayAttempted = false;
+      
+      const tryPlayAudio = () => {
+        if (audioPlayAttempted || !isPreviewing) return;
+        audioPlayAttempted = true;
         
-        // Try to play immediately on mobile (G key is user gesture)
+        console.log('Attempting to play audio:', album.title, 'readyState:', audio.readyState);
+        
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            console.log('Audio playback started successfully');
+          }).catch(error => {
+            console.warn('Audio play failed, will retry:', error);
+            audioPlayAttempted = false;
+            
+            // Retry after short delay
+            setTimeout(() => {
+              if (isPreviewing && !audioPlayAttempted) {
+                tryPlayAudio();
+              }
+            }, 800);
+          });
+        }
+      };
+      
+      // Listen for multiple audio ready events
+      const onAudioReady = () => {
+        console.log('Audio ready event fired, readyState:', audio.readyState);
+        
+        // Clean up listeners
+        audio.removeEventListener('canplay', onAudioReady);
+        audio.removeEventListener('canplaythrough', onAudioReady);
+        audio.removeEventListener('loadeddata', onAudioReady);
+        
+        // Wait for animation to complete then play
         setTimeout(() => {
           if (isPreviewing) {
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-              playPromise.then(() => {
-                console.log('Mobile audio started successfully');
-              }).catch(error => {
-                console.warn('Mobile audio failed:', error);
-                // Single retry for mobile
-                setTimeout(() => {
-                  if (isPreviewing) {
-                    audio.play().catch(e => console.warn('Mobile audio retry failed:', e));
-                  }
-                }, 1000);
-              });
-            }
+            tryPlayAudio();
           }
         }, 4800);
-      } else {
-        // Desktop - use the reliable event-based approach
-        const onCanPlay = () => {
-          console.log('Desktop audio ready, playing...');
-          audio.removeEventListener('canplay', onCanPlay);
-          
-          setTimeout(() => {
-            if (isPreviewing) {
-              const playPromise = audio.play();
-              if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                  console.warn('Desktop audio failed:', error);
-                });
-              }
-            }
-          }, 4800);
-        };
-        
-        audio.addEventListener('canplay', onCanPlay);
-      }
+      };
+      
+      // Multiple event listeners for better compatibility
+      audio.addEventListener('canplay', onAudioReady);
+      audio.addEventListener('canplaythrough', onAudioReady);
+      audio.addEventListener('loadeddata', onAudioReady);
+      
+      // Fallback timer for mobile/slow connections
+      audioTimeout = setTimeout(() => {
+        console.log('Audio timeout - forcing play attempt');
+        if (isPreviewing && !audioPlayAttempted) {
+          tryPlayAudio();
+        }
+      }, 6000); // Wait up to 6 seconds
       
       previewInstruction.style.display = "block";
 
