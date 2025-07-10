@@ -1444,7 +1444,7 @@ export function animate() {
     }
     
     if (deviceOrientation && initialOrientation) {
-      updateCameraFromOrientation();
+      updateCameraFromOrientation(camera);
     }
   }
 
