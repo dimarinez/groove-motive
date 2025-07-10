@@ -1554,7 +1554,7 @@ export function animate() {
     // Beta -90° = phone flat up → camera looks up
     // Map so: upright=0°→straight, flat=90°→down, upside=-90°→up
     const adjustedBeta = beta; // Keep original beta
-    const pitchSensitivity = 0.01; // Much lower sensitivity to test
+    const pitchSensitivity = 0.8; // Back to normal sensitivity
     camera.rotation.x = THREE.MathUtils.degToRad(adjustedBeta) * pitchSensitivity;
     
     // Alpha controls yaw (left/right turning) - normalize to -180 to 180 range
