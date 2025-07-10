@@ -762,30 +762,36 @@ function updateCameraFromOrientation() {
   // Beta controls vertical rotation (forward/back tilt) - fix direction
   let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
   
-  // Clamp pitch to prevent extreme angles that cause spinning
-  const maxPitch = THREE.MathUtils.degToRad(75); // More restrictive upward limit
-  const minPitch = THREE.MathUtils.degToRad(-85); // Keep downward range
-  targetPitch = THREE.MathUtils.clamp(targetPitch, minPitch, maxPitch);
-  
   // Apply orientation directly to camera for immediate response
   // No smoothing - user wants immediate reaction to tilts
   smoothedOrientation.yaw = targetYaw;
   smoothedOrientation.pitch = targetPitch;
 
-  // Apply rotation using lookAt to prevent gimbal lock spiraling
-  // Calculate target position based on orientation
-  const distance = 5; // Virtual distance for lookAt calculation
-  const targetX = Math.sin(smoothedOrientation.yaw) * Math.cos(smoothedOrientation.pitch) * distance;
-  const targetY = Math.sin(smoothedOrientation.pitch) * distance;
-  const targetZ = Math.cos(smoothedOrientation.yaw) * Math.cos(smoothedOrientation.pitch) * distance;
-  
+  // Simple direct rotation - keep what works for side-to-side
   if (controls && controls.getObject) {
     const cameraObject = controls.getObject();
-    const currentPos = cameraObject.position;
-    cameraObject.lookAt(currentPos.x + targetX, currentPos.y + targetY, currentPos.z + targetZ);
+    // Only apply yaw (horizontal) rotation directly - this works fine
+    cameraObject.rotation.y = smoothedOrientation.yaw;
+    
+    // For pitch (vertical), add small smoothing only when tilting up to prevent spiral
+    const currentPitch = cameraObject.rotation.x;
+    if (smoothedOrientation.pitch > currentPitch) {
+      // Tilting up - add slight smoothing to prevent spiral
+      cameraObject.rotation.x = THREE.MathUtils.lerp(currentPitch, smoothedOrientation.pitch, 0.1);
+    } else {
+      // Tilting down - immediate response (this works fine)
+      cameraObject.rotation.x = smoothedOrientation.pitch;
+    }
+    cameraObject.rotation.z = 0;
   } else {
-    const currentPos = camera.position;
-    camera.lookAt(currentPos.x + targetX, currentPos.y + targetY, currentPos.z + targetZ);
+    camera.rotation.y = smoothedOrientation.yaw;
+    const currentPitch = camera.rotation.x;
+    if (smoothedOrientation.pitch > currentPitch) {
+      camera.rotation.x = THREE.MathUtils.lerp(currentPitch, smoothedOrientation.pitch, 0.1);
+    } else {
+      camera.rotation.x = smoothedOrientation.pitch;
+    }
+    camera.rotation.z = 0;
   }
 
   // Debug logging to check if orientation is working
@@ -1239,67 +1245,8 @@ function startPreview(album) {
     isPreviewing = true;
     currentAlbum = album;
     
-    // Show loading indicator immediately
-    const showPreviewLoader = () => {
-      const existingLoader = document.querySelector('.preview-loading-indicator');
-      if (existingLoader) existingLoader.remove();
-      
-      const loader = document.createElement('div');
-      loader.className = 'preview-loading-indicator';
-      loader.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 20px 30px;
-        border-radius: 12px;
-        z-index: 3000;
-        font-size: 16px;
-        text-align: center;
-        backdrop-filter: blur(10px);
-      `;
-      loader.innerHTML = `
-        <div style="margin-bottom: 15px;">Loading ${album.title}...</div>
-        <div style="width: 200px; height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden;">
-          <div style="width: 100%; height: 100%; background: white; animation: pulse 1.5s ease-in-out infinite;"></div>
-        </div>
-        <style>
-          @keyframes pulse {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-          }
-        </style>
-      `;
-      document.body.appendChild(loader);
-      return loader;
-    };
-    
-    const hidePreviewLoader = (loader) => {
-      if (loader && loader.parentNode) {
-        loader.parentNode.removeChild(loader);
-      }
-    };
-    
-    const previewLoader = showPreviewLoader();
-    
     applyVinylTexture(album);
     applyCoverTexture(album, () => {
-      // Wait a moment to show the loading animation
-      setTimeout(() => {
-        hidePreviewLoader(previewLoader);
-        
-        animatedRecordPlayer.visible = true;
-        if (putVinylAction) {
-          putVinylAction.stop();
-          putVinylAction.setLoop(THREE.LoopOnce);
-          putVinylAction.clampWhenFinished = true;
-          putVinylAction.timeScale = 1;
-          putVinylAction.reset();
-          putVinylAction.play();
-        }
-      }, 1500); // Show loading for 1.5 seconds
       
       // Mobile-friendly audio setup
       audio.src = album.previewUrl;
@@ -1348,12 +1295,23 @@ function startPreview(album) {
         audio.removeEventListener('canplaythrough', onAudioReady);
         audio.removeEventListener('loadeddata', onAudioReady);
         
-        // Wait for animation to complete then play
+        // Start record player animation now that audio is ready
+        animatedRecordPlayer.visible = true;
+        if (putVinylAction) {
+          putVinylAction.stop();
+          putVinylAction.setLoop(THREE.LoopOnce);
+          putVinylAction.clampWhenFinished = true;
+          putVinylAction.timeScale = 1;
+          putVinylAction.reset();
+          putVinylAction.play();
+        }
+        
+        // Start audio timer from when record animation begins
         setTimeout(() => {
-          if (isPreviewing) {
+          if (isPreviewing && !audioPlayAttempted) {
             tryPlayAudio();
           }
-        }, 4800);
+        }, 4800); // 4800ms after record animation starts
       };
       
       // Multiple event listeners for better compatibility
@@ -1361,13 +1319,29 @@ function startPreview(album) {
       audio.addEventListener('canplaythrough', onAudioReady);
       audio.addEventListener('loadeddata', onAudioReady);
       
-      // Fallback timer for mobile/slow connections
+      // Fallback timer - start animation even if audio not ready
       audioTimeout = setTimeout(() => {
-        console.log('Audio timeout - forcing play attempt');
-        if (isPreviewing && !audioPlayAttempted) {
-          tryPlayAudio();
+        console.log('Audio loading timeout - starting animation anyway');
+        
+        // Start animation even if audio isn't ready
+        animatedRecordPlayer.visible = true;
+        if (putVinylAction) {
+          putVinylAction.stop();
+          putVinylAction.setLoop(THREE.LoopOnce);
+          putVinylAction.clampWhenFinished = true;
+          putVinylAction.timeScale = 1;
+          putVinylAction.reset();
+          putVinylAction.play();
         }
-      }, 6000); // Wait up to 6 seconds
+        
+        // Try to play audio after animation
+        setTimeout(() => {
+          if (isPreviewing && !audioPlayAttempted) {
+            tryPlayAudio();
+          }
+        }, 4800);
+        
+      }, 3000); // Wait max 3 seconds for audio to load
       
       previewInstruction.style.display = "block";
 
