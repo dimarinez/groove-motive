@@ -9,7 +9,7 @@ const albums = [
     cover:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM001%20Cover%20Art.jpg",
     previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Luke%20Andy%20%26%20Sophiegrophy%20-%20My%20Side%20%28Radio%20Edit%29%5BGroove%20Motive%5D.wav",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Luke%20Andy%20%26%20Sophiegrophy%20-%20My%20Side%20%28Radio%20Edit%29%5BGroove%20Motive%5D.mp3",
     buyUrl: "https://example.com/buy1",
   },
   {
@@ -17,7 +17,7 @@ const albums = [
     cover:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM002.jpg",
     previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/KiRiK%20-%20Truth_Groove%20Motive%20%5BRadio%20Master%5D.wav",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/KiRiK%20-%20Truth_Groove%20Motive%20%5BRadio%20Master%5D.mp3",
     buyUrl: "https://example.com/buy2",
   },
   {
@@ -25,7 +25,7 @@ const albums = [
     cover:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM003.jpg",
     previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Dateless%20-%20Like%20Me_Groove%20Motive.wav",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Dateless%20-%20Like%20Me_Groove%20Motive.mp3",
     buyUrl: "https://example.com/buy3",
   },
   {
@@ -33,7 +33,7 @@ const albums = [
     cover:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg",
     previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/BRN%20-%20Machines%20%28Radio%29%28FW%20MASTER%201%29.wav",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/BRN%20-%20Machines%20%28Radio%29%28FW%20MASTER%201%29.mp3",
     buyUrl: "https://example.com/buy3",
   },
 ];
@@ -762,6 +762,11 @@ function updateCameraFromOrientation() {
   // Beta controls vertical rotation (forward/back tilt) - fix direction
   let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
   
+  // Clamp pitch to prevent gimbal lock when tilting up
+  const maxPitch = THREE.MathUtils.degToRad(85); // Prevent extreme upward tilt
+  const minPitch = THREE.MathUtils.degToRad(-85); // Prevent extreme downward tilt
+  targetPitch = THREE.MathUtils.clamp(targetPitch, minPitch, maxPitch);
+  
   // Apply orientation directly to camera for immediate response
   // No smoothing - user wants immediate reaction to tilts
   smoothedOrientation.yaw = targetYaw;
@@ -1242,40 +1247,7 @@ function startPreview(album) {
         putVinylAction.play();
       }
       
-      // Show loading indicator while preparing audio
-      const showAudioLoader = () => {
-        const existingLoader = document.querySelector('.audio-loading-indicator');
-        if (existingLoader) existingLoader.remove();
-        
-        const loader = document.createElement('div');
-        loader.className = 'audio-loading-indicator';
-        loader.style.cssText = `
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: rgba(0, 0, 0, 0.8);
-          color: white;
-          padding: 20px;
-          border-radius: 8px;
-          z-index: 3000;
-          font-size: 14px;
-          text-align: center;
-        `;
-        loader.innerHTML = '<div>Loading audio...</div>';
-        document.body.appendChild(loader);
-        return loader;
-      };
-      
-      const hideAudioLoader = (loader) => {
-        if (loader && loader.parentNode) {
-          loader.parentNode.removeChild(loader);
-        }
-      };
-      
-      const audioLoader = showAudioLoader();
-      
-      // Improved audio setup for reliable first-play
+      // Mobile-friendly audio setup
       audio.src = album.previewUrl;
       audio.preload = 'auto';
       
@@ -1283,110 +1255,70 @@ function startPreview(album) {
       audio.currentTime = 0;
       audio.pause();
       
-      // Force load and wait for ready state
+      // Force load for mobile compatibility
       audio.load();
       
-      // Multiple fallback strategies for audio loading
-      let audioReady = false;
-      let playAttempted = false;
-      let animationStarted = false;
-      
-      const startRecordPlayerAnimation = () => {
-        if (animationStarted) return;
-        animationStarted = true;
+      // Mobile requires immediate play attempt after user gesture (G key press)
+      // Don't wait for canplay events on mobile as they're unreliable
+      if (isMobile) {
+        console.log('Mobile detected - attempting immediate audio play');
         
-        hideAudioLoader(audioLoader);
-        
-        // Start record player animation
-        if (putVinylAction) {
-          putVinylAction.stop();
-          putVinylAction.setLoop(THREE.LoopOnce);
-          putVinylAction.clampWhenFinished = true;
-          putVinylAction.timeScale = 1;
-          putVinylAction.reset();
-          putVinylAction.play();
-        }
-        
-        previewInstruction.style.display = "block";
-
-        // Animate camera to face record player from further back
-        gsap.to(camera.position, {
-          x: 0,
-          y: 1.8,
-          z: -1.5,
-          duration: 1,
-          ease: "power2.inOut",
-          onUpdate: () => {
-            camera.lookAt(0, 1.2, -6);
-          },
-          onComplete: () => {
-            controls.update();
-          },
-        });
-      };
-      
-      const tryAudioPlay = () => {
-        if (playAttempted || !isPreviewing) return;
-        playAttempted = true;
-        
-        console.log('Playing audio for:', album.title, 'readyState:', audio.readyState);
-        const playPromise = audio.play();
-        
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.warn('Audio play failed, will retry...', error);
-            playAttempted = false; // Allow retry
-            
-            // Quick retry after short delay
-            setTimeout(() => {
-              if (isPreviewing && !playAttempted) {
-                tryAudioPlay();
-              }
-            }, 500);
-          });
-        }
-      };
-      
-      // Listen for when audio is ready to play
-      const onCanPlay = () => {
-        console.log('Audio canplay event fired, readyState:', audio.readyState);
-        audioReady = true;
-        audio.removeEventListener('canplay', onCanPlay);
-        audio.removeEventListener('canplaythrough', onCanPlay);
-        audio.removeEventListener('loadeddata', onCanPlay);
-        
-        // Start animation once audio is ready
-        startRecordPlayerAnimation();
-        
-        // Short delay then try to play
+        // Try to play immediately on mobile (G key is user gesture)
         setTimeout(() => {
           if (isPreviewing) {
-            tryAudioPlay();
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+              playPromise.then(() => {
+                console.log('Mobile audio started successfully');
+              }).catch(error => {
+                console.warn('Mobile audio failed:', error);
+                // Single retry for mobile
+                setTimeout(() => {
+                  if (isPreviewing) {
+                    audio.play().catch(e => console.warn('Mobile audio retry failed:', e));
+                  }
+                }, 1000);
+              });
+            }
           }
-        }, 4900); // Play after animation completes
-      };
-      
-      // Multiple event listeners for better compatibility
-      audio.addEventListener('canplay', onCanPlay);
-      audio.addEventListener('canplaythrough', onCanPlay);
-      audio.addEventListener('loadeddata', onCanPlay);
-      
-      // Fallback timer - start animation if audio takes too long
-      audioTimeout = setTimeout(() => {
-        if (isPreviewing && !animationStarted) {
-          console.log('Audio loading timeout - starting animation anyway');
-          startRecordPlayerAnimation();
+        }, 4800);
+      } else {
+        // Desktop - use the reliable event-based approach
+        const onCanPlay = () => {
+          console.log('Desktop audio ready, playing...');
+          audio.removeEventListener('canplay', onCanPlay);
           
-          // Still try to play audio
           setTimeout(() => {
             if (isPreviewing) {
-              tryAudioPlay();
+              const playPromise = audio.play();
+              if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                  console.warn('Desktop audio failed:', error);
+                });
+              }
             }
-          }, 4900);
-        }
-      }, 3000); // Wait max 3 seconds for audio
+          }, 4800);
+        };
+        
+        audio.addEventListener('canplay', onCanPlay);
+      }
       
-      // Animation will be started by audio loading callback
+      previewInstruction.style.display = "block";
+
+      // Animate camera to face record player from further back
+      gsap.to(camera.position, {
+        x: 0,
+        y: 1.8,
+        z: -1.5,
+        duration: 1,
+        ease: "power2.inOut",
+        onUpdate: () => {
+          camera.lookAt(0, 1.2, -6);
+        },
+        onComplete: () => {
+          controls.update();
+        },
+      });
     });
   }
 }
