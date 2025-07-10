@@ -115,24 +115,33 @@ export class SimpleDeviceOrientationControls {
   
   /**
    * Calibrate the controls to current device orientation
+   * Sets the current device position as the "neutral" looking straight ahead
    */
   calibrate() {
     if (!this.deviceOrientation) return;
     
+    // Store current device orientation as the baseline
     this.initialOrientation = { ...this.deviceOrientation };
+    
+    // Set camera to look straight ahead (at the wall) when phone is upright
+    // In the gallery, "straight ahead" is looking at z = -6 (where the record player is)
+    this.camera.position.y = 1.6; // Eye level
+    this.camera.rotation.order = 'YXZ';
+    this.camera.rotation.x = 0; // No pitch
+    this.camera.rotation.y = 0; // Looking straight ahead (negative z direction)
+    this.camera.rotation.z = 0; // No roll
+    
+    // Initialize smoothed orientation to match camera
     this.smoothedOrientation = {
-      yaw: this.camera.rotation.y,
-      pitch: this.camera.rotation.x,
-      roll: this.camera.rotation.z
+      yaw: 0,    // Looking straight ahead
+      pitch: 0,  // Level
+      roll: 0    // Upright
     };
     
-    console.log('Enhanced orientation calibrated:', {
+    console.log('Portrait orientation calibrated for upright phone:', {
       initial: this.initialOrientation,
-      camera: {
-        yaw: THREE.MathUtils.radToDeg(this.camera.rotation.y).toFixed(1),
-        pitch: THREE.MathUtils.radToDeg(this.camera.rotation.x).toFixed(1),
-        roll: THREE.MathUtils.radToDeg(this.camera.rotation.z).toFixed(1)
-      }
+      camera: 'Looking straight ahead at wall',
+      position: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z }
     });
   }
   
@@ -159,24 +168,28 @@ export class SimpleDeviceOrientationControls {
     let targetRoll = 0;
     
     // Gyro response (compass/yaw rotation - alpha)
+    // For portrait mode: phone upright should look straight ahead
     if (this.enableGyroResponse) {
-      targetYaw = -THREE.MathUtils.degToRad(normalizedDeltaAlpha) * this.gyroSensitivity;
+      targetYaw = THREE.MathUtils.degToRad(normalizedDeltaAlpha) * this.gyroSensitivity;
       if (this.invertYaw) targetYaw = -targetYaw;
     }
     
     // Pitch response (up/down tilt - beta)
-    targetPitch = THREE.MathUtils.degToRad(deltaBeta) * this.sensitivity;
+    // For portrait mode: tilting phone up/down should pitch camera up/down
+    // Beta in portrait: 0° = upright, positive = tilting back, negative = tilting forward
+    targetPitch = -THREE.MathUtils.degToRad(deltaBeta) * this.sensitivity;
     if (this.invertPitch) targetPitch = -targetPitch;
     
     // Tilt response (left/right tilt - gamma)
+    // For portrait mode: tilting phone left/right should roll camera and assist turning
     if (this.enableTiltResponse) {
-      // Use gamma for more pronounced natural movement
+      // Gamma in portrait: 0° = upright, positive = tilting right, negative = tilting left
       const tiltInfluence = THREE.MathUtils.degToRad(deltaGamma) * this.tiltSensitivity;
       
-      // More pronounced roll effect for immediate visual feedback
-      targetRoll = tiltInfluence * 0.6;
+      // Roll effect: positive gamma (tilt right) should roll camera right
+      targetRoll = -tiltInfluence * 0.6;
       
-      // Strong tilt influence on yaw for intuitive turning
+      // Yaw assist: tilting right should turn right
       targetYaw += tiltInfluence * 0.8;
     }
     

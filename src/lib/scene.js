@@ -80,6 +80,92 @@ let gammaValue = null;
 let audioPreloaded = false;
 let orientationDebugLogged = false;
 
+// Portrait mode enforcement
+let portraitWarning = null;
+let isPortraitMode = true;
+
+// Portrait mode enforcement helpers
+function createPortraitWarning() {
+  if (portraitWarning) return;
+  
+  portraitWarning = document.createElement("div");
+  portraitWarning.id = "portrait-warning";
+  portraitWarning.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    font-family: "Suisse", -apple-system, BlinkMacSystemFont, sans-serif;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+  `;
+  
+  portraitWarning.innerHTML = `
+    <div style="font-size: 48px; margin-bottom: 20px;">📱</div>
+    <h2 style="font-size: 24px; margin-bottom: 15px; font-weight: 600;">Portrait Mode Required</h2>
+    <p style="font-size: 18px; line-height: 1.5; max-width: 300px; margin-bottom: 20px;">
+      Please rotate your device to portrait orientation for the best gallery experience.
+    </p>
+    <div style="font-size: 36px; animation: pulse 2s infinite;">↻</div>
+    <style>
+      @keyframes pulse {
+        0%, 100% { opacity: 0.6; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.1); }
+      }
+    </style>
+  `;
+  
+  document.body.appendChild(portraitWarning);
+}
+
+function checkOrientation() {
+  if (!isMobile) return;
+  
+  const isCurrentlyPortrait = window.innerHeight > window.innerWidth;
+  const isInGalleryMode = controls && controls.isLocked;
+  
+  if (isCurrentlyPortrait !== isPortraitMode) {
+    isPortraitMode = isCurrentlyPortrait;
+    
+    if (isPortraitMode) {
+      // Switched to portrait
+      if (portraitWarning) {
+        portraitWarning.style.display = 'none';
+      }
+      console.log('Device rotated to portrait mode');
+      
+      // Recalibrate orientation controls after rotation
+      setTimeout(() => {
+        if (simpleOrientationControls && simpleOrientationControls.isEnabled) {
+          simpleOrientationControls.calibrate();
+        }
+      }, 500);
+    } else {
+      // Switched to landscape - only show warning if in gallery mode
+      if (isInGalleryMode) {
+        createPortraitWarning();
+        portraitWarning.style.display = 'flex';
+        console.log('Device rotated to landscape mode in gallery - showing warning');
+      }
+    }
+  }
+}
+
+function hidePortraitWarning() {
+  if (portraitWarning) {
+    portraitWarning.style.display = 'none';
+  }
+}
+
 // Asset loading helpers
 function updateLoadingProgress() {
   if (loadingIndicator) {
@@ -170,6 +256,14 @@ export function initScene() {
 
   // Initialize mobile detection
   isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
+  // Check initial orientation for mobile
+  if (isMobile) {
+    isPortraitMode = window.innerHeight > window.innerWidth;
+    if (!isPortraitMode) {
+      createPortraitWarning();
+    }
+  }
 
   // Add UI element for preview/stop instruction
   if (!previewInstruction) {
@@ -529,6 +623,10 @@ export function initScene() {
   try {
     if (globalThis.window) {
       window.addEventListener("resize", onWindowResize);
+      window.addEventListener("orientationchange", () => {
+        setTimeout(checkOrientation, 300); // Small delay for orientation change
+      });
+      window.addEventListener("resize", checkOrientation); // Also check on resize
       window.addAlbum = addAlbum;
     }
   } catch (error) {
@@ -731,6 +829,11 @@ function resetToInitialState() {
   // Remove body class to hide mobile menu
   document.body.classList.remove("gallery-entered");
 
+  // Hide portrait warning when exiting gallery
+  if (isMobile) {
+    hidePortraitWarning();
+  }
+
   // Show container with panels
   const container = document.getElementById("container");
   if (container) {
@@ -882,15 +985,25 @@ export function enterGallery() {
   if (isMobile) {
     requestDeviceOrientationPermission();
     
-    // Calibrate orientation to match current camera position after a short delay
+    // Calibrate orientation for portrait mode after a short delay
     setTimeout(() => {
       if (simpleOrientationControls && simpleOrientationControls.isEnabled) {
-        console.log('Calibrating simple orientation controls to match current camera position');
+        console.log('Calibrating for portrait mode - phone upright should look at wall');
+        
+        // Ensure camera is positioned and oriented correctly for portrait mode
+        camera.position.set(0, 1.6, -2); // Standard viewing position
+        camera.rotation.order = 'YXZ';
+        
+        // Calibrate with phone upright = looking straight at wall
         simpleOrientationControls.calibrate();
         
-        console.log('Simple orientation controls calibrated after entering gallery:', {
-          cameraYaw: THREE.MathUtils.radToDeg(camera.rotation.y).toFixed(1),
-          cameraPitch: THREE.MathUtils.radToDeg(camera.rotation.x).toFixed(1)
+        console.log('Portrait mode calibration complete:', {
+          cameraPosition: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+          cameraRotation: { 
+            yaw: THREE.MathUtils.radToDeg(camera.rotation.y).toFixed(1),
+            pitch: THREE.MathUtils.radToDeg(camera.rotation.x).toFixed(1),
+            roll: THREE.MathUtils.radToDeg(camera.rotation.z).toFixed(1)
+          }
         });
       }
     }, 1000);
