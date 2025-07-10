@@ -756,11 +756,11 @@ function updateCameraFromOrientation() {
   if (relativeAlpha < -180) relativeAlpha += 360;
 
   // Phone-tilt mapping for portrait mode - immediate response
-  // Gamma controls horizontal rotation (left/right tilt)
+  // Gamma controls horizontal rotation (left/right tilt) - keep as is, works fine
   let targetYaw = THREE.MathUtils.degToRad(relativeGamma) * orientationSensitivity;
   
-  // Beta controls vertical rotation (forward/back tilt) - invert for correct direction
-  let targetPitch = THREE.MathUtils.degToRad(-relativeBeta) * orientationSensitivity;
+  // Beta controls vertical rotation (forward/back tilt) - fix direction
+  let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
   
   // Apply orientation directly to camera for immediate response
   // No smoothing - user wants immediate reaction to tilts
