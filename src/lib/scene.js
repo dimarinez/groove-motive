@@ -56,7 +56,7 @@ let audioTimeout = null;
 let ui, albumTitle, enterButton, galleryCanvas, galleryScreen;
 let moveUpButton, moveDownButton, moveLeftButton, moveRightButton;
 let isMobile = false;
-// Simple device orientation controls
+// Device orientation controls
 let deviceOrientationControls = null;
 let deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
 let initialOrientation = null;
@@ -144,6 +144,13 @@ function checkOrientation() {
       }
       console.log('Device rotated to portrait mode');
       
+      // If user was blocked from entering gallery, allow them to try again
+      const container = document.getElementById("container");
+      if (container && container.style.display === "none" && !controls.isLocked) {
+        console.log('Re-enabling gallery access after portrait rotation');
+        container.style.display = "flex";
+      }
+      
       // Recalibrate orientation controls after rotation
       setTimeout(() => {
         if (deviceOrientationControls && deviceOrientationControls.enabled) {
@@ -151,11 +158,19 @@ function checkOrientation() {
         }
       }, 500);
     } else {
-      // Switched to landscape - only show warning if in gallery mode
-      if (isInGalleryMode) {
-        createPortraitWarning();
-        portraitWarning.style.display = 'flex';
-        console.log('Device rotated to landscape mode in gallery - showing warning');
+      // Switched to landscape - show warning regardless of mode
+      createPortraitWarning();
+      portraitWarning.style.display = 'flex';
+      console.log('Device rotated to landscape mode - showing warning');
+      
+      // If in gallery mode, also unlock controls to prevent getting stuck
+      if (isInGalleryMode && controls && controls.isLocked) {
+        setTimeout(() => {
+          if (!isPortraitMode && controls.isLocked) {
+            console.log('Auto-unlocking controls due to landscape mode');
+            controls.unlock();
+          }
+        }, 2000); // Give user 2 seconds to rotate back
       }
     }
   }
@@ -263,6 +278,7 @@ export function initScene() {
     isPortraitMode = window.innerHeight > window.innerWidth;
     if (!isPortraitMode) {
       createPortraitWarning();
+      portraitWarning.style.display = 'flex';
     }
   }
 
@@ -388,11 +404,12 @@ export function initScene() {
   
   // Set initial camera orientation for mobile devices
   if (isMobile) {
-    // Start with slight downward tilt for natural viewing
-    const initialPitch = THREE.MathUtils.degToRad(-15);
-    camera.rotation.x = initialPitch;
+    // Phone upright in portrait should look directly at the wall (0 degrees)
+    camera.rotation.x = 0;
     camera.rotation.y = 0;
     camera.rotation.z = 0;
+    // Point camera toward the wall
+    camera.lookAt(0, 1.6, -6);
   }
 
   renderer = new THREE.WebGLRenderer({
@@ -869,9 +886,9 @@ function resetToInitialState() {
   
   // Set proper initial orientation for mobile
   if (isMobile) {
-    // Reset with natural downward tilt
-    const initialPitch = THREE.MathUtils.degToRad(-15);
-    camera.rotation.set(initialPitch, 0, 0);
+    // Phone upright should look directly at wall
+    camera.rotation.set(0, 0, 0);
+    camera.lookAt(0, 1.6, -6);
   } else {
     camera.rotation.set(0, 0, 0);
     camera.lookAt(0, 1.6, -6);
@@ -980,8 +997,25 @@ export function enterGallery() {
     previewAnimationId = null;
   }
 
-  // Request device orientation permission when entering gallery (user interaction)
+  // Check orientation immediately when entering gallery
   if (isMobile) {
+    checkOrientation();
+    
+    // Don't proceed if in landscape mode
+    if (!isPortraitMode) {
+      console.log('Blocking gallery entry - device in landscape mode');
+      createPortraitWarning();
+      portraitWarning.style.display = 'flex';
+      
+      // Reset back to home screen
+      setTimeout(() => {
+        if (!isPortraitMode) {
+          resetToInitialState();
+        }
+      }, 100);
+      return;
+    }
+    
     requestDeviceOrientationPermission();
     
     // Calibrate orientation for portrait mode after a short delay
@@ -993,6 +1027,7 @@ export function enterGallery() {
         camera.position.set(0, 1.6, -2); // Standard viewing position
         camera.rotation.order = 'YXZ';
         camera.rotation.set(0, 0, 0); // Reset rotation
+        camera.lookAt(0, 1.6, -6); // Point directly at the wall
         
         // Recalibrate with current device orientation
         recalibrateOrientation();
@@ -1519,16 +1554,22 @@ export function animate() {
       normalizedDeltaAlpha = deltaAlpha > 0 ? deltaAlpha - 360 : deltaAlpha + 360;
     }
     
-    // Apply rotations with high sensitivity
-    const sensitivity = 1.5;
+    // Apply rotations with proper mobile orientation mapping
+    // For portrait mode: phone upright should look straight ahead
+    const sensitivity = 1.0;
     camera.rotation.order = 'YXZ';
-    camera.rotation.y = THREE.MathUtils.degToRad(normalizedDeltaAlpha) * sensitivity;
-    camera.rotation.x = -THREE.MathUtils.degToRad(deltaBeta) * sensitivity;
-    camera.rotation.z = -THREE.MathUtils.degToRad(deltaGamma) * 0.3;
     
-    // Clamp rotations
-    camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -Math.PI/3, Math.PI/3);
-    camera.rotation.z = THREE.MathUtils.clamp(camera.rotation.z, -Math.PI/6, Math.PI/6);
+    // Map device orientation to camera rotation for portrait mode
+    // When phone is upright (portrait), tilting left/right should turn camera left/right
+    camera.rotation.y = THREE.MathUtils.degToRad(-normalizedDeltaAlpha) * sensitivity;
+    // Tilting phone forward/back should tilt camera up/down
+    camera.rotation.x = THREE.MathUtils.degToRad(deltaBeta - 90) * sensitivity * 0.5;
+    // Rolling phone should have minimal effect
+    camera.rotation.z = THREE.MathUtils.degToRad(deltaGamma) * 0.1;
+    
+    // Clamp rotations for comfortable viewing
+    camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -Math.PI/4, Math.PI/4);
+    camera.rotation.z = THREE.MathUtils.clamp(camera.rotation.z, -Math.PI/12, Math.PI/12);
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
