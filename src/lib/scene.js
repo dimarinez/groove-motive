@@ -129,7 +129,7 @@ function createPortraitWarning() {
 function checkOrientation() {
   if (!isMobile) return;
   
-  const isCurrentlyPortrait = window.innerHeight > window.innerWidth;
+  const isCurrentlyPortrait = globalThis.window.innerHeight > globalThis.window.innerWidth;
   const isInGalleryMode = controls && controls.isLocked;
   
   if (isCurrentlyPortrait !== isPortraitMode) {
@@ -278,7 +278,7 @@ export function initScene() {
   
   // Check initial orientation for mobile
   if (isMobile) {
-    isPortraitMode = window.innerHeight > window.innerWidth;
+    isPortraitMode = globalThis.window.innerHeight > globalThis.window.innerWidth;
     if (!isPortraitMode) {
       createPortraitWarning();
       portraitWarning.style.display = 'flex';
@@ -560,10 +560,10 @@ export function initScene() {
   });
 
   // Window on front wall
-  const window = new THREE.Mesh(new THREE.PlaneGeometry(4, 2), windowMaterial);
-  window.position.set(0, 2.5, 10.1);
-  window.userData.isWall = false;
-  scene.add(window);
+  const windowMesh = new THREE.Mesh(new THREE.PlaneGeometry(4, 2), windowMaterial);
+  windowMesh.position.set(0, 2.5, 10.1);
+  windowMesh.userData.isWall = false;
+  scene.add(windowMesh);
 
   // Lighting
   const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
