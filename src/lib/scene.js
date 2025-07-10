@@ -767,17 +767,18 @@ function updateCameraFromOrientation() {
   smoothedOrientation.yaw = targetYaw;
   smoothedOrientation.pitch = targetPitch;
 
-  // Apply the orientation to the camera using quaternions for stability
-  // Create rotation quaternion to avoid gimbal lock
-  const quaternion = new THREE.Quaternion();
-  quaternion.setFromEuler(new THREE.Euler(smoothedOrientation.pitch, smoothedOrientation.yaw, 0, 'YXZ'));
-
-  // Apply the quaternion rotation to the camera
+  // Apply orientation directly to camera rotation to avoid gimbal lock
+  // Use separate rotations to prevent diagonal spinning when tilting up
   if (controls && controls.getObject) {
     const cameraObject = controls.getObject();
-    cameraObject.quaternion.copy(quaternion);
+    // Apply rotations separately to avoid coupling
+    cameraObject.rotation.x = smoothedOrientation.pitch;
+    cameraObject.rotation.y = smoothedOrientation.yaw;
+    cameraObject.rotation.z = 0; // No roll rotation
   } else {
-    camera.quaternion.copy(quaternion);
+    camera.rotation.x = smoothedOrientation.pitch;
+    camera.rotation.y = smoothedOrientation.yaw;
+    camera.rotation.z = 0;
   }
 
   // Debug logging to check if orientation is working
@@ -1242,6 +1243,39 @@ function startPreview(album) {
         putVinylAction.play();
       }
       
+      // Show loading indicator while preparing audio
+      const showAudioLoader = () => {
+        const existingLoader = document.querySelector('.audio-loading-indicator');
+        if (existingLoader) existingLoader.remove();
+        
+        const loader = document.createElement('div');
+        loader.className = 'audio-loading-indicator';
+        loader.style.cssText = `
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 20px;
+          border-radius: 8px;
+          z-index: 3000;
+          font-size: 14px;
+          text-align: center;
+        `;
+        loader.innerHTML = '<div>Loading audio...</div>';
+        document.body.appendChild(loader);
+        return loader;
+      };
+      
+      const hideAudioLoader = (loader) => {
+        if (loader && loader.parentNode) {
+          loader.parentNode.removeChild(loader);
+        }
+      };
+      
+      const audioLoader = showAudioLoader();
+      
       // Improved audio setup for reliable first-play
       audio.src = album.previewUrl;
       audio.preload = 'auto';
@@ -1256,6 +1290,41 @@ function startPreview(album) {
       // Multiple fallback strategies for audio loading
       let audioReady = false;
       let playAttempted = false;
+      let animationStarted = false;
+      
+      const startRecordPlayerAnimation = () => {
+        if (animationStarted) return;
+        animationStarted = true;
+        
+        hideAudioLoader(audioLoader);
+        
+        // Start record player animation
+        if (putVinylAction) {
+          putVinylAction.stop();
+          putVinylAction.setLoop(THREE.LoopOnce);
+          putVinylAction.clampWhenFinished = true;
+          putVinylAction.timeScale = 1;
+          putVinylAction.reset();
+          putVinylAction.play();
+        }
+        
+        previewInstruction.style.display = "block";
+
+        // Animate camera to face record player from further back
+        gsap.to(camera.position, {
+          x: 0,
+          y: 1.8,
+          z: -1.5,
+          duration: 1,
+          ease: "power2.inOut",
+          onUpdate: () => {
+            camera.lookAt(0, 1.2, -6);
+          },
+          onComplete: () => {
+            controls.update();
+          },
+        });
+      };
       
       const tryAudioPlay = () => {
         if (playAttempted || !isPreviewing) return;
@@ -1287,12 +1356,15 @@ function startPreview(album) {
         audio.removeEventListener('canplaythrough', onCanPlay);
         audio.removeEventListener('loadeddata', onCanPlay);
         
+        // Start animation once audio is ready
+        startRecordPlayerAnimation();
+        
         // Short delay then try to play
         setTimeout(() => {
           if (isPreviewing) {
             tryAudioPlay();
           }
-        }, 100);
+        }, 4900); // Play after animation completes
       };
       
       // Multiple event listeners for better compatibility
@@ -1300,30 +1372,22 @@ function startPreview(album) {
       audio.addEventListener('canplaythrough', onCanPlay);
       audio.addEventListener('loadeddata', onCanPlay);
       
-      // Fallback timer - try to play after animation completes regardless
+      // Fallback timer - start animation if audio takes too long
       audioTimeout = setTimeout(() => {
-        if (isPreviewing && !audioReady) {
-          console.log('Audio fallback timer - forcing play attempt');
-          tryAudioPlay();
+        if (isPreviewing && !animationStarted) {
+          console.log('Audio loading timeout - starting animation anyway');
+          startRecordPlayerAnimation();
+          
+          // Still try to play audio
+          setTimeout(() => {
+            if (isPreviewing) {
+              tryAudioPlay();
+            }
+          }, 4900);
         }
-      }, 4800);
+      }, 3000); // Wait max 3 seconds for audio
       
-      previewInstruction.style.display = "block";
-
-      // Animate camera to face record player from further back
-      gsap.to(camera.position, {
-        x: 0,
-        y: 1.8,
-        z: -1.5, // Further back to see both record player and album
-        duration: 1,
-        ease: "power2.inOut",
-        onUpdate: () => {
-          camera.lookAt(0, 1.2, -6); // Look slightly down at the record player
-        },
-        onComplete: () => {
-          controls.update();
-        },
-      });
+      // Animation will be started by audio loading callback
     });
   }
 }
