@@ -43,9 +43,7 @@ let moveForward = false,
   moveBackward = false,
   moveLeft = false,
   moveRight = false;
-let velocity = new THREE.Vector3();
-let direction = new THREE.Vector3();
-const clock = new THREE.Clock();
+let velocity, direction, clock;
 let audio,
   currentAlbum = null,
   isPreviewing = false;
@@ -272,6 +270,11 @@ export function initScene() {
 
   // Initialize mobile detection
   isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
+  // Initialize THREE.js objects
+  velocity = new THREE.Vector3();
+  direction = new THREE.Vector3();
+  clock = new THREE.Clock();
   
   // Check initial orientation for mobile
   if (isMobile) {
