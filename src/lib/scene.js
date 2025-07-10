@@ -650,12 +650,13 @@ function setupSimpleDeviceOrientation() {
   // Create SimpleDeviceOrientationControls
   simpleOrientationControls = new SimpleDeviceOrientationControls(camera);
   
-  // Configure enhanced settings for better gyro and tilt response
-  simpleOrientationControls.setEnhancedSensitivity(1.0, 0.8, 1.2); // gyro, tilt, pitch
-  simpleOrientationControls.setSmoothing(0.1); // More responsive
-  simpleOrientationControls.setPitchLimits(-60, 60); // Wider range
-  simpleOrientationControls.setRollLimits(25); // Allow natural roll
+  // Configure enhanced settings for immediate, natural response
+  simpleOrientationControls.setEnhancedSensitivity(1.6, 1.5, 1.8); // High sensitivity: gyro, tilt, pitch
+  simpleOrientationControls.setSmoothing(0.05); // Very responsive
+  simpleOrientationControls.setPitchLimits(-75, 75); // Wide range
+  simpleOrientationControls.setRollLimits(35); // Allow natural roll
   simpleOrientationControls.setOrientationModes(true, true); // Enable both gyro and tilt
+  simpleOrientationControls.setDirectMode(true); // Enable direct tracking for immediate response
   
   // Connect the controls
   const connected = simpleOrientationControls.connect();

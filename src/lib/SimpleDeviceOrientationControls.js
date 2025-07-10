@@ -15,11 +15,11 @@ export class SimpleDeviceOrientationControls {
     this.initialOrientation = null;
     this.smoothedOrientation = { yaw: 0, pitch: 0, roll: 0 };
     
-    // Enhanced gyro and tilt settings
-    this.smoothingFactor = 0.08; // More responsive
-    this.sensitivity = 1.2; // Higher sensitivity for better response
-    this.tiltSensitivity = 0.8; // Separate sensitivity for tilt (gamma)
-    this.gyroSensitivity = 1.0; // Separate sensitivity for yaw rotation
+    // Enhanced gyro and tilt settings for immediate response
+    this.smoothingFactor = 0.25; // Much more responsive
+    this.sensitivity = 1.8; // Higher sensitivity for immediate response
+    this.tiltSensitivity = 1.5; // High sensitivity for tilt
+    this.gyroSensitivity = 1.6; // High sensitivity for gyro rotation
     
     // Limits for pitch and roll
     this.minPitch = THREE.MathUtils.degToRad(-75);
@@ -31,6 +31,7 @@ export class SimpleDeviceOrientationControls {
     this.enableGyroResponse = true; // Enable alpha (compass/yaw) response
     this.invertPitch = false; // Option to invert pitch direction
     this.invertYaw = false; // Option to invert yaw direction
+    this.directMode = true; // Enable direct tracking mode for immediate response
     
     // Bind methods
     this.onDeviceOrientationChange = this.onDeviceOrientationChange.bind(this);
@@ -169,34 +170,56 @@ export class SimpleDeviceOrientationControls {
     
     // Tilt response (left/right tilt - gamma)
     if (this.enableTiltResponse) {
-      // Use gamma for subtle roll effect and also influence yaw for natural feel
+      // Use gamma for more pronounced natural movement
       const tiltInfluence = THREE.MathUtils.degToRad(deltaGamma) * this.tiltSensitivity;
       
-      // Add tilt to roll for natural camera movement
-      targetRoll = tiltInfluence * 0.3; // Subtle roll effect
+      // More pronounced roll effect for immediate visual feedback
+      targetRoll = tiltInfluence * 0.6;
       
-      // Add tilt influence to yaw for more natural turning
-      targetYaw += tiltInfluence * 0.5;
+      // Strong tilt influence on yaw for intuitive turning
+      targetYaw += tiltInfluence * 0.8;
     }
     
-    // Apply enhanced smoothing with different rates for each axis
-    this.smoothedOrientation.yaw = THREE.MathUtils.lerp(
-      this.smoothedOrientation.yaw,
-      targetYaw,
-      this.smoothingFactor
-    );
-    
-    this.smoothedOrientation.pitch = THREE.MathUtils.lerp(
-      this.smoothedOrientation.pitch,
-      targetPitch,
-      this.smoothingFactor * 1.2 // Slightly faster pitch response
-    );
-    
-    this.smoothedOrientation.roll = THREE.MathUtils.lerp(
-      this.smoothedOrientation.roll,
-      targetRoll,
-      this.smoothingFactor * 0.8 // Slower roll for stability
-    );
+    // Apply smoothing - use direct mode for immediate response or smoothed for stability
+    if (this.directMode) {
+      // Direct mode: minimal smoothing for immediate response
+      this.smoothedOrientation.yaw = THREE.MathUtils.lerp(
+        this.smoothedOrientation.yaw,
+        targetYaw,
+        0.8 // Very high response rate
+      );
+      
+      this.smoothedOrientation.pitch = THREE.MathUtils.lerp(
+        this.smoothedOrientation.pitch,
+        targetPitch,
+        0.9 // Extremely high response rate for pitch
+      );
+      
+      this.smoothedOrientation.roll = THREE.MathUtils.lerp(
+        this.smoothedOrientation.roll,
+        targetRoll,
+        0.7 // High response rate for roll
+      );
+    } else {
+      // Smoothed mode: enhanced smoothing with high responsiveness
+      this.smoothedOrientation.yaw = THREE.MathUtils.lerp(
+        this.smoothedOrientation.yaw,
+        targetYaw,
+        this.smoothingFactor * 1.1
+      );
+      
+      this.smoothedOrientation.pitch = THREE.MathUtils.lerp(
+        this.smoothedOrientation.pitch,
+        targetPitch,
+        this.smoothingFactor * 1.3
+      );
+      
+      this.smoothedOrientation.roll = THREE.MathUtils.lerp(
+        this.smoothedOrientation.roll,
+        targetRoll,
+        this.smoothingFactor * 1.0
+      );
+    }
     
     // Apply limits
     this.smoothedOrientation.pitch = THREE.MathUtils.clamp(
@@ -284,6 +307,15 @@ export class SimpleDeviceOrientationControls {
     this.invertPitch = pitch;
     this.invertYaw = yaw;
     console.log('Inversions updated:', { pitch, yaw });
+  }
+  
+  /**
+   * Enable or disable direct tracking mode
+   * @param {boolean} enabled - Use direct mode for immediate response
+   */
+  setDirectMode(enabled = true) {
+    this.directMode = enabled;
+    console.log('Direct mode:', enabled ? 'enabled (immediate response)' : 'disabled (smoothed)');
   }
   
   /**
