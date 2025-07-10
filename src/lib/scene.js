@@ -410,7 +410,7 @@ export function initScene() {
     camera.rotation.y = 0;
     camera.rotation.z = 0;
     // Point camera toward the wall
-    camera.lookAt(0, 1.6, -6);
+    camera.lookAt(0, 0, -6);
   }
 
   renderer = new THREE.WebGLRenderer({
@@ -811,6 +811,8 @@ function cleanupDeviceOrientation() {
   window.removeEventListener('deviceorientation', () => {});
   deviceOrientationControls = null;
   deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
+  orientationCalibration = { alpha: 0, beta: 0, gamma: 0 };
+  isCalibrated = false;
   console.log('Device orientation controls cleaned up');
 }
 
@@ -1014,18 +1016,22 @@ export function enterGallery() {
       return;
     }
     
+    // Reset orientation calibration for fresh setup
+    isCalibrated = false;
+    orientationCalibration = { alpha: 0, beta: 0, gamma: 0 };
+    
     requestDeviceOrientationPermission();
     
     // Set initial camera position for portrait mode
     setTimeout(() => {
       if (deviceOrientationControls && deviceOrientationControls.enabled) {
-        console.log('Setting up absolute orientation controls');
+        console.log('Setting up calibrated orientation controls');
         
         // Ensure camera is positioned correctly for portrait mode
         camera.position.set(0, 1.6, -2); // Standard viewing position
         camera.rotation.order = 'YXZ';
         
-        console.log('Absolute orientation controls ready');
+        console.log('Calibrated orientation controls ready');
       }
     }, 1000);
   }
