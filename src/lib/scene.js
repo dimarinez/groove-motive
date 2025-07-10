@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
-import { DeviceOrientationControls } from "three/addons/controls/DeviceOrientationControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { SimpleDeviceOrientationControls } from "./SimpleDeviceOrientationControls.js";
 import gsap from "gsap";
 
 const albums = [
@@ -57,8 +57,8 @@ let audioTimeout = null;
 let ui, albumTitle, enterButton, galleryCanvas, galleryScreen;
 let moveUpButton, moveDownButton, moveLeftButton, moveRightButton;
 let isMobile = false;
-// Device orientation controls
-let deviceOrientationControls = null;
+// Simple device orientation controls
+let simpleOrientationControls = null;
 let clickToLockHandler = null;
 let previewInstruction = null;
 let previewAnimationId = null;
@@ -342,9 +342,9 @@ export function initScene() {
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
 
-  // Setup device orientation for mobile
+  // Setup simple device orientation for mobile
   if (isMobile) {
-    setupDeviceOrientationControls();
+    setupSimpleDeviceOrientation();
   }
 
   // Initialize asset loading (count: logo texture, record player GLB, album covers)
@@ -606,7 +606,7 @@ async function requestDeviceOrientationPermission() {
       
       if (permissionResult === 'granted') {
         console.log('Device orientation permission granted');
-        setupDeviceOrientationControls();
+        setupSimpleDeviceOrientation();
       } else if (permissionResult === 'denied') {
         console.log('Device orientation permission denied');
       } else {
@@ -619,7 +619,7 @@ async function requestDeviceOrientationPermission() {
   } else {
     // Android or older iOS - no permission required
     console.log('No permission required for device orientation');
-    setupDeviceOrientationControls();
+    setupSimpleDeviceOrientation();
   }
 
   // Request motion permission if available
@@ -636,37 +636,44 @@ async function requestDeviceOrientationPermission() {
 }
 
 /**
- * Device orientation handling for mobile camera control
- * Optimized for portrait mode with smooth navigation
+ * Simple device orientation handling for mobile camera control
+ * Simplified alternative to Three.js DeviceOrientationControls
  */
-function setupDeviceOrientationControls() {
+function setupSimpleDeviceOrientation() {
   if (!isMobile) {
     console.log('Not mobile device, skipping orientation setup');
     return;
   }
 
-  console.log('🚀 Setting up Three.js DeviceOrientationControls...');
+  console.log('🚀 Setting up Simple Device Orientation Controls...');
 
-  // Create DeviceOrientationControls
-  deviceOrientationControls = new DeviceOrientationControls(camera);
-  deviceOrientationControls.enabled = true;
+  // Create SimpleDeviceOrientationControls
+  simpleOrientationControls = new SimpleDeviceOrientationControls(camera);
   
-  // Set up connection status tracking
-  deviceOrientationControls.addEventListener('change', () => {
-    // Update orientation status when controls change
-    updateOrientationStatus('granted', 'Orientation: Active');
-  });
-
-  console.log('DeviceOrientationControls initialized');
+  // Configure settings for better mobile experience
+  simpleOrientationControls.setSensitivity(0.8);
+  simpleOrientationControls.setSmoothing(0.2);
+  simpleOrientationControls.setPitchLimits(-45, 45);
   
-  // Verify orientation controls are working
+  // Connect the controls
+  const connected = simpleOrientationControls.connect();
+  
+  if (connected) {
+    console.log('Simple device orientation controls connected');
+    updateOrientationStatus('granted', 'Orientation: Ready');
+  } else {
+    console.warn('Simple device orientation controls failed to connect');
+    updateOrientationStatus('denied', 'Orientation: Failed');
+  }
+  
+  // Verify controls are working after a delay
   setTimeout(() => {
-    if (deviceOrientationControls.enabled) {
-      console.log('Device orientation controls active');
-      updateOrientationStatus('granted', 'Orientation: Ready');
+    if (simpleOrientationControls.isEnabled) {
+      console.log('Simple device orientation controls active');
+      updateOrientationStatus('granted', 'Orientation: Active');
     } else {
-      console.warn('Device orientation controls failed to enable');
-      updateOrientationStatus('denied', 'Orientation: Failed');
+      console.warn('Simple device orientation controls not active');
+      updateOrientationStatus('not-requested', 'Orientation: Waiting');
     }
   }, 2000);
 }
@@ -678,28 +685,18 @@ function setupDeviceOrientationControls() {
  * Useful for resetting the "center" position during navigation
  */
 function recalibrateOrientation() {
-  if (isMobile && deviceOrientation) {
-    initialOrientation = { ...deviceOrientation };
-    smoothedOrientation = { yaw: 0, pitch: 0 };
-    console.log('Orientation recalibrated to current position:', {
-      alpha: initialOrientation.alpha.toFixed(1),
-      beta: initialOrientation.beta.toFixed(1),
-      gamma: initialOrientation.gamma.toFixed(1)
-    });
+  if (isMobile && simpleOrientationControls) {
+    simpleOrientationControls.calibrate();
+    console.log('Simple orientation controls recalibrated');
   }
 }
 
-// Clean up orientation listeners
+// Clean up orientation controls
 function cleanupDeviceOrientation() {
-  window.removeEventListener('deviceorientation', () => {});
-  document.removeEventListener('deviceorientation', () => {});
-  window.removeEventListener('devicemotion', () => {});
-  document.removeEventListener('devicemotion', () => {});
-  
-  // Reset orientation state
-  deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
-  initialOrientation = null;
-  smoothedOrientation = { yaw: 0, pitch: 0 };
+  if (simpleOrientationControls) {
+    simpleOrientationControls.disconnect();
+    console.log('Simple orientation controls disconnected');
+  }
 }
 
 function resetToInitialState() {
@@ -770,7 +767,6 @@ function resetToInitialState() {
     // Reset with natural downward tilt
     const initialPitch = THREE.MathUtils.degToRad(-15);
     camera.rotation.set(initialPitch, 0, 0);
-    smoothedOrientation = { yaw: 0, pitch: initialPitch };
   } else {
     camera.rotation.set(0, 0, 0);
     camera.lookAt(0, 1.6, -6);
@@ -778,8 +774,6 @@ function resetToInitialState() {
 
   // Reset device orientation
   if (isMobile) {
-    initialOrientation = null;
-    deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
     cleanupDeviceOrientation();
   }
 
@@ -887,19 +881,11 @@ export function enterGallery() {
     
     // Calibrate orientation to match current camera position after a short delay
     setTimeout(() => {
-      if (deviceOrientation.alpha !== 0 || deviceOrientation.beta !== 0 || deviceOrientation.gamma !== 0) {
-        console.log('Calibrating orientation to match current camera position');
-        initialOrientation = {
-          alpha: deviceOrientation.alpha,
-          beta: deviceOrientation.beta + 15, // Account for natural tilt
-          gamma: deviceOrientation.gamma
-        };
+      if (simpleOrientationControls && simpleOrientationControls.isEnabled) {
+        console.log('Calibrating simple orientation controls to match current camera position');
+        simpleOrientationControls.calibrate();
         
-        // Set smoothed values to current camera rotation
-        smoothedOrientation.yaw = camera.rotation.y;
-        smoothedOrientation.pitch = camera.rotation.x;
-        
-        console.log('Orientation calibrated after entering gallery:', {
+        console.log('Simple orientation controls calibrated after entering gallery:', {
           cameraYaw: THREE.MathUtils.radToDeg(camera.rotation.y).toFixed(1),
           cameraPitch: THREE.MathUtils.radToDeg(camera.rotation.x).toFixed(1)
         });
@@ -1411,9 +1397,9 @@ export function animate() {
     controls.moveForward(velocity.z * delta);
   }
 
-  // Apply device orientation for mobile camera control
-  if (isMobile && deviceOrientationControls) {
-    deviceOrientationControls.update();
+  // Apply simple device orientation for mobile camera control
+  if (isMobile && simpleOrientationControls) {
+    simpleOrientationControls.update();
   }
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
