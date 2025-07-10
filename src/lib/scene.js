@@ -401,7 +401,7 @@ export function initScene() {
     0.1,
     1000
   );
-  camera.position.set(0, 1.6, -2);
+  camera.position.set(0, 0, -2);
   
   // Set initial camera orientation for mobile devices
   if (isMobile) {
@@ -410,7 +410,7 @@ export function initScene() {
     camera.rotation.y = 0;
     camera.rotation.z = 0;
     // Point camera toward the wall
-    camera.lookAt(0, 0, -6);
+    camera.lookAt(0, 1.6, -6);
   }
 
   renderer = new THREE.WebGLRenderer({
