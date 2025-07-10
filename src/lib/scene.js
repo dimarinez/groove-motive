@@ -57,6 +57,8 @@ let isMobile = false;
 // Device orientation controls
 let deviceOrientationControls = null;
 let deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
+let orientationCalibration = { alpha: 0, beta: 0, gamma: 0 };
+let isCalibrated = false;
 let clickToLockHandler = null;
 let previewInstruction = null;
 let previewAnimationId = null;
@@ -769,6 +771,13 @@ function setupDeviceOrientationControls() {
         beta: event.beta,
         gamma: event.gamma
       };
+      
+      // Auto-calibrate on first reading (assumes phone is upright when entering gallery)
+      if (!isCalibrated) {
+        orientationCalibration = { ...deviceOrientation };
+        isCalibrated = true;
+        console.log('Auto-calibrated orientation:', orientationCalibration);
+      }
     }
   };
 
@@ -1539,32 +1548,37 @@ export function animate() {
     controls.moveForward(velocity.z * delta);
   }
 
-  // Apply absolute device orientation for mobile camera control
-  if (isMobile && deviceOrientationControls && deviceOrientationControls.enabled && deviceOrientation) {
-    // Use absolute device orientation values
-    const alpha = deviceOrientation.alpha || 0; // Compass heading (0-360°)
-    const beta = deviceOrientation.beta || 0;   // Front-back tilt (-180 to 180°)
-    const gamma = deviceOrientation.gamma || 0; // Left-right tilt (-90 to 90°)
+  // Apply calibrated device orientation for mobile camera control
+  if (isMobile && deviceOrientationControls && deviceOrientationControls.enabled && deviceOrientation && isCalibrated) {
+    // Use calibrated orientation values (relative to upright position)
+    const alpha = deviceOrientation.alpha || 0;
+    const beta = deviceOrientation.beta || 0;
+    const gamma = deviceOrientation.gamma || 0;
+    
+    // Calculate relative rotation from calibrated upright position
+    const deltaBeta = beta - orientationCalibration.beta;
+    let deltaAlpha = alpha - orientationCalibration.alpha;
+    
+    // Handle alpha wraparound
+    if (deltaAlpha > 180) deltaAlpha -= 360;
+    if (deltaAlpha < -180) deltaAlpha += 360;
     
     camera.rotation.order = 'YXZ';
     
-    // Map absolute beta to camera pitch (phone camera = eye):
-    // Beta 0° = phone upright → camera looks straight ahead  
-    // Beta 90° = phone flat down → camera looks down
-    // Beta -90° = phone flat up → camera looks up
-    // Map so: upright=0°→straight, flat=90°→down, upside=-90°→up
-    const adjustedBeta = beta; // Keep original beta
-    const pitchSensitivity = 0.8; // Back to normal sensitivity
-    camera.rotation.x = THREE.MathUtils.degToRad(adjustedBeta) * pitchSensitivity;
+    // Map relative beta to camera pitch:
+    // deltaBeta 0° = phone in calibrated position → camera looks straight ahead  
+    // deltaBeta positive = phone tilted forward → camera looks down
+    // deltaBeta negative = phone tilted back → camera looks up
+    const pitchSensitivity = 0.8;
+    camera.rotation.x = THREE.MathUtils.degToRad(deltaBeta) * pitchSensitivity;
     
-    // Alpha controls yaw (left/right turning) - normalize to -180 to 180 range
+    // Map relative alpha to camera yaw (left/right turning)
     const yawSensitivity = 0.8;
-    let normalizedAlpha = alpha;
-    if (normalizedAlpha > 180) normalizedAlpha -= 360;
-    camera.rotation.y = THREE.MathUtils.degToRad(normalizedAlpha) * yawSensitivity;
+    camera.rotation.y = THREE.MathUtils.degToRad(deltaAlpha) * yawSensitivity;
     
     // Gamma (roll) - minimal effect for stability
-    camera.rotation.z = THREE.MathUtils.degToRad(gamma) * 0.05;
+    const deltaGamma = gamma - orientationCalibration.gamma;
+    camera.rotation.z = THREE.MathUtils.degToRad(deltaGamma) * 0.05;
     
     // Clamp rotations for comfortable viewing
     camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -Math.PI/2, Math.PI/2);
