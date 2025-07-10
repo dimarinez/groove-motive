@@ -767,18 +767,22 @@ function updateCameraFromOrientation() {
   smoothedOrientation.yaw = targetYaw;
   smoothedOrientation.pitch = targetPitch;
 
-  // Apply rotation - immediate response for both axes
+  // Apply rotation - keep horizontal perfect, fix vertical
   if (controls && controls.getObject) {
     const cameraObject = controls.getObject();
-    // Horizontal (yaw) - immediate response, works perfectly
+    // Horizontal (yaw) - immediate response, works perfectly - DON'T CHANGE
     cameraObject.rotation.y = smoothedOrientation.yaw;
     
-    // Vertical (pitch) - immediate response, but invert direction if needed
-    cameraObject.rotation.x = -smoothedOrientation.pitch; // Try negative
+    // Vertical (pitch) - fix direction and add slight smoothing to prevent jitter
+    const currentPitch = cameraObject.rotation.x;
+    const targetPitchFixed = smoothedOrientation.pitch; // Remove negative, go back to positive
+    cameraObject.rotation.x = THREE.MathUtils.lerp(currentPitch, targetPitchFixed, 0.15); // Light smoothing for jitter
     cameraObject.rotation.z = 0;
   } else {
     camera.rotation.y = smoothedOrientation.yaw;
-    camera.rotation.x = -smoothedOrientation.pitch; // Try negative
+    const currentPitch = camera.rotation.x;
+    const targetPitchFixed = smoothedOrientation.pitch;
+    camera.rotation.x = THREE.MathUtils.lerp(currentPitch, targetPitchFixed, 0.15);
     camera.rotation.z = 0;
   }
 
