@@ -641,101 +641,51 @@ async function requestDeviceOrientationPermission() {
   }
 }
 
+let orientationSamples = [];
+let calibrationStart = null;
+
 /**
  * Device orientation handling for mobile camera control
  * Optimized for portrait mode with smooth navigation
  */
 function setupDeviceOrientationControls() {
-  if (!isMobile) {
-    console.log('Not mobile device, skipping orientation setup');
-    return;
-  }
+  if (!isMobile) return;
 
-  console.log('🚀 Setting up device orientation controls...');
+  calibrationStart = Date.now();
+  orientationSamples = [];
 
-  // Reset orientation data
-  deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
-  initialOrientation = null;
-  smoothedOrientation = { yaw: 0, pitch: 0 };
-  previousSmoothedOrientation = { yaw: 0, pitch: 0 };
+  window.addEventListener('deviceorientation', function handleInitialOrientation(event) {
+    if (event.alpha === null || event.beta === null || event.gamma === null) return;
 
-  // Keep orientation values hidden
-  if (orientationValues) {
-    orientationValues.style.display = 'none';
-  }
-
-  /**
-   * Device orientation event handler for portrait mode
-   * Maps phone orientation to camera rotation for intuitive navigation
-   */
-  window.addEventListener('deviceorientation', function(event) {
-    // Debug: Log when orientation events are received
-    if (Math.random() < 0.005) {
-      console.log('Device orientation event received:', {
+    if (Date.now() - calibrationStart < 1000) {
+      orientationSamples.push({
         alpha: event.alpha,
         beta: event.beta,
         gamma: event.gamma
       });
+      return;
     }
-    
-    // Process orientation data for camera control
-    if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
-      // Store raw orientation values - no filtering to reduce complexity
-      deviceOrientation = {
-        alpha: event.alpha,    // Compass heading (0-360°)
-        beta: event.beta,      // Front-to-back tilt (-180° to 180°)
-        gamma: event.gamma     // Left-to-right tilt (-90° to 90°)
+
+    if (!initialOrientation && orientationSamples.length) {
+      const avg = orientationSamples.reduce((acc, val) => {
+        acc.alpha += val.alpha;
+        acc.beta += val.beta;
+        acc.gamma += val.gamma;
+        return acc;
+      }, { alpha: 0, beta: 0, gamma: 0 });
+
+      initialOrientation = {
+        alpha: avg.alpha / orientationSamples.length,
+        beta: avg.beta / orientationSamples.length + 15,
+        gamma: avg.gamma / orientationSamples.length
       };
 
-      // Set initial orientation when device is held in natural viewing position
-      // Account for phone being held slightly tilted down (natural viewing angle)
-      if (!initialOrientation) {
-        initialOrientation = {
-          alpha: deviceOrientation.alpha,
-          beta: deviceOrientation.beta + 15, // Offset for natural downward tilt
-          gamma: deviceOrientation.gamma
-        };
-        
-        // Set initial camera orientation to match device position
-        const initialYaw = THREE.MathUtils.degToRad(0); // Start facing forward
-        const initialPitch = THREE.MathUtils.degToRad(-15); // Slight downward tilt for natural view
-        
-        smoothedOrientation.yaw = initialYaw;
-        smoothedOrientation.pitch = initialPitch;
-        
-        // Apply initial orientation to camera
-        if (camera) {
-          const quaternion = new THREE.Quaternion();
-          quaternion.setFromEuler(new THREE.Euler(initialPitch, initialYaw, 0, 'YXZ'));
-          camera.quaternion.copy(quaternion);
-        }
-        
-        console.log('✅ Initial orientation calibrated:', {
-          alpha: initialOrientation.alpha.toFixed(1),
-          beta: initialOrientation.beta.toFixed(1),
-          gamma: initialOrientation.gamma.toFixed(1),
-          cameraYaw: THREE.MathUtils.radToDeg(initialYaw).toFixed(1),
-          cameraPitch: THREE.MathUtils.radToDeg(initialPitch).toFixed(1)
-        });
-      }
-    } else {
-      if (Math.random() < 0.001) {
-        console.log('⚠️ Device orientation event with null values:', event);
-      }
+      window.removeEventListener('deviceorientation', handleInitialOrientation);
+      console.log('📐 Calibrated orientation:', initialOrientation);
     }
   });
-  
-  console.log('Device orientation controls initialized for portrait mode');
-  
-  // Verify orientation events are working
-  setTimeout(() => {
-    if (!initialOrientation) {
-      console.warn('No device orientation events received - check permissions');
-      updateOrientationStatus('denied', 'Orientation: No events');
-    } else {
-      console.log('Device orientation active and calibrated');
-    }
-  }, 2000);
+
+  console.log('📲 Orientation setup initiated');
 }
 
 /**
@@ -743,88 +693,36 @@ function setupDeviceOrientationControls() {
  * Designed for portrait mode with full 360° horizontal and vertical range
  * Uses quaternions to avoid gimbal lock and handles orientation discontinuities
  */
-function updateCameraFromOrientation() {
+function updateCameraFromOrientation(camera) {
   if (!deviceOrientation || !initialOrientation) return;
 
-  // Calculate relative rotation from initial upright portrait position
   let relativeAlpha = deviceOrientation.alpha - initialOrientation.alpha;
   let relativeBeta = deviceOrientation.beta - initialOrientation.beta;
   let relativeGamma = deviceOrientation.gamma - initialOrientation.gamma;
 
-  // Handle 360° wraparound for alpha (compass heading) with hysteresis
   if (relativeAlpha > 180) relativeAlpha -= 360;
   if (relativeAlpha < -180) relativeAlpha += 360;
 
-  // Phone-tilt mapping for portrait mode - immediate response
-  // Gamma controls horizontal rotation (left/right tilt) - keep as is, works fine
   let targetYaw = THREE.MathUtils.degToRad(relativeGamma) * orientationSensitivity;
-  
-  // Beta controls vertical rotation (forward/back tilt) - fix direction
   let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
-  
-  // Apply orientation directly to camera for immediate response
-  // No smoothing - user wants immediate reaction to tilts
+
   smoothedOrientation.yaw = targetYaw;
   smoothedOrientation.pitch = targetPitch;
 
-  // Simple direct rotation - keep what works for side-to-side
-  if (controls && controls.getObject) {
-    const cameraObject = controls.getObject();
-    // Only apply yaw (horizontal) rotation directly - this works fine
-    cameraObject.rotation.y = smoothedOrientation.yaw;
-    
-    // For pitch (vertical), add small smoothing only when tilting up to prevent spiral
-    const currentPitch = cameraObject.rotation.x;
-    if (smoothedOrientation.pitch > currentPitch) {
-      // Tilting up - add slight smoothing to prevent spiral
-      cameraObject.rotation.x = THREE.MathUtils.lerp(currentPitch, smoothedOrientation.pitch, 0.1);
-    } else {
-      // Tilting down - immediate response (this works fine)
-      cameraObject.rotation.x = smoothedOrientation.pitch;
-    }
-    cameraObject.rotation.z = 0;
-  } else {
-    camera.rotation.y = smoothedOrientation.yaw;
-    const currentPitch = camera.rotation.x;
-    if (smoothedOrientation.pitch > currentPitch) {
-      camera.rotation.x = THREE.MathUtils.lerp(currentPitch, smoothedOrientation.pitch, 0.1);
-    } else {
-      camera.rotation.x = smoothedOrientation.pitch;
-    }
-    camera.rotation.z = 0;
-  }
+  const euler = new THREE.Euler(smoothedOrientation.pitch, smoothedOrientation.yaw, 0, 'YXZ');
+  const targetQuaternion = new THREE.Quaternion().setFromEuler(euler);
 
-  // Debug logging to check if orientation is working
-  if (Math.random() < 0.02) { // Log occasionally to check movement
-    console.log('Orientation update:', {
-      rawGamma: deviceOrientation.gamma.toFixed(1),
-      rawBeta: deviceOrientation.beta.toFixed(1),
-      relativeGamma: relativeGamma.toFixed(1),
-      relativeBeta: relativeBeta.toFixed(1),
-      targetYaw: THREE.MathUtils.radToDeg(targetYaw).toFixed(1),
-      targetPitch: THREE.MathUtils.radToDeg(targetPitch).toFixed(1),
-      immediateYaw: THREE.MathUtils.radToDeg(smoothedOrientation.yaw).toFixed(1),
-      immediatePitch: THREE.MathUtils.radToDeg(smoothedOrientation.pitch).toFixed(1),
-      hasInitial: !!initialOrientation
-    });
-  }
+  camera.quaternion.slerp(targetQuaternion, 0.1); // Smooth transition
 }
-
 
 /**
  * Recalibrates device orientation to current position
  * Useful for resetting the "center" position during navigation
  */
 function recalibrateOrientation() {
-  if (isMobile && deviceOrientation) {
-    initialOrientation = { ...deviceOrientation };
-    smoothedOrientation = { yaw: 0, pitch: 0 };
-    console.log('Orientation recalibrated to current position:', {
-      alpha: initialOrientation.alpha.toFixed(1),
-      beta: initialOrientation.beta.toFixed(1),
-      gamma: initialOrientation.gamma.toFixed(1)
-    });
-  }
+  initialOrientation = { ...deviceOrientation };
+  smoothedOrientation = { yaw: 0, pitch: 0 };
+  console.log('🔁 Recalibrated orientation:', initialOrientation);
 }
 
 // Clean up orientation listeners
