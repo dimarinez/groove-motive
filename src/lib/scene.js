@@ -1548,12 +1548,12 @@ export function animate() {
     
     camera.rotation.order = 'YXZ';
     
-    // Map absolute beta to camera pitch:
-    // Beta 0° = phone upright → camera looks straight ahead  
-    // Beta 90° = phone flat down → camera looks down
-    // Beta -90° = phone flat up → camera looks up
+    // Map absolute beta to camera pitch (phone camera = eye):
+    // Beta 0° = phone upright (camera forward) → camera looks straight ahead  
+    // Beta positive = phone tilted forward (camera down) → camera looks down
+    // Beta negative = phone tilted back (camera up) → camera looks up
     const pitchSensitivity = 0.8;
-    camera.rotation.x = THREE.MathUtils.degToRad(beta) * pitchSensitivity;
+    camera.rotation.x = THREE.MathUtils.degToRad(-beta) * pitchSensitivity;
     
     // Alpha controls yaw (left/right turning) - normalize to -180 to 180 range
     const yawSensitivity = 0.8;
