@@ -762,6 +762,17 @@ function updateCameraFromOrientation() {
   // Beta controls vertical rotation (forward/back tilt) - fix direction
   let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
   
+  // Clamp upward pitch more aggressively to prevent spiral
+  const maxUpwardPitch = THREE.MathUtils.degToRad(45); // Much more restrictive upward limit
+  const maxDownwardPitch = THREE.MathUtils.degToRad(-75); // Allow more downward range
+  
+  // If tilting up, clamp it heavily
+  if (targetPitch > 0) {
+    targetPitch = Math.min(targetPitch, maxUpwardPitch);
+  } else {
+    targetPitch = Math.max(targetPitch, maxDownwardPitch);
+  }
+  
   // Apply orientation directly to camera for immediate response
   // No smoothing - user wants immediate reaction to tilts
   smoothedOrientation.yaw = targetYaw;
