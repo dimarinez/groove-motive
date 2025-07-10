@@ -1293,8 +1293,9 @@ function startPreview(album) {
           playPromise.then(() => {
             console.log('Audio started successfully');
           }).catch(error => {
-            console.warn('Audio play failed:', error);
-            // Don't retry automatically - let user press G again if needed
+            console.warn('First audio play failed, trying immediately again:', error);
+            // Immediate second attempt for mobile
+            audio.play().catch(e => console.warn('Second audio play attempt failed:', e));
           });
         }
       };
