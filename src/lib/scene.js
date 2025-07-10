@@ -401,7 +401,7 @@ export function initScene() {
     0.1,
     1000
   );
-  camera.position.set(0, 0, -2);
+  camera.position.set(0, 1.6, -2);
   
   // Set initial camera orientation for mobile devices
   if (isMobile) {
@@ -1019,6 +1019,11 @@ export function enterGallery() {
     // Reset orientation calibration for fresh setup
     isCalibrated = false;
     orientationCalibration = { alpha: 0, beta: 0, gamma: 0 };
+    
+    // Re-setup device orientation controls if they were cleaned up
+    if (!deviceOrientationControls || !deviceOrientationControls.enabled) {
+      setupDeviceOrientationControls();
+    }
     
     requestDeviceOrientationPermission();
     
