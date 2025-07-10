@@ -1294,13 +1294,7 @@ function startPreview(album) {
             console.log('Audio started successfully');
           }).catch(error => {
             console.warn('Audio play failed:', error);
-            audioPlayAttempted = false;
-            // Retry once
-            setTimeout(() => {
-              if (isPreviewing && !audioPlayAttempted) {
-                tryPlayAudio();
-              }
-            }, 500);
+            // Don't retry automatically - let user press G again if needed
           });
         }
       };
