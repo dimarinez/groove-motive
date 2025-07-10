@@ -767,30 +767,20 @@ function updateCameraFromOrientation() {
   smoothedOrientation.yaw = targetYaw;
   smoothedOrientation.pitch = targetPitch;
 
-  // Simple direct rotation - keep what works for side-to-side
+  // Apply rotation with heavy smoothing on vertical only to prevent spiral
   if (controls && controls.getObject) {
     const cameraObject = controls.getObject();
-    // Only apply yaw (horizontal) rotation directly - this works fine
+    // Horizontal (yaw) - immediate response, works perfectly
     cameraObject.rotation.y = smoothedOrientation.yaw;
     
-    // For pitch (vertical), add small smoothing only when tilting up to prevent spiral
+    // Vertical (pitch) - add heavy smoothing to prevent spiral
     const currentPitch = cameraObject.rotation.x;
-    if (smoothedOrientation.pitch > currentPitch) {
-      // Tilting up - add slight smoothing to prevent spiral
-      cameraObject.rotation.x = THREE.MathUtils.lerp(currentPitch, smoothedOrientation.pitch, 0.1);
-    } else {
-      // Tilting down - immediate response (this works fine)
-      cameraObject.rotation.x = smoothedOrientation.pitch;
-    }
+    cameraObject.rotation.x = THREE.MathUtils.lerp(currentPitch, smoothedOrientation.pitch, 0.05);
     cameraObject.rotation.z = 0;
   } else {
     camera.rotation.y = smoothedOrientation.yaw;
     const currentPitch = camera.rotation.x;
-    if (smoothedOrientation.pitch > currentPitch) {
-      camera.rotation.x = THREE.MathUtils.lerp(currentPitch, smoothedOrientation.pitch, 0.1);
-    } else {
-      camera.rotation.x = smoothedOrientation.pitch;
-    }
+    camera.rotation.x = THREE.MathUtils.lerp(currentPitch, smoothedOrientation.pitch, 0.05);
     camera.rotation.z = 0;
   }
 
