@@ -762,36 +762,23 @@ function updateCameraFromOrientation() {
   // Beta controls vertical rotation (forward/back tilt) - fix direction
   let targetPitch = THREE.MathUtils.degToRad(relativeBeta) * orientationSensitivity;
   
-  // Clamp upward pitch more aggressively to prevent spiral
-  const maxUpwardPitch = THREE.MathUtils.degToRad(45); // Much more restrictive upward limit
-  const maxDownwardPitch = THREE.MathUtils.degToRad(-75); // Allow more downward range
-  
-  // If tilting up, clamp it heavily
-  if (targetPitch > 0) {
-    targetPitch = Math.min(targetPitch, maxUpwardPitch);
-  } else {
-    targetPitch = Math.max(targetPitch, maxDownwardPitch);
-  }
-  
   // Apply orientation directly to camera for immediate response
   // No smoothing - user wants immediate reaction to tilts
   smoothedOrientation.yaw = targetYaw;
   smoothedOrientation.pitch = targetPitch;
 
-  // Apply rotation with heavy smoothing on vertical only to prevent spiral
+  // Apply rotation - immediate response for both axes
   if (controls && controls.getObject) {
     const cameraObject = controls.getObject();
     // Horizontal (yaw) - immediate response, works perfectly
     cameraObject.rotation.y = smoothedOrientation.yaw;
     
-    // Vertical (pitch) - add heavy smoothing to prevent spiral
-    const currentPitch = cameraObject.rotation.x;
-    cameraObject.rotation.x = THREE.MathUtils.lerp(currentPitch, smoothedOrientation.pitch, 0.05);
+    // Vertical (pitch) - immediate response, but invert direction if needed
+    cameraObject.rotation.x = -smoothedOrientation.pitch; // Try negative
     cameraObject.rotation.z = 0;
   } else {
     camera.rotation.y = smoothedOrientation.yaw;
-    const currentPitch = camera.rotation.x;
-    camera.rotation.x = THREE.MathUtils.lerp(currentPitch, smoothedOrientation.pitch, 0.05);
+    camera.rotation.x = -smoothedOrientation.pitch; // Try negative
     camera.rotation.z = 0;
   }
 
