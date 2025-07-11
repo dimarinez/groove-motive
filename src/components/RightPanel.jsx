@@ -40,6 +40,10 @@ export default function RightPanel() {
             <div>γ: <span id="gamma-value">0</span>°</div>
           </div>
         </div>
+        <div className="instruction-container instruction-container--escape">
+          <div className="escape-key">ESC</div>
+          <p>Press to exit<br/>the gallery</p>
+        </div>
       </div>
     </div>
   );

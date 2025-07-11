@@ -10,7 +10,7 @@ const albums = [
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM001%20Cover%20Art.jpg",
     previewUrl:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Luke%20Andy%20%26%20Sophiegrophy%20-%20My%20Side%20%28Radio%20Edit%29%5BGroove%20Motive%5D.mp3",
-    buyUrl: "https://groovemotive.bandcamp.com/track/my-side",
+    buyUrl: "https://www.beatport.com/track/my-side/20167500",
   },
   {
     title: "KiRiK",
@@ -18,7 +18,7 @@ const albums = [
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM002.jpg",
     previewUrl:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/KiRiK%20-%20Truth_Groove%20Motive%20%5BRadio%20Master%5D.mp3",
-    buyUrl: "https://groovemotive.bandcamp.com/track/truth",
+    buyUrl: "https://www.beatport.com/track/truth/20398456",
   },
   {
     title: "Dateless",
@@ -576,14 +576,135 @@ export function initScene() {
 
   // Record player
   const gltfLoader = new GLTFLoader();
+  
+  // Marble pillars in corners (snug against walls)
+  const pillarPositions = [
+    [-9, 0, -9], // Back left corner
+    [9, 0, -9],  // Back right corner
+    [-9, 0, 9],  // Front left corner
+    [9, 0, 9]    // Front right corner
+  ];
+
+  // Load marble pillars with extensive debugging
+  pillarPositions.forEach((position, index) => {
+    gltfLoader.load(
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/marble_pillar.glb",
+      (gltf) => {
+        const pillar = gltf.scene;
+        
+        // Scale down the massive model to larger, more prominent size
+        pillar.scale.set(0.04, 0.04, 0.04); // Much bigger scale for impressive pillars
+        
+        // Compute bounding box after scaling
+        const box = new THREE.Box3().setFromObject(pillar);
+        const size = box.getSize(new THREE.Vector3());
+        
+        console.log(`Pillar ${index + 1} size after scaling:`, size);
+        
+        // Position the pillar so its bottom sits on the floor
+        pillar.position.set(
+          position[0], 
+          position[1] - box.min.y, // Offset by the minimum Y to put bottom at floor level
+          position[2]
+        );
+        
+        pillar.rotation.y = 0; // Reset rotation
+        pillar.visible = true;
+        
+        let meshCount = 0;
+        pillar.traverse((child) => {
+          if (child.isMesh) {
+            meshCount++;
+            console.log(`Mesh ${meshCount}:`, child.name, 'Vertices:', child.geometry.attributes.position?.count);
+            
+            // Apply proper material encoding and keep original material
+            if (child.material) {
+              if (child.material.map) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+                child.material.map.needsUpdate = true;
+              }
+              // Enhance the original material properties
+              child.material.needsUpdate = true;
+            }
+            child.visible = true;
+            child.frustumCulled = false;
+          }
+          child.visible = true;
+        });
+        
+        // If no meshes found, create a placeholder
+        if (meshCount === 0) {
+          console.log(`No meshes found in pillar ${index + 1}, creating placeholder`);
+          const placeholderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 4, 8);
+          const placeholderMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
+          const placeholder = new THREE.Mesh(placeholderGeometry, placeholderMaterial);
+          placeholder.position.set(0, 2, 0);
+          pillar.add(placeholder);
+        }
+        
+        scene.add(pillar);
+        console.log(`Pillar ${index + 1} added to scene with ${meshCount} meshes`);
+      },
+      undefined,
+      (error) => {
+        console.error(`Error loading pillar ${index + 1}:`, error);
+        // Create fallback pillar
+        const fallbackGeometry = new THREE.CylinderGeometry(0.8, 0.8, 5, 12);
+        const fallbackMaterial = new THREE.MeshStandardMaterial({ 
+          color: 0xcccccc,
+          roughness: 0.3,
+          metalness: 0.1
+        });
+        const fallbackPillar = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
+        fallbackPillar.position.set(position[0], 2.5, position[2]);
+        scene.add(fallbackPillar);
+        console.log(`Fallback pillar ${index + 1} created`);
+      }
+    );
+  });
   gltfLoader.load(
     "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/vinyl_record_player.glb",
     (gltf) => {
       animatedRecordPlayer = gltf.scene;
-      animatedRecordPlayer.position.set(0, 0, -6);
+      animatedRecordPlayer.position.set(0, 0.9, -6); // Raised to sit on table
       animatedRecordPlayer.scale.set(0.05, 0.05, 0.05);
       animatedRecordPlayer.visible = true;
       scene.add(animatedRecordPlayer);
+
+      // Create table under record player
+      const tableGeometry = new THREE.BoxGeometry(6, 0.2, 4);
+      const tableMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x8B4513, // Brown wood color
+        roughness: 0.7,
+        metalness: 0.1
+      });
+      const table = new THREE.Mesh(tableGeometry, tableMaterial);
+      table.position.set(0, 0.8, -6); // Raised up to be more visible
+      table.userData.isWall = false;
+      scene.add(table);
+      
+      // Add table legs
+      const legGeometry = new THREE.BoxGeometry(0.15, 1.6, 0.15);
+      const legMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x654321, // Darker brown
+        roughness: 0.8,
+        metalness: 0.05
+      });
+      
+      // Create 4 legs
+      const legPositions = [
+        [-2.8, 0, -4.2], // Front left
+        [2.8, 0, -4.2],  // Front right
+        [-2.8, 0, -7.8], // Back left
+        [2.8, 0, -7.8]   // Back right
+      ];
+      
+      legPositions.forEach(pos => {
+        const leg = new THREE.Mesh(legGeometry, legMaterial);
+        leg.position.set(pos[0], pos[1], pos[2]);
+        leg.userData.isWall = false;
+        scene.add(leg);
+      });
 
       animatedRecordPlayer.traverse((child) => {
         if (child.isMesh && child.material) {
@@ -1152,10 +1273,25 @@ function createAlbumMesh(album, index) {
       onAssetLoaded(); // Still count as loaded even if failed
     }
   );
+  
+  // Create album artwork
   const material = new THREE.MeshBasicMaterial({ map: texture });
   const albumMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
   albumMesh.position.set(-8 + index * 4, 2.5, -9.8);
   albumMesh.userData = { album };
+  
+  // Create gold frame
+  const frameGeometry = new THREE.PlaneGeometry(2.3, 2.3);
+  const frameMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0xFFD700, // Gold color
+    metalness: 1.0,  // Maximum metallic shine
+    roughness: 0.05  // Very smooth and reflective
+  });
+  const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+  frame.position.set(-8 + index * 4, 2.5, -9.81); // Slightly behind artwork
+  frame.userData.isWall = false;
+  
+  scene.add(frame);
   scene.add(albumMesh);
 }
 

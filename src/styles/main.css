@@ -32,6 +32,7 @@ body {
   justify-content: center;
   opacity: 0;
   letter-spacing: -0.02em;
+  overflow-x: hidden;
 }
 
 
@@ -49,14 +50,15 @@ body {
 
 #left-panel h2 {
   font-size: 38px;
-  margin-bottom: 75px;
+  margin-bottom: 100px;
 }
 
 #left-panel.left-panel-container {
   position: relative;
-  padding: 200px 30px 30px 30px;
+  padding: 200px 0 30px 30px;
   background: #f8f8f8;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   justify-content: flex-start;
 }
 
@@ -172,9 +174,48 @@ body {
   margin-bottom: 2.5rem;
 }
 
-#left-panel .left-panel-logo {
+#left-panel .left-logo-back {
+  background: white;
+  display: inline-block;
   max-width: 250px;
-  margin-bottom: 100px;
+}
+
+#left-panel .left-panel-g {
+  max-width: 300px;
+  display: inline-block;
+}
+
+/* Artistic positioning for the large G mark */
+#left-panel .left-panel-g-artistic {
+  position: absolute;
+  top: 45%;
+  right: -15%;
+  width: 280px;
+  height: auto;
+  opacity: 0.08;
+  transform: rotate(15deg);
+  z-index: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* Ensure content is above the artistic G */
+#left-panel .exhibitions-title,
+#left-panel .exhibitions-list,
+#left-panel .social-links {
+  position: relative;
+  z-index: 2;
+}
+
+#left-panel .left-logo-container {
+  background: black;
+  margin-bottom: 50px;
+}
+
+#left-panel .left-panel-logo {
+  width: 100%;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 #left-panel h1 {
@@ -215,16 +256,7 @@ body {
 #left-panel .g-spacer {
   position: relative;
   width: 100%;
-}
-
-#left-panel .left-panel-large-g {
-  font-size: 500px;
-  font-weight: bold;
-  left: -170px;
-  position: relative;
-  color: #000;
-  z-index: 1;
-  line-height: 1;
+  padding: 2em 0;
 }
 
 #left-panel .exhibitions-title {
@@ -564,26 +596,52 @@ body {
   transition: all 0.3s ease;
 }
 
+.instruction-container--escape {
+  display: flex;
+  justify-content: end;
+  flex-direction: column;
+}
+
+.escape-key {
+  width: 45px;
+  height: 35px;
+  border: 2px solid white;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px auto;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 4px;
+  font-family: "Suisse", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 
 @media (max-width: 768px) {
   #container {
     flex-direction: column;
     height: 100dvh;
   }
+
   #left-panel {
     width: 100%;
     height: 50%;
     overflow-y: auto;
     padding: 2rem 1.5rem;
   }
+
+  #left-panel .instruction-container--escape {
+    display: none;
+  }
   
   #left-panel.left-panel-container {
-    padding: 2rem 1.5rem;
+    padding: 2rem 0 2rem 1.5rem;
   }
   
   #left-panel .left-panel-logo {
     max-width: 180px;
-    margin-bottom: 1rem;
   }
   
   #left-panel .left-panel-description {
@@ -599,15 +657,6 @@ body {
     line-height: 1.6;
     margin-bottom: 1.5rem;
     text-indent: 0;
-  }
-  
-  #left-panel .left-panel-large-g {
-    font-size: 500px;
-    left: -170px;
-  }
-  
-  #left-panel .g-spacer {
-    margin: 1rem 0;
   }
   
   #left-panel .exhibitions-title {
