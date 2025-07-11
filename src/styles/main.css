@@ -632,7 +632,7 @@ body {
     padding: 2rem 1.5rem;
   }
 
-  #left-panel .instruction-container--escape {
+  .instruction-container--escape {
     display: none;
   }
   
