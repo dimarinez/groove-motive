@@ -20,7 +20,7 @@ export default function LeftPanel() {
       const moveImage = (e) => {
         const imgElement = hoverImages.current[index];
         if (imgElement) {
-          imgElement.style.left = `${e.pageX - 100}px`; // Center image relative to cursor
+          imgElement.style.left = `${e.pageX}px`; // Center image relative to cursor
           imgElement.style.top = `${e.pageY - 100}px`;
           imgElement.style.opacity = '1';
           imgElement.style.display = 'block';
@@ -55,6 +55,7 @@ export default function LeftPanel() {
         <img src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM_Wordmark_CLEAR_BLACK.png" alt="Groove Motive" className="left-panel-logo" />
       </div>
       </div>
+      <h2>A New Label Built from Passion</h2>
       <div className="left-panel-large-g">
         <img src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM_Mark_Black_300PPI.png" alt="Groove Motive" className="left-panel-g-artistic" />
       </div>

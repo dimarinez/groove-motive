@@ -1264,7 +1264,11 @@ function findVinylMesh(object) {
 }
 
 function createAlbumMesh(album, index) {
-  const texture = new THREE.TextureLoader().load(
+  const position = [-8 + index * 4, 1.8, -9.8];
+  
+  // Load the album texture
+  const textureLoader = new THREE.TextureLoader();
+  const texture = textureLoader.load(
     album.cover,
     () => onAssetLoaded(), // Album cover loaded
     undefined,
@@ -1274,25 +1278,160 @@ function createAlbumMesh(album, index) {
     }
   );
   
-  // Create album artwork
-  const material = new THREE.MeshBasicMaterial({ map: texture });
-  const albumMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
-  albumMesh.position.set(-8 + index * 4, 2.5, -9.8);
-  albumMesh.userData = { album };
+  // Load the GLB frame from local assets
+  const frameLoader = new GLTFLoader();
+  console.log('Loading local GLB frame for:', album.title);
+  frameLoader.load(
+    "/src/assets/frame01_lowpoly.glb",
+    (gltf) => {
+      console.log('Local GLB frame loaded successfully for:', album.title);
+      const frameModel = gltf.scene;
+      frameModel.position.set(position[0], position[1] - 2.0, position[2] + 0.05);
+      frameModel.scale.set(14, 14, 2);
+      frameModel.userData = { album };
+      
+      let albumArtApplied = false;
+      
+      // Log all meshes found in the frame and make them lighter
+      frameModel.traverse((child) => {
+        if (child.isMesh) {
+          console.log(`Frame mesh: "${child.name}", material: "${child.material?.name}"`);
+          
+          // Make frame material lighter
+          if (child.material) {
+            // Clone the material to avoid affecting other instances
+            child.material = child.material.clone();
+            child.material.color.setHex(0xd4af37); // Set to gold color
+            child.material.emissive.setHex(0x333333); // Add more emission for brightness
+            child.material.roughness = 0.3;
+            child.material.metalness = 0.8;
+          }
+        }
+      });
+      
+      // Apply album artwork to the center/canvas area
+      frameModel.traverse((child) => {
+        if (child.isMesh) {
+          const meshName = child.name.toLowerCase();
+          const materialName = child.material?.name?.toLowerCase() || '';
+          
+          // Look for the canvas/picture area with various possible names
+          if (meshName.includes('picture') || 
+              meshName.includes('canvas') || 
+              meshName.includes('art') ||
+              meshName.includes('painting') ||
+              meshName.includes('image') ||
+              meshName.includes('center') ||
+              meshName.includes('inner') ||
+              materialName.includes('picture') ||
+              materialName.includes('canvas')) {
+            
+            // Apply album artwork to this mesh
+            child.material = new THREE.MeshStandardMaterial({
+              map: texture,
+              roughness: 0.1,
+              metalness: 0.0
+            });
+            albumArtApplied = true;
+            console.log(`Applied album texture to: ${child.name}`);
+          }
+          // Keep original materials for frame decorative parts
+        }
+      });
+      
+      // If no specific canvas area found, add a plane in the center
+      if (!albumArtApplied) {
+        console.log('No canvas mesh found, creating center plane');
+        const albumMaterial = new THREE.MeshStandardMaterial({ 
+          map: texture,
+          roughness: 0.1,
+          metalness: 0.0
+        });
+        const albumPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.12), albumMaterial);
+        albumPlane.position.set(0.077, 0.225, -0.01);
+        frameModel.add(albumPlane);
+        console.log('Added center plane for album art');
+      }
+      
+      scene.add(frameModel);
+      console.log(`Local GLB frame added for: ${album.title}`);
+    },
+    (progress) => {
+      console.log('GLB frame loading progress:', (progress.loaded / progress.total * 100).toFixed(1) + '%');
+    },
+    (error) => {
+      console.error(`Error loading local GLB frame for ${album.title}:`, error);
+      console.log('Falling back to custom frame');
+      // Fallback to custom frame
+      createFramedAlbum(position, texture, album);
+    }
+  );
+}
+
+function createFramedAlbum(position, texture, album) {
+  // Create a group to hold frame and artwork
+  const frameGroup = new THREE.Group();
+  frameGroup.position.set(position[0], position[1], position[2]);
   
-  // Create gold frame
-  const frameGeometry = new THREE.PlaneGeometry(2.3, 2.3);
-  const frameMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0xFFD700, // Gold color
-    metalness: 1.0,  // Maximum metallic shine
-    roughness: 0.05  // Very smooth and reflective
+  // Create 3D frame using basic geometry
+  const frameDepth = 0;
+  const frameWidth = 2.6;
+  const frameHeight = 2.6;
+  const frameThickness = 0.2;
+  
+  // Default material for frame parts (no color override)
+  const frameMaterial = new THREE.MeshStandardMaterial({
+    roughness: 0.3,
+    metalness: 0.8
   });
-  const frame = new THREE.Mesh(frameGeometry, frameMaterial);
-  frame.position.set(-8 + index * 4, 2.5, -9.81); // Slightly behind artwork
-  frame.userData.isWall = false;
   
-  scene.add(frame);
-  scene.add(albumMesh);
+  // Create frame parts (top, bottom, left, right)
+  const topFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(frameWidth, frameThickness, frameDepth),
+    frameMaterial
+  );
+  topFrame.position.set(0, frameHeight/2 - frameThickness/2, 0);
+  frameGroup.add(topFrame);
+  
+  const bottomFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(frameWidth, frameThickness, frameDepth),
+    frameMaterial.clone()
+  );
+  bottomFrame.position.set(0, -frameHeight/2 + frameThickness/2, 0);
+  frameGroup.add(bottomFrame);
+  
+  const leftFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(frameThickness, frameHeight - 2*frameThickness, frameDepth),
+    frameMaterial.clone()
+  );
+  leftFrame.position.set(-frameWidth/2 + frameThickness/2, 0, 0);
+  frameGroup.add(leftFrame);
+  
+  const rightFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(frameThickness, frameHeight - 2*frameThickness, frameDepth),
+    frameMaterial.clone()
+  );
+  rightFrame.position.set(frameWidth/2 - frameThickness/2, 0, 0);
+  frameGroup.add(rightFrame);
+  
+  // Create album artwork in the center
+  const albumMaterial = new THREE.MeshStandardMaterial({ 
+    map: texture,
+    roughness: 0.1,
+    metalness: 0.0
+  });
+  const artworkSize = frameWidth - 2*frameThickness - 0.05; // Smaller gap
+  const albumMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(artworkSize, artworkSize), 
+    albumMaterial
+  );
+  albumMesh.position.set(0, 0, -frameDepth/2 + 0.01); // Inside the frame, at the back
+  frameGroup.add(albumMesh);
+  
+  frameGroup.userData = { album };
+  scene.add(frameGroup);
+  
+  console.log(`Created framed album for: ${album.title}`);
 }
 
 function addAlbum(title, cover, previewUrl, buyUrl) {
