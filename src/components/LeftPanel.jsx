@@ -70,7 +70,7 @@ export default function LeftPanel() {
         leftPanel.removeEventListener('scroll', handleScroll);
       }
       hoverImages.current.forEach(img => img.remove());
-    });
+    };
   }, []);
 
   return (
