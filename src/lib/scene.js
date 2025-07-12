@@ -1282,7 +1282,7 @@ function createAlbumMesh(album, index) {
   const frameLoader = new GLTFLoader();
   console.log('Loading local GLB frame for:', album.title);
   frameLoader.load(
-    "/src/assets/frame01_lowpoly.glb",
+    "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/frame01_lowpoly.glb",
     (gltf) => {
       console.log('Local GLB frame loaded successfully for:', album.title);
       const frameModel = gltf.scene;

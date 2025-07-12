@@ -56,6 +56,10 @@ export default function LeftPanel() {
       </div>
       </div>
       <h2>A New Label Built from Passion</h2>
+      <div className="read-more-mobile">
+        <span>See Events</span>
+        <div className="arrow-down">↓</div>
+      </div>
       <div className="left-panel-large-g">
         <img src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM_Mark_Black_300PPI.png" alt="Groove Motive" className="left-panel-g-artistic" />
       </div>
