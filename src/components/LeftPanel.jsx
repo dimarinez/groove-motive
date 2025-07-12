@@ -4,6 +4,25 @@ export default function LeftPanel() {
   const hoverImages = useRef([]);
 
   useEffect(() => {
+    // Handle scroll arrow visibility
+    const leftPanel = document.getElementById('left-panel');
+    const scrollArrow = document.getElementById('scroll-arrow-mobile');
+    let hasScrolled = false;
+
+    const handleScroll = () => {
+      if (!hasScrolled && scrollArrow) {
+        hasScrolled = true;
+        scrollArrow.style.opacity = '0';
+        setTimeout(() => {
+          scrollArrow.style.display = 'none';
+        }, 300);
+      }
+    };
+
+    if (leftPanel) {
+      leftPanel.addEventListener('scroll', handleScroll);
+    }
+
     const eventLinks = document.querySelectorAll('#left-panel ul li a');
     hoverImages.current = [];
 
@@ -43,8 +62,14 @@ export default function LeftPanel() {
         link.removeEventListener('mouseover', moveImage);
         link.removeEventListener('mousemove', moveImage);
         link.removeEventListener('mouseout', hideImage);
-        hoverImages.current.forEach(img => img.remove());
       };
+    });
+
+    return () => {
+      if (leftPanel) {
+        leftPanel.removeEventListener('scroll', handleScroll);
+      }
+      hoverImages.current.forEach(img => img.remove());
     });
   }, []);
 
@@ -56,9 +81,8 @@ export default function LeftPanel() {
       </div>
       </div>
       <h2>A New Label Built from Passion</h2>
-      <div className="read-more-mobile">
-        <span>See Events</span>
-        <div className="arrow-down">↓</div>
+      <div className="scroll-arrow-mobile" id="scroll-arrow-mobile">
+        ↓
       </div>
       <div className="left-panel-large-g">
         <img src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM_Mark_Black_300PPI.png" alt="Groove Motive" className="left-panel-g-artistic" />
