@@ -393,7 +393,14 @@ body.gallery-entered canvas {
   flex-direction: column;
 }
 
-/* Gallery canvas styles are handled by the Three.js renderer canvas directly */
+/* Gallery canvas styles */
+#gallery-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  margin: 0;
+  padding: 0;
+}
 
 #enter-button {
   position: absolute;

@@ -72,7 +72,7 @@ export default function Navigation({ onNavigate, currentView = 'home' }) {
             aria-label="Go to home page"
           >
             <img 
-              src="/src/assets/GM_Wordmark_WHITE_300PPI.svg" 
+              src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM_Wordmark_WHITE_300PPI.svg" 
               alt="Groove Motive" 
               className="nav-logo-img"
             />
