@@ -1,67 +1,222 @@
-import { useEffect } from 'react';
-import LeftPanel from './components/LeftPanel';
-import RightPanel from './components/RightPanel';
+import { useEffect, useState } from 'react';
+import Navigation from './components/Navigation';
+import HomePage from './components/HomePage';
+import AboutPage from './components/pages/AboutPage';
+import ReleasesPage from './components/pages/ReleasesPage';
+import EventsPage from './components/pages/EventsPage';
+import VideosPage from './components/pages/VideosPage';
+import MouseFollower from './components/MouseFollower';
 import UI from './components/UI';
 import MobileControls from './components/MobileControls';
 import HamburgerMenu from './components/HamburgerMenu';
-import { initScene, animate, animatePreview, enterGallery } from './lib/scene';
+import InstructionsGroup from './components/InstructionsGroup';
+import { initScene, animate, animatePreview, enterGallery, resetSceneForHomepage } from './lib/scene';
+import { resetHomeAnimationState } from './components/HomePage';
 import gsap from 'gsap';
 
 function App() {
+  const [currentView, setCurrentView] = useState('home');
+  const [isInGallery, setIsInGallery] = useState(false);
+
   const handleEnterGallery = () => {
-    enterGallery();
-    // Small delay to ensure canvas is properly attached before starting animation
+    try {
+      setIsInGallery(true);
+      enterGallery();
+      // Small delay to ensure canvas is properly attached before starting animation
+      setTimeout(() => {
+        try {
+          animate();
+        } catch (error) {
+          console.error("Error starting animation:", error);
+          // Reset to homepage if animation fails
+          handleReturnToHomepage();
+        }
+      }, 50);
+    } catch (error) {
+      console.error("Error entering gallery:", error);
+      // Reset to homepage if gallery entry fails
+      handleReturnToHomepage();
+    }
+  };
+
+  const handleReturnToHomepage = () => {
+    setCurrentView('home');
+    setIsInGallery(false);
+    
+    // Reset animation states to allow entrance animation to play again
+    resetHomeAnimationState();
+    
+    // Reset scene state and reinitialize
     setTimeout(() => {
-      animate();
+      try {
+        // Reset scene states first
+        resetSceneForHomepage();
+        
+        // Small delay to ensure DOM is ready
+        setTimeout(() => {
+          const heroCanvas = document.getElementById('hero-gallery-canvas');
+          if (heroCanvas) {
+            console.log("Reinitializing scene for homepage return");
+            
+            // Reinitialize the scene
+            initScene();
+            
+            // Start preview animation after initialization
+            setTimeout(() => {
+              console.log("Starting preview animation after homepage return");
+              animatePreview();
+            }, 200);
+          } else {
+            console.warn("Hero canvas not found when returning to homepage");
+          }
+        }, 100);
+      } catch (error) {
+        console.error("Error reinitializing scene on homepage return:", error);
+      }
     }, 50);
   };
 
-  useEffect(() => {
-    // Initialize Three.js scene for preview
-    initScene();
-    animatePreview();
-
-    // GSAP animations for panels
-    gsap.fromTo(
-      '#left-panel',
-      { opacity: 0, x: -50 },
-      { opacity: 1, x: 0, duration: 0.8, ease: 'power2.out' }
-    );
-    gsap.fromTo(
-      '#right-panel',
-      { opacity: 0 },
-      { opacity: 1, duration: 0.8, ease: 'power2.out', delay: 0.2 }
-    );
-
-    // Add event listener for enter button
-    const enterButton = document.getElementById('enter-button');
-    if (enterButton) {
-      enterButton.addEventListener('click', handleEnterGallery);
-      // Add touch support for mobile
-      enterButton.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        handleEnterGallery();
-      });
+  const handleNavigation = (section) => {
+    if (section === 'listening-room') {
+      handleEnterGallery();
+    } else {
+      // Clean up scene preview when navigating away from home
+      try {
+        resetSceneForHomepage();
+      } catch (error) {
+        console.warn("Error cleaning up scene during navigation:", error);
+      }
       
-      return () => {
-        // Cleanup (e.g., remove event listeners)
-        enterButton.removeEventListener('click', handleEnterGallery);
-        enterButton.removeEventListener('touchstart', handleEnterGallery);
-      };
+      // Page transition animation
+      gsap.to('.page-transition', {
+        opacity: 1,
+        duration: 0.3,
+        onComplete: () => {
+          setCurrentView(section);
+          setIsInGallery(false);
+          
+          // Fade out transition overlay
+          gsap.to('.page-transition', {
+            opacity: 0,
+            duration: 0.3,
+            delay: 0.1
+          });
+        }
+      });
     }
-  }, []);
+  };
+
+  useEffect(() => {
+    if (currentView === 'home' && !isInGallery) {
+      // Initialize Three.js scene for preview in hero section
+      console.log("Home page loaded, initializing scene preview");
+      
+      const initScenePreview = () => {
+        const heroCanvas = document.getElementById('hero-gallery-canvas');
+        console.log("Looking for hero canvas:", {
+          heroCanvas: !!heroCanvas,
+          currentView,
+          isInGallery
+        });
+        
+        if (heroCanvas) {
+          console.log("Initializing 3D scene in hero canvas");
+          try {
+            initScene();
+            // Small delay to ensure scene is fully initialized
+            setTimeout(() => {
+              animatePreview();
+            }, 100);
+          } catch (error) {
+            console.error("Error initializing scene:", error);
+          }
+        } else {
+          console.warn("Hero canvas not found, retrying...");
+          // Retry after longer delay
+          setTimeout(() => {
+            const retryCanvas = document.getElementById('hero-gallery-canvas');
+            if (retryCanvas) {
+              console.log("Retry successful, initializing scene");
+              try {
+                initScene();
+                setTimeout(() => {
+                  animatePreview();
+                }, 100);
+              } catch (error) {
+                console.error("Error initializing scene on retry:", error);
+              }
+            } else {
+              console.error("Hero canvas still not found after retry");
+            }
+          }, 500);
+        }
+      };
+
+      // Use a timeout to ensure DOM is ready
+      setTimeout(initScenePreview, 500);
+    }
+  }, [currentView, isInGallery]);
+
+  // Expose the return to homepage function globally
+  useEffect(() => {
+    if (globalThis.window) {
+      window.returnToHomepage = handleReturnToHomepage;
+    }
+    
+    return () => {
+      if (globalThis.window) {
+        delete window.returnToHomepage;
+      }
+    };
+  }, [handleReturnToHomepage]);
+
+  // Render different views based on current state
+  if (isInGallery) {
+    return (
+      <>
+        {/* Full 3D Gallery Experience */}
+        <UI />
+        <MobileControls />
+        <InstructionsGroup />
+        <div className="hamburger-menu">
+          <HamburgerMenu />
+        </div>
+      </>
+    );
+  }
+
+  // Render different views based on current state
+  const renderCurrentView = () => {
+    switch(currentView) {
+      case 'home':
+        return <HomePage onEnterListeningRoom={handleEnterGallery} />;
+      case 'about':
+        return <AboutPage />;
+      case 'releases':
+        return <ReleasesPage />;
+      case 'events':
+        return <EventsPage />;
+      case 'videos':
+        return <VideosPage />;
+      case 'listening-room':
+        return null; // This shouldn't be reached since listening-room triggers isInGallery
+      default:
+        return <HomePage onEnterListeningRoom={handleEnterGallery} />;
+    }
+  };
 
   return (
     <>
-      <div id="container">
-        <LeftPanel />
-        <RightPanel />
-      </div>
-      <UI />
-      <MobileControls />
-      <div className="hamburger-menu">
-        <HamburgerMenu />
-      </div>
+      <MouseFollower />
+      <Navigation onNavigate={handleNavigation} currentView={currentView} />
+      
+      {/* Page Transition Overlay */}
+      <div className="page-transition"></div>
+      
+      {/* Main Content */}
+      <main className="main-content">
+        {renderCurrentView()}
+      </main>
     </>
   );
 }

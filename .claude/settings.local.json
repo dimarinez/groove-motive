@@ -9,7 +9,10 @@
       "WebFetch(domain:www.dropbox.com)",
       "Bash(node:*)",
       "Bash(curl:*)",
-      "WebFetch(domain:5ndhpj66kbzege6f.public.blob.vercel-storage.com)"
+      "WebFetch(domain:5ndhpj66kbzege6f.public.blob.vercel-storage.com)",
+      "Bash(rm:*)",
+      "Bash(sed:*)",
+      "Bash(awk:*)"
     ],
     "deny": []
   }

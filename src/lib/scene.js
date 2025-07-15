@@ -70,6 +70,7 @@ let totalAssets = 0;
 let loadingIndicator = null;
 let progressBar = null;
 let progressText = null;
+let sceneReady = false;
 let orientationStatus = null;
 let orientationIndicator = null;
 let orientationText = null;
@@ -84,6 +85,112 @@ let recordAnimationStarted = false;
 // Portrait mode enforcement
 let portraitWarning = null;
 let isPortraitMode = true;
+
+// Scene initialization flag
+let isSceneInitialized = false;
+let hasShownInstructions = localStorage.getItem('grooveMotive_hasShownInstructions') === 'true';
+
+// Load all assets immediately for preview
+function loadAllAssets() {
+  console.log("Loading all assets for preview...");
+  const gltfLoader = new GLTFLoader();
+  
+  // Modern Couch - turned around and positioned further back
+  gltfLoader.load(
+    "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/modern_couch.glb",
+    (gltf) => {
+      const couch = gltf.scene;
+      couch.position.set(0, 0, 1); // Further back from table
+      couch.scale.set(0.8, 0.8, 0.8); // Slightly smaller
+      couch.rotation.y = Math.PI; // Turn around to face the table
+      couch.visible = true;
+      
+      couch.traverse((child) => {
+        if (child.isMesh && child.material) {
+          if (child.material.map) {
+            child.material.map.encoding = THREE.sRGBEncoding;
+            child.material.map.needsUpdate = true;
+          }
+          child.material.needsUpdate = true;
+        }
+      });
+      
+      scene.add(couch);
+      console.log("Modern couch added to scene");
+      onAssetLoaded(); // Couch loaded
+    },
+    undefined,
+    (error) => {
+      console.error("Error loading couch model:", error);
+      onAssetLoaded(); // Still count as loaded even if failed
+    }
+  );
+
+  // House Plant 1 - left side wall middle
+  gltfLoader.load(
+    "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/house_plant.glb",
+    (gltf) => {
+      const plant3 = gltf.scene;
+      plant3.position.set(-9, 0, 0); // Left wall middle
+      plant3.scale.set(0.6, 0.6, 0.6); // Half the size of monstera
+      plant3.rotation.y = Math.PI / 2; // Face towards center
+      plant3.visible = true;
+      
+      plant3.traverse((child) => {
+        if (child.isMesh && child.material) {
+          if (child.material.map) {
+            child.material.map.encoding = THREE.sRGBEncoding;
+            child.material.map.needsUpdate = true;
+          }
+          child.material.needsUpdate = true;
+        }
+      });
+      
+      scene.add(plant3);
+      console.log("House plant 1 added to scene");
+      onAssetLoaded(); // Plant 3 loaded
+    },
+    undefined,
+    (error) => {
+      console.error("Error loading house plant 1:", error);
+      onAssetLoaded(); // Still count as loaded even if failed
+    }
+  );
+
+  // House Plant 2 - right side wall middle
+  gltfLoader.load(
+    "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/house_plant.glb",
+    (gltf) => {
+      const plant4 = gltf.scene;
+      plant4.position.set(9, 0, 0); // Right wall middle
+      plant4.scale.set(0.6, 0.6, 0.6); // Half the size of monstera
+      plant4.rotation.y = -Math.PI / 2; // Face towards center
+      plant4.visible = true;
+      
+      plant4.traverse((child) => {
+        if (child.isMesh && child.material) {
+          if (child.material.map) {
+            child.material.map.encoding = THREE.sRGBEncoding;
+            child.material.map.needsUpdate = true;
+          }
+          child.material.needsUpdate = true;
+        }
+      });
+      
+      scene.add(plant4);
+      console.log("House plant 2 added to scene");
+      onAssetLoaded(); // Plant 4 loaded
+    },
+    undefined,
+    (error) => {
+      console.error("Error loading house plant 2:", error);
+      onAssetLoaded(); // Still count as loaded even if failed
+    }
+  );
+
+  // Albums
+  albums.forEach((album, index) => createAlbumMesh(album, index));
+}
 
 // Portrait mode enforcement helpers
 function createPortraitWarning() {
@@ -104,7 +211,7 @@ function createPortraitWarning() {
     justify-content: center;
     align-items: center;
     z-index: 10000;
-    font-family: "Suisse", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif;
     text-align: center;
     padding: 20px;
     box-sizing: border-box;
@@ -145,10 +252,10 @@ function checkOrientation() {
       console.log('Device rotated to portrait mode');
       
       // If user was blocked from entering gallery, allow them to try again
-      const container = document.getElementById("container");
-      if (container && container.style.display === "none" && !controls.isLocked) {
+      const mainContent = document.querySelector(".main-content");
+      if (mainContent && mainContent.style.display === "none" && !controls.isLocked) {
         console.log('Re-enabling gallery access after portrait rotation');
-        container.style.display = "flex";
+        mainContent.style.display = "block";
       }
       
       // Orientation controls automatically adjust to new position
@@ -178,6 +285,133 @@ function hidePortraitWarning() {
   }
 }
 
+// Create and show instructional popup
+function showWelcomeInstructions() {
+  if (hasShownInstructions) return;
+  
+  hasShownInstructions = true;
+  localStorage.setItem('grooveMotive_hasShownInstructions', 'true');
+  
+  // Ensure controls are unlocked and cursor is enabled for the popup
+  if (controls && controls.isLocked) {
+    controls.unlock();
+  }
+  document.body.style.cursor = "auto";
+  
+  const instructionalPopup = document.createElement("div");
+  instructionalPopup.id = "welcome-instructions";
+  instructionalPopup.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.95);
+    color: white;
+    padding: 40px;
+    border-radius: 20px;
+    font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif;
+    text-align: center;
+    z-index: 10000;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+  `;
+  
+  const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
+  instructionalPopup.innerHTML = `
+    <div style="margin-bottom: 30px;">
+      <h2 style="font-size: 28px; margin-bottom: 20px; color: #fff; font-weight: 600;">
+        Welcome to the Listening Room
+      </h2>
+      <p style="font-size: 18px; line-height: 1.6; margin-bottom: 25px; color: rgba(255,255,255,0.9);">
+        Explore the gallery and approach the framed artwork to discover music releases.
+      </p>
+    </div>
+    
+    <div style="margin-bottom: 30px;">
+      <h3 style="font-size: 20px; margin-bottom: 15px; color: #fff;">How to Navigate:</h3>
+      ${isMobileDevice ? `
+        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+          • Use the directional arrows at the bottom to move around
+        </p>
+        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+          • Tilt and rotate your device to look around
+        </p>
+        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+          • Get close to framed artwork to see album details
+        </p>
+        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+          • Tap the <strong>Preview</strong> button to play music
+        </p>
+        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+          • Tap the <strong>Buy</strong> button to purchase tracks
+        </p>
+      ` : `
+        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+          • Use <strong>Arrow Keys</strong> or <strong>WASD</strong> to move around
+        </p>
+        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+          • Move your <strong>mouse</strong> to look around
+        </p>
+        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+          • Press <strong>G</strong> to preview music when near artwork
+        </p>
+        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+          • Press <strong>P</strong> to pause during preview
+        </p>
+        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+          • Press <strong>B</strong> to buy the track
+        </p>
+        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+          • Press <strong>Escape</strong> to exit the gallery
+        </p>
+      `}
+    </div>
+    
+    <button id="close-instructions" style="
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 30px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: inherit;
+    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 25px rgba(102, 126, 234, 0.4)'" 
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+      Start Exploring
+    </button>
+  `;
+  
+  document.body.appendChild(instructionalPopup);
+  
+  // Add click handler to close button
+  const closeButton = document.getElementById("close-instructions");
+  closeButton.addEventListener("click", () => {
+    gsap.to(instructionalPopup, {
+      opacity: 0,
+      scale: 0.8,
+      duration: 0.4,
+      ease: "power2.in",
+      onComplete: () => {
+        document.body.removeChild(instructionalPopup);
+      }
+    });
+  });
+  
+  // Animate in
+  gsap.fromTo(instructionalPopup, 
+    { opacity: 0, scale: 0.8 },
+    { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.2)" }
+  );
+}
+
 // Asset loading helpers
 function updateLoadingProgress() {
   if (loadingIndicator) {
@@ -195,11 +429,37 @@ function updateLoadingProgress() {
     }
     
     if (assetsLoaded >= totalAssets) {
+      sceneReady = true;
+      console.log("Essential scene assets loaded, scene ready for entry");
       loadingIndicator.style.display = 'none';
       if (enterButton) {
         enterButton.disabled = false;
         enterButton.style.opacity = '1';
       }
+      
+      // Update global window properties
+      try {
+        if (globalThis.window) {
+          window.sceneReady = true;
+          window.sceneAssetsLoaded = assetsLoaded;
+          window.sceneTotalAssets = totalAssets;
+          // Dispatch custom event for scene ready
+          window.dispatchEvent(new CustomEvent('sceneReady', { 
+            detail: { assetsLoaded, totalAssets } 
+          }));
+        }
+      } catch (error) {
+        console.warn("Could not expose scene properties to global scope:", error);
+      }
+      
+      // Update preview container to show it's ready
+      const previewContainer = document.querySelector('.preview-container');
+      if (previewContainer) {
+        previewContainer.classList.add('scene-ready');
+      }
+      
+      
+      // All assets already loaded, no deferred loading needed
     } else {
       loadingIndicator.style.display = 'flex';
       if (enterButton) {
@@ -213,6 +473,20 @@ function updateLoadingProgress() {
 function onAssetLoaded() {
   assetsLoaded++;
   updateLoadingProgress();
+  
+  // Update global progress tracking
+  try {
+    if (globalThis.window) {
+      window.sceneAssetsLoaded = assetsLoaded;
+      window.sceneTotalAssets = totalAssets;
+      // Dispatch progress update event
+      window.dispatchEvent(new CustomEvent('sceneProgress', { 
+        detail: { assetsLoaded, totalAssets, progress: (assetsLoaded / totalAssets) * 100 } 
+      }));
+    }
+  } catch (error) {
+    console.warn("Could not update global progress:", error);
+  }
 }
 
 // Orientation status helpers
@@ -254,7 +528,18 @@ function preloadAudioFiles() {
   });
 }
 
-export function initScene() {
+function initScene() {
+  // Prevent multiple initializations, but allow re-initialization if core components are missing
+  if (isSceneInitialized && scene && camera && renderer) {
+    console.log("Scene already initialized and components exist, skipping...");
+    return;
+  }
+  
+  if (isSceneInitialized && (!scene || !camera || !renderer)) {
+    console.log("Scene was initialized but components are missing, re-initializing...");
+    isSceneInitialized = false;
+  }
+
   // Check if we're in a browser environment
   try {
     if (!globalThis.window || !globalThis.document || !globalThis.navigator) {
@@ -288,9 +573,9 @@ export function initScene() {
     previewInstruction = document.createElement("div");
     previewInstruction.id = "preview-instruction";
     previewInstruction.style.cssText =
-      'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0, 0, 0, 0.9); padding: 20px 30px; border-radius: 12px; font-size: 18px; font-weight: 600; text-align: center; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.2); z-index: 1000; display: none; font-family: "Suisse", -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: 0.5px; white-space: nowrap; max-width: 90vw; overflow: hidden;';
+      'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0, 0, 0, 0.9); padding: 20px 30px; border-radius: 12px; font-size: 18px; font-weight: 600; text-align: center; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.2); z-index: 1000; display: none; font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: 0.5px; white-space: nowrap; max-width: 90vw; overflow: hidden;';
     previewInstruction.innerHTML =
-      'Press <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">G</span> to stop the music';
+      'Press <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">G</span> to stop • <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">P</span> to pause';
     document.body.appendChild(previewInstruction);
   }
 
@@ -298,8 +583,13 @@ export function initScene() {
   ui = document.getElementById("ui");
   albumTitle = document.getElementById("album-title");
   enterButton = document.getElementById("enter-button");
-  galleryCanvas = document.getElementById("gallery-canvas");
+  galleryCanvas = document.getElementById("hero-gallery-canvas"); // Only use hero canvas now
   galleryScreen = document.getElementById("gallery-screen");
+  
+  // Set up for hero canvas
+  if (galleryCanvas) {
+    console.log("Setting up hero canvas for 3D preview");
+  }
   moveUpButton = document.getElementById("move-up");
   moveDownButton = document.getElementById("move-down");
   moveLeftButton = document.getElementById("move-left");
@@ -315,9 +605,17 @@ export function initScene() {
   betaValue = document.getElementById("beta-value");
   gammaValue = document.getElementById("gamma-value");
 
-  if (!galleryCanvas || !enterButton) {
-    console.error("Required DOM elements not found.");
+  if (!galleryCanvas) {
+    console.error("Gallery canvas not found. Available elements:", {
+      heroCanvas: !!document.getElementById("hero-gallery-canvas"),
+      galleryCanvas: !!document.getElementById("gallery-canvas")
+    });
     return;
+  }
+  
+  // enterButton is not required for hero canvas mode
+  if (!enterButton) {
+    console.log("No enter button found - this is expected for hero canvas mode");
   }
 
   // Debug logging for mobile UI element
@@ -327,7 +625,7 @@ export function initScene() {
   }
 
   // Mobile button event listeners
-  if (isMobile) {
+  if (isMobile && moveUpButton && moveDownButton && moveLeftButton && moveRightButton) {
     moveUpButton.addEventListener("touchstart", () => {
       moveBackward = true;
     });
@@ -382,14 +680,22 @@ export function initScene() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf0f0f0);
 
-  // Ensure proper canvas sizing by using parent dimensions
-  const rightPanel = document.getElementById("right-panel");
-  const canvasWidth = rightPanel
-    ? rightPanel.clientWidth
-    : galleryCanvas.clientWidth;
-  const canvasHeight = rightPanel
-    ? rightPanel.clientHeight
-    : galleryCanvas.clientHeight;
+  // Ensure proper canvas sizing using hero container
+  const heroPreview = galleryCanvas ? galleryCanvas.parentElement : null;
+  
+  let canvasWidth, canvasHeight;
+  
+  if (heroPreview) {
+    // Hero canvas sizing
+    canvasWidth = heroPreview.clientWidth;
+    canvasHeight = heroPreview.clientHeight;
+    console.log("Hero canvas dimensions:", canvasWidth, "x", canvasHeight);
+  } else {
+    // Fallback
+    canvasWidth = 800;
+    canvasHeight = 600;
+    console.log("Using fallback canvas dimensions");
+  }
 
   camera = new THREE.PerspectiveCamera(
     75,
@@ -409,14 +715,22 @@ export function initScene() {
     camera.lookAt(0, 1.6, -6);
   }
 
-  renderer = new THREE.WebGLRenderer({
-    canvas: galleryCanvas,
-    antialias: true,
-  });
-  renderer.setSize(canvasWidth, canvasHeight);
-  renderer.outputEncoding = THREE.sRGBEncoding;
+  try {
+    renderer = new THREE.WebGLRenderer({
+      canvas: galleryCanvas,
+      antialias: true,
+    });
+    renderer.setSize(canvasWidth, canvasHeight);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    
+    console.log("Renderer created successfully");
 
-  controls = new PointerLockControls(camera, galleryCanvas);
+    controls = new PointerLockControls(camera, galleryCanvas);
+    console.log("Controls created successfully");
+  } catch (error) {
+    console.error("Error creating renderer or controls:", error);
+    return;
+  }
   
   // Expose controls to global scope for hamburger menu access
   try {
@@ -456,8 +770,9 @@ export function initScene() {
     setupDeviceOrientationControls();
   }
 
-  // Initialize asset loading (count: logo texture, record player GLB, album covers)
-  totalAssets = 1 + 1 + albums.length; // logo + record player + album covers
+  // Initialize asset loading - load all assets for preview
+  // All assets: logo texture, record player, basic scene, couch, plants, album covers, pillar plants
+  totalAssets = 14; // logo + record player + basic scene + couch + 4 plants + 4 albums + 4 pillar plants
   updateLoadingProgress();
   
   // Hide orientation status and values on all devices
@@ -520,9 +835,13 @@ export function initScene() {
   });
   const carpet = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), carpetMaterial);
   carpet.rotation.x = -Math.PI / 2;
-  carpet.position.set(0, 0, 0);
+  carpet.position.set(0, 0, -2.5); // Move towards the table with record player
   carpet.userData.isWall = false;
   scene.add(carpet);
+  
+  // Mark basic scene as ready - allow immediate gallery entry
+  onAssetLoaded(); // Basic scene loaded
+  sceneReady = true; // Scene is ready for entry even while assets load
 
   // Ceiling
   const ceiling = new THREE.Mesh(
@@ -644,6 +963,36 @@ export function initScene() {
         
         scene.add(pillar);
         console.log(`Pillar ${index + 1} added to scene with ${meshCount} meshes`);
+        
+        // Add monstera plant on top of each pillar
+        gltfLoader.load(
+          "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/monstera_deliciosa_potted_mid-century_plant.glb",
+          (plantGltf) => {
+            const plant = plantGltf.scene;
+            plant.scale.set(32.0, 32.0, 32.0); // Much larger scale for pillar top
+            plant.position.set(0, 12, 0); // Position on top of pillar
+            plant.visible = true;
+            
+            plant.traverse((child) => {
+              if (child.isMesh && child.material) {
+                if (child.material.map) {
+                  child.material.map.encoding = THREE.sRGBEncoding;
+                  child.material.map.needsUpdate = true;
+                }
+                child.material.needsUpdate = true;
+              }
+            });
+            
+            pillar.add(plant); // Add plant as child of pillar
+            console.log(`Monstera plant added to pillar ${index + 1}`);
+            onAssetLoaded(); // Pillar plant loaded
+          },
+          undefined,
+          (error) => {
+            console.error(`Error loading monstera plant for pillar ${index + 1}:`, error);
+            onAssetLoaded(); // Still count as loaded even if failed
+          }
+        );
       },
       undefined,
       (error) => {
@@ -750,8 +1099,8 @@ export function initScene() {
     }
   );
 
-  // Albums
-  albums.forEach((album, index) => createAlbumMesh(album, index));
+  // Load all assets immediately for preview
+  loadAllAssets();
 
   audio = new Audio();
   audio.addEventListener("ended", () => []);
@@ -771,6 +1120,10 @@ export function initScene() {
 
   // Force initial render and ensure proper sizing
   renderer.render(scene, camera);
+  
+  // Mark scene as initialized
+  isSceneInitialized = true;
+  console.log("Scene initialization completed successfully");
 
   // Ensure proper canvas sizing after DOM is fully loaded
   setTimeout(() => {
@@ -939,21 +1292,23 @@ function resetToInitialState() {
     stopPreview();
   }
 
-  // Reset UI elements
-  ui.style.display = "none";
-  currentAlbum = null;
-  albumTitle.textContent = "";
+  // Cancel preview animation
+  if (previewAnimationId) {
+    cancelAnimationFrame(previewAnimationId);
+    previewAnimationId = null;
+  }
 
-  // Move instructions back to right panel
+  // Reset UI elements
+  if (ui) ui.style.display = "none";
+  currentAlbum = null;
+  if (albumTitle) albumTitle.textContent = "";
+
+  // Move instructions back to original position
   const instructionsGroup = document.getElementById("instructions-group");
   if (instructionsGroup) {
     instructionsGroup.classList.remove("show");
     instructionsGroup.style.position = "";
     instructionsGroup.style.zIndex = "";
-    const rightPanel = document.getElementById("right-panel");
-    if (rightPanel) {
-      rightPanel.appendChild(instructionsGroup);
-    }
   }
 
   // Reset cursor
@@ -967,10 +1322,10 @@ function resetToInitialState() {
     hidePortraitWarning();
   }
 
-  // Show container with panels
-  const container = document.getElementById("container");
-  if (container) {
-    container.style.display = "flex";
+  // Show main content (homepage)
+  const mainContent = document.querySelector(".main-content");
+  if (mainContent) {
+    mainContent.style.display = "block";
   }
 
   // Hide mobile controls
@@ -985,28 +1340,9 @@ function resetToInitialState() {
     hamburgerMenu.classList.remove("show");
   }
 
-  // Restore panel animations
-  gsap.fromTo(
-    "#left-panel",
-    { opacity: 0, x: -50 },
-    { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" }
-  );
-  gsap.to("#right-panel", {
-    opacity: 1,
-    duration: 0.8,
-    ease: "power2",
-    delay: 0.2,
-  });
-
   // Reset camera to initial position
-  camera.position.set(0, 1.6, -2);
-  
-  // Set proper initial orientation for mobile
-  if (isMobile) {
-    // Phone upright should look directly at wall
-    camera.rotation.set(0, 0, 0);
-    camera.lookAt(0, 1.6, -6);
-  } else {
+  if (camera) {
+    camera.position.set(0, 1.6, -2);
     camera.rotation.set(0, 0, 0);
     camera.lookAt(0, 1.6, -6);
   }
@@ -1017,102 +1353,130 @@ function resetToInitialState() {
   }
 
   // Remove fullscreen canvas if it exists
-  if (document.body.contains(renderer.domElement)) {
+  if (renderer && renderer.domElement && document.body.contains(renderer.domElement)) {
     document.body.removeChild(renderer.domElement);
   }
-
-  // Restore to preview canvas
-  const rightPanel = document.getElementById("right-panel");
-  if (rightPanel) {
-    const canvasContainer =
-      rightPanel.querySelector(".canvas-container") || rightPanel;
-    canvasContainer.appendChild(renderer.domElement);
-    renderer.domElement.id = "gallery-canvas";
-    renderer.domElement.style.pointerEvents = "none";
-    renderer.domElement.style.width = "100%";
-    renderer.domElement.style.height = "100%";
-    galleryCanvas = renderer.domElement;
-
-    // Resize to preview size
-    renderer.setSize(rightPanel.clientWidth, rightPanel.clientHeight);
-    camera.aspect = rightPanel.clientWidth / rightPanel.clientHeight;
-    camera.updateProjectionMatrix();
-  }
-
-  // Reset controls
-  controls.dispose();
-  controls = new PointerLockControls(camera, renderer.domElement);
   
-  // Re-expose controls to global scope
+  // Properly dispose of Three.js components
+  if (renderer) {
+    renderer.dispose();
+    renderer = null;
+  }
+  
+  if (controls) {
+    controls.dispose();
+    controls = null;
+  }
+  
+  // Clear scene objects
+  if (scene) {
+    scene.clear();
+    scene = null;
+  }
+  
+  camera = null;
+  
+  // Reset scene initialization flag to allow re-initialization
+  isSceneInitialized = false;
+  
+  // Don't reset instructions flag - let it persist across sessions
+
+  // Trigger app state reset to return to homepage
   try {
-    if (globalThis.window) {
-      window.controls = controls;
+    if (globalThis.window && window.returnToHomepage) {
+      window.returnToHomepage();
     }
   } catch (error) {
-    console.warn("Could not re-expose controls to global scope:", error);
+    console.warn("Could not trigger app state reset:", error);
+    // Graceful fallback: just ensure main content is visible
+    const mainContent = document.querySelector(".main-content");
+    if (mainContent) {
+      mainContent.style.display = "block";
+    }
   }
-
-  // Re-add control event listeners
-  controls.addEventListener("lock", () => {
-    document.body.style.cursor = "none";
-    ui.style.display = "none";
-    if (isMobile) {
-      const mobileControls = document.getElementById("mobile-controls");
-      if (mobileControls) {
-        mobileControls.style.display = "flex";
-        console.log("Mobile controls shown in resetToInitialState");
-      } else {
-        console.warn(
-          "Mobile controls element not found in resetToInitialState"
-        );
-      }
-    }
-  });
-  controls.addEventListener("unlock", () => {
-    // Clean up click-to-lock handler
-    if (clickToLockHandler) {
-      document.removeEventListener("click", clickToLockHandler);
-      clickToLockHandler = null;
-    }
-
-    // Reset to initial state
-    resetToInitialState();
-  });
-
-  // Stop main animation loop
-  if (mainAnimationId) {
-    cancelAnimationFrame(mainAnimationId);
-    mainAnimationId = null;
-  }
-
-  // Force render and restart preview animation
-  renderer.render(scene, camera);
-
-  // Restart preview animation
-  setTimeout(() => {
-    if (!controls.isLocked) {
-      animatePreview();
-    }
-  }, 100);
-
-  // Trigger resize
-  setTimeout(() => {
-    onWindowResize();
-  }, 100);
 }
 
-export function enterGallery() {
-  const container = document.getElementById("container");
-  if (container) container.style.display = "none";
+function enterGallery() {
+  console.log("=== ENTERING GALLERY ===");
+  console.log("Scene ready:", sceneReady);
+  console.log("Assets loaded:", assetsLoaded, "/", totalAssets);
+  console.log("Scene:", scene);
+  console.log("Scene children:", scene?.children?.length);
+  console.log("Camera:", camera);
+  console.log("Camera position:", camera?.position);
+  console.log("Renderer:", renderer);
+  console.log("Renderer domElement:", !!renderer?.domElement);
+  console.log("Renderer size:", renderer?.domElement?.width, "x", renderer?.domElement?.height);
+
+  // Allow immediate entry - assets will load in background
+
+  // Check if scene is properly initialized
+  if (!scene || !camera || !renderer) {
+    console.warn("Scene not properly initialized, attempting re-initialization...");
+    try {
+      // Reset the initialization flag and try to reinitialize
+      isSceneInitialized = false;
+      initScene();
+      
+      // If still not ready, show loading message
+      if (!scene || !camera || !renderer) {
+        console.log("Re-initialization failed, showing loading message...");
+        const mainContent = document.querySelector(".main-content");
+        if (mainContent) {
+          const loadingMessage = document.createElement("div");
+          loadingMessage.innerHTML = "Initializing 3D scene, please wait...";
+          loadingMessage.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Gotham', sans-serif;
+            z-index: 9999;
+          `;
+          document.body.appendChild(loadingMessage);
+          
+          // Remove loading message and return to homepage
+          setTimeout(() => {
+            if (document.body.contains(loadingMessage)) {
+              document.body.removeChild(loadingMessage);
+            }
+            // Return to homepage instead of entering gallery
+            if (globalThis.window && window.returnToHomepage) {
+              window.returnToHomepage();
+            }
+          }, 2000);
+        }
+        return;
+      }
+    } catch (error) {
+      console.error("Error reinitializing scene:", error);
+      // Return to homepage on error
+      if (globalThis.window && window.returnToHomepage) {
+        window.returnToHomepage();
+      }
+      return;
+    }
+  }
+
+  // Hide all page content
+  const mainContent = document.querySelector(".main-content");
+  if (mainContent) mainContent.style.display = "none";
 
   // Add body class for mobile menu
   document.body.classList.add("gallery-entered");
 
-  // Stop preview animation
+  // Stop preview animation and enable cursor immediately
   if (previewAnimationId) {
     cancelAnimationFrame(previewAnimationId);
     previewAnimationId = null;
   }
+  
+  // Enable cursor immediately when entering the world
+  document.body.style.cursor = "auto";
 
   // Check orientation immediately when entering gallery
   if (isMobile) {
@@ -1158,8 +1522,7 @@ export function enterGallery() {
     }, 1000);
   }
   
-  // Start preloading audio files after entering gallery
-  preloadAudioFiles();
+  // Audio will be loaded when needed for previews
 
   // Move instructions to body for fullscreen
   const instructionsGroup = document.getElementById("instructions-group");
@@ -1170,18 +1533,48 @@ export function enterGallery() {
     instructionsGroup.style.zIndex = "950";
   }
 
-  document.body.appendChild(renderer.domElement);
-  try {
-    if (globalThis.window) {
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-    }
-  } catch (error) {
-    console.warn("Could not resize renderer for fullscreen:", error);
+  // Dispose existing controls first
+  if (controls) {
+    controls.dispose();
+    controls = null;
   }
-  controls.dispose();
-  controls = new PointerLockControls(camera, renderer.domElement);
+
+  // Get the gallery canvas and replace it with the renderer's canvas
+  const galleryCanvas = document.getElementById('gallery-canvas');
+  if (renderer && renderer.domElement && galleryCanvas) {
+    // Replace the placeholder canvas with the actual renderer canvas
+    galleryCanvas.parentNode.replaceChild(renderer.domElement, galleryCanvas);
+    renderer.domElement.id = 'gallery-canvas'; // Give it the same ID for styling
+    
+    try {
+      if (globalThis.window) {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+      }
+    } catch (error) {
+      console.warn("Could not resize renderer for fullscreen:", error);
+    }
+    
+    // Create new controls with the updated canvas element
+    controls = new PointerLockControls(camera, renderer.domElement);
+    
+  } else if (renderer && renderer.domElement) {
+    // Fallback: append to body if gallery canvas not found
+    document.body.appendChild(renderer.domElement);
+    try {
+      if (globalThis.window) {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+      }
+    } catch (error) {
+      console.warn("Could not resize renderer for fullscreen:", error);
+    }
+    
+    // Create new controls with the canvas element
+    controls = new PointerLockControls(camera, renderer.domElement);
+  }
   
   // Re-expose controls to global scope
   try {
@@ -1193,19 +1586,21 @@ export function enterGallery() {
   }
 
   // Add unlock event listener
-  controls.addEventListener("unlock", () => {
-    // Clean up click-to-lock handler
-    if (clickToLockHandler) {
-      document.removeEventListener("click", clickToLockHandler);
-      clickToLockHandler = null;
-    }
+  if (controls) {
+    controls.addEventListener("unlock", () => {
+      // Clean up click-to-lock handler
+      if (clickToLockHandler) {
+        document.removeEventListener("click", clickToLockHandler);
+        clickToLockHandler = null;
+      }
 
-    // Clean up orientation listeners
-    cleanupDeviceOrientation();
+      // Clean up orientation listeners
+      cleanupDeviceOrientation();
 
-    // Reset to initial state
-    resetToInitialState();
-  });
+      // Reset to initial state
+      resetToInitialState();
+    });
+  }
 
 
   // Clean up any existing click-to-lock handler
@@ -1215,38 +1610,88 @@ export function enterGallery() {
 
   // Enable click-to-lock
   clickToLockHandler = (event) => {
-    if (event.target.id !== "enter-button" && !controls.isLocked) {
+    if (controls && event.target.id !== "enter-button" && !controls.isLocked) {
+      console.log("Attempting to lock pointer...");
       try {
         controls.lock();
+        console.log("Pointer lock successful");
       } catch (error) {
         console.warn("Pointer lock failed:", error);
       }
     }
   };
-  document.addEventListener("click", clickToLockHandler);
+  
+  // Add click listener with slight delay to ensure DOM is ready
+  setTimeout(() => {
+    document.addEventListener("click", clickToLockHandler);
+    console.log("Click-to-lock handler added");
+  }, 200);
+
+  // Set camera position for gallery view
+  if (camera) {
+    camera.position.set(0, 1.6, -2);
+    camera.lookAt(0, 1.6, -6);
+    console.log("Camera positioned for gallery view:", camera.position);
+  }
 
   // Force render
-  renderer.render(scene, camera);
+  console.log("Forcing render at end of enterGallery");
+  console.log("Scene children count:", scene?.children?.length);
+  console.log("Camera position:", camera?.position);
+  console.log("Scene background:", scene?.background);
+  
+  if (renderer && scene && camera) {
+    renderer.render(scene, camera);
+    console.log("Render completed successfully");
+  } else {
+    console.error("Cannot render - missing components:", {
+      renderer: !!renderer,
+      scene: !!scene,
+      camera: !!camera
+    });
+  }
+  console.log("=== GALLERY ENTRY COMPLETE ===");
 
-  // Initial lock
+  // Show welcome instructions first, then handle controls
   setTimeout(() => {
-    if (!controls.isLocked) {
-      try {
-        controls.lock();
-      } catch (error) {
-        console.warn("Initial pointer lock failed:", error);
-      }
+    showWelcomeInstructions();
+    
+    // Only auto-lock controls for desktop after instructions are dismissed
+    if (!isMobile) {
+      // Wait for instructions to be dismissed before auto-locking
+      const checkInstructions = () => {
+        const instructionsEl = document.getElementById("welcome-instructions");
+        if (!instructionsEl) {
+          // Instructions have been dismissed, now auto-lock
+          setTimeout(() => {
+            try {
+              if (controls) {
+                controls.lock();
+                console.log("Controls automatically locked after instructions");
+              }
+            } catch (error) {
+              console.warn("Auto-lock failed, user will need to click:", error);
+            }
+          }, 500);
+        } else {
+          // Check again in 100ms
+          setTimeout(checkInstructions, 100);
+        }
+      };
+      checkInstructions();
     }
-
-    // Ensure mobile controls visible
-    if (isMobile) {
+  }, 1000);
+  
+  // Ensure mobile controls visible
+  if (isMobile) {
+    setTimeout(() => {
       const mobileControls = document.getElementById("mobile-controls");
       if (mobileControls) {
         mobileControls.style.display = "flex";
         console.log("Mobile controls ensured visible in enterGallery");
       }
-    }
-  }, 100);
+    }, 100);
+  }
 }
 
 function findVinylMesh(object) {
@@ -1270,11 +1715,10 @@ function createAlbumMesh(album, index) {
   const textureLoader = new THREE.TextureLoader();
   const texture = textureLoader.load(
     album.cover,
-    () => onAssetLoaded(), // Album cover loaded
+    () => console.log("Deferred: Album cover loaded", album.title), // Album cover loaded (deferred)
     undefined,
     (error) => {
       console.error("Error loading album cover:", error);
-      onAssetLoaded(); // Still count as loaded even if failed
     }
   );
   
@@ -1355,6 +1799,7 @@ function createAlbumMesh(album, index) {
       
       scene.add(frameModel);
       console.log(`Local GLB frame added for: ${album.title}`);
+      onAssetLoaded(); // Album frame loaded
     },
     (progress) => {
       console.log('GLB frame loading progress:', (progress.loaded / progress.total * 100).toFixed(1) + '%');
@@ -1364,6 +1809,7 @@ function createAlbumMesh(album, index) {
       console.log('Falling back to custom frame');
       // Fallback to custom frame
       createFramedAlbum(position, texture, album);
+      onAssetLoaded(); // Album frame loaded (fallback)
     }
   );
 }
@@ -1432,6 +1878,7 @@ function createFramedAlbum(position, texture, album) {
   scene.add(frameGroup);
   
   console.log(`Created framed album for: ${album.title}`);
+  onAssetLoaded(); // Custom frame loaded
 }
 
 function addAlbum(title, cover, previewUrl, buyUrl) {
@@ -1660,19 +2107,23 @@ function stopPreview() {
 function onKeyDown(event) {
   switch (event.code) {
     case "ArrowDown":
+    case "KeyS":
       moveForward = true;
       break;
     case "ArrowUp":
+    case "KeyW":
       moveBackward = true;
       break;
     case "ArrowRight":
+    case "KeyD":
       moveLeft = true;
       break;
     case "ArrowLeft":
+    case "KeyA":
       moveRight = true;
       break;
     case "Escape":
-      if (controls.isLocked) {
+      if (controls && controls.isLocked) {
         controls.unlock();
       }
       break;
@@ -1681,6 +2132,23 @@ function onKeyDown(event) {
         stopPreview();
       } else if (currentAlbum) {
         startPreview(currentAlbum);
+      }
+      break;
+    case "KeyP":
+      if (isPreviewing && audio) {
+        if (audio.paused) {
+          audio.play().catch(error => {
+            console.warn("Could not resume audio:", error);
+          });
+          // Update instruction text
+          previewInstruction.innerHTML = 
+            'Press <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">G</span> to stop • <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">P</span> to pause';
+        } else {
+          audio.pause();
+          // Update instruction text
+          previewInstruction.innerHTML = 
+            'Press <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">G</span> to stop • <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">P</span> to resume';
+        }
       }
       break;
     case "KeyB":
@@ -1715,15 +2183,19 @@ function onKeyDown(event) {
 function onKeyUp(event) {
   switch (event.code) {
     case "ArrowDown":
+    case "KeyS":
       moveForward = false;
       break;
     case "ArrowUp":
+    case "KeyW":
       moveBackward = false;
       break;
     case "ArrowRight":
+    case "KeyD":
       moveLeft = false;
       break;
     case "ArrowLeft":
+    case "KeyA":
       moveRight = false;
       break;
   }
@@ -1739,11 +2211,13 @@ function onWindowResize() {
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     } else {
-      // Preview mode
-      const rightPanel = document.getElementById("right-panel");
-      if (rightPanel) {
-        const canvasWidth = rightPanel.clientWidth;
-        const canvasHeight = rightPanel.clientHeight;
+      // Preview mode - using hero canvas
+      const heroPreview = galleryCanvas ? galleryCanvas.parentElement : null;
+      
+      if (heroPreview) {
+        // Hero canvas sizing
+        const canvasWidth = heroPreview.clientWidth;
+        const canvasHeight = heroPreview.clientHeight;
         camera.aspect = canvasWidth / canvasHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(canvasWidth, canvasHeight);
@@ -1776,11 +2250,25 @@ function checkCollision(newPosition) {
   return canMove;
 }
 
-export function animatePreview() {
-  if (!controls.isLocked && renderer && scene && camera) {
+function animatePreview() {
+  if ((!controls || !controls.isLocked) && renderer && scene && camera) {
     const time = clock.getElapsedTime();
-    camera.position.x = Math.sin(time * 0.2) * 5;
-    camera.position.z = -5 + Math.cos(time * 0.2) * 3;
+    
+    // Different camera movement for hero vs right panel preview
+    const isHeroCanvas = galleryCanvas && galleryCanvas.id === "hero-gallery-canvas";
+    
+    if (isHeroCanvas) {
+      // Slower, more elegant movement for hero preview
+      camera.position.x = Math.sin(time * 0.15) * 4;
+      camera.position.z = -4 + Math.cos(time * 0.15) * 2;
+      camera.position.y = 1.6 + Math.sin(time * 0.1) * 0.2;
+    } else {
+      // Original movement for right panel
+      camera.position.x = Math.sin(time * 0.2) * 5;
+      camera.position.z = -5 + Math.cos(time * 0.2) * 3;
+      camera.position.y = 1.6;
+    }
+    
     camera.lookAt(0, 1.6, -6);
     renderer.render(scene, camera);
     previewAnimationId = requestAnimationFrame(animatePreview);
@@ -1792,12 +2280,15 @@ try {
   if (globalThis.window) {
     window.animatePreview = animatePreview;
     window.resetToInitialState = resetToInitialState;
+    window.sceneReady = sceneReady; // Expose scene ready state
+    window.sceneAssetsLoaded = assetsLoaded; // Expose loading progress
+    window.sceneTotalAssets = totalAssets;
   }
 } catch (error) {
   console.warn("Could not expose functions to global scope:", error);
 }
 
-export function animate() {
+function animate() {
   mainAnimationId = requestAnimationFrame(animate);
   const delta = clock.getDelta();
   if (mixer) mixer.update(delta);
@@ -1917,41 +2408,94 @@ export function animate() {
 
     if (closestAlbum && closestAlbum !== currentAlbum) {
       currentAlbum = closestAlbum;
-      albumTitle.textContent = currentAlbum.title;
-      if (ui.style.display !== "block") {
-        ui.style.display = "block";
-        if (isMobile) {
-          console.log("Showing album popup on mobile:", currentAlbum.title);
-          console.log("UI element found:", ui);
+      
+      // Ensure UI elements exist
+      if (!ui) ui = document.getElementById("ui");
+      if (!albumTitle) albumTitle = document.getElementById("album-title");
+      
+      if (ui && albumTitle) {
+        albumTitle.textContent = currentAlbum.title;
+        if (ui.style.display !== "block") {
+          ui.style.display = "block";
+          if (isMobile) {
+            console.log("Showing album popup on mobile:", currentAlbum.title);
+            console.log("UI element found:", ui);
+          }
+          gsap.fromTo(
+            "#ui",
+            { opacity: 0, scale: 0.8 },
+            { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.4)" }
+          );
         }
-        gsap.fromTo(
-          "#ui",
-          { opacity: 0, scale: 0.8 },
-          { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.4)" }
-        );
+        ui.classList.add("visible");
       }
-      ui.classList.add("visible");
     } else if (!closestAlbum && currentAlbum) {
       currentAlbum = null;
       if (isMobile) {
         console.log("Hiding album popup on mobile");
       }
-      gsap.to("#ui", {
-        opacity: 0,
-        scale: 0.8,
-        duration: 0.3,
-        ease: "power2.in",
-        onComplete: () => {
-          ui.style.display = "none";
-          ui.classList.remove("visible");
-        },
-      });
+      
+      // Ensure UI element exists
+      if (!ui) ui = document.getElementById("ui");
+      
+      if (ui) {
+        gsap.to("#ui", {
+          opacity: 0,
+          scale: 0.8,
+          duration: 0.3,
+          ease: "power2.in",
+          onComplete: () => {
+            ui.style.display = "none";
+            ui.classList.remove("visible");
+          },
+        });
+      }
     }
   } else if (currentAlbum) {
     currentAlbum = null;
-    ui.style.display = "none";
-    ui.classList.remove("visible");
+    if (!ui) ui = document.getElementById("ui");
+    if (ui) {
+      ui.style.display = "none";
+      ui.classList.remove("visible");
+    }
   }
 
   renderer.render(scene, camera);
 }
+
+// Function to reset scene state when returning to homepage
+function resetSceneForHomepage() {
+  console.log("Resetting scene state for homepage return");
+  
+  // Cancel any existing preview animation
+  if (previewAnimationId) {
+    cancelAnimationFrame(previewAnimationId);
+    previewAnimationId = null;
+  }
+  
+  // Cancel main animation
+  if (mainAnimationId) {
+    cancelAnimationFrame(mainAnimationId);
+    mainAnimationId = null;
+  }
+  
+  // Reset scene initialization flag to allow re-initialization
+  isSceneInitialized = false;
+  
+  // Reset camera position if camera exists
+  if (camera) {
+    camera.position.set(0, 1.6, -2);
+    if (isMobile) {
+      camera.lookAt(0, 1.6, -6);
+    }
+  }
+  
+  // Reset preview states
+  isPreviewing = false;
+  currentAlbum = null;
+  
+  console.log("Scene state reset completed");
+}
+
+// Export functions
+export { initScene, animate, animatePreview, enterGallery, resetSceneForHomepage };
