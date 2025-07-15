@@ -882,10 +882,12 @@ body {
 
   .hero-content {
     order: 2;
+    top: 8%;
   }
 
   .hero-3d-preview {
     order: 1;
+    bottom: 15%;
   }
 
   .preview-container {

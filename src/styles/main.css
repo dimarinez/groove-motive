@@ -766,13 +766,19 @@ body.gallery-entered canvas {
   #ui {
     top: 80px;
     bottom: auto;
-    max-width: 280px;
-    font-size: 0.9em;
+    max-width: 250px;
+    font-size: 0.8em;
+    padding: 15px 20px;
   }
   
   #album-title {
-    font-size: 1.2em;
-    margin-bottom: 8px;
+    font-size: 1.1em;
+    margin-bottom: 6px;
+  }
+  
+  #ui .instructions {
+    font-size: 0.85em;
+    line-height: 1.4;
   }
   
   /* Align mobile controls and instructions at bottom */

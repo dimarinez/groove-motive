@@ -16,7 +16,7 @@ export default function AboutPage() {
       <div className="page-content">
         <div className="page-container">
           <div className="page-header">
-            <h1 className="page-title">About Groove Motive</h1>
+            <h1 className="page-title">About</h1>
             <p className="page-subtitle">A New Label Built from Passion</p>
           </div>
 
