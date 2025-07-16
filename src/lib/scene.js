@@ -2424,16 +2424,7 @@ function animate() {
   const container = document.getElementById("container");
   const isInGalleryMode =
     controls.isLocked ||
-    (isMobile && container && container.style.display === "none");
-
-  if (isMobile) {
-    console.log("Mobile gallery mode check:", {
-      controlsLocked: controls.isLocked,
-      containerExists: !!container,
-      containerDisplay: container ? container.style.display : "no container",
-      isInGalleryMode: isInGalleryMode
-    });
-  }
+    (container && container.style.display === "none");
 
   if (isInGalleryMode) {
     let closestAlbum = null;
@@ -2450,21 +2441,6 @@ function animate() {
         }
       }
     });
-
-    if (isMobile && albumCount === 0) {
-      console.log("No albums found in scene on mobile!");
-    } else if (isMobile && albumCount > 0) {
-      console.log(`Found ${albumCount} albums in scene on mobile`);
-    }
-
-    if (isMobile && closestAlbum) {
-      console.log(
-        "Found closest album on mobile:",
-        closestAlbum.title,
-        "Distance:",
-        closestDistance
-      );
-    }
 
     if (closestAlbum && closestAlbum !== currentAlbum) {
       currentAlbum = closestAlbum;
@@ -2491,20 +2467,7 @@ function animate() {
       }
     } else if (!closestAlbum && currentAlbum) {
       currentAlbum = null;
-      const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
-                             ('ontouchstart' in window) || 
-                             (navigator.maxTouchPoints > 0) ||
-                             window.innerWidth <= 768;
-      
-      if (isMobile || isMobileDevice) {
-        console.log("Hiding album popup on mobile");
-        // Remove mobile popup
-        const existingMobilePopup = document.getElementById("mobile-album-popup");
-        if (existingMobilePopup) {
-          existingMobilePopup.remove();
-          console.log("Mobile popup removed");
-        }
-      } else {
+
         // Desktop UI hiding logic
         if (!ui) ui = document.getElementById("ui");
         
@@ -2525,28 +2488,14 @@ function animate() {
             ui.classList.remove("visible");
           }
         }
-      }
     }
   } else if (currentAlbum) {
     currentAlbum = null;
-    const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
-                           ('ontouchstart' in window) || 
-                           (navigator.maxTouchPoints > 0) ||
-                           window.innerWidth <= 768;
-    
-    if (isMobile || isMobileDevice) {
-      // Remove mobile popup
-      const existingMobilePopup = document.getElementById("mobile-album-popup");
-      if (existingMobilePopup) {
-        existingMobilePopup.remove();
-      }
-    } else {
       if (!ui) ui = document.getElementById("ui");
       if (ui) {
         ui.style.display = "none";
         ui.classList.remove("visible");
       }
-    }
   }
 
   renderer.render(scene, camera);
