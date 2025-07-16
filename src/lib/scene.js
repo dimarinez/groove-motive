@@ -287,7 +287,8 @@ function hidePortraitWarning() {
 
 // Create and show instructional popup
 function showWelcomeInstructions() {
-  if (hasShownInstructions) return;
+  // Always show instructions on mobile for better UX, otherwise respect localStorage
+  if (hasShownInstructions && !isMobile) return;
   
   hasShownInstructions = true;
   localStorage.setItem('grooveMotive_hasShownInstructions', 'true');
