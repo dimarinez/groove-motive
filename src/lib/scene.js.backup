@@ -89,6 +89,7 @@ let hasShownInstructions = localStorage.getItem('grooveMotive_hasShownInstructio
 
 // Load all assets immediately for preview
 function loadAllAssets() {
+  console.log("Loading all assets for preview...");
   const gltfLoader = new GLTFLoader();
   
   // Modern Couch - turned around and positioned further back
@@ -112,6 +113,7 @@ function loadAllAssets() {
       });
       
       scene.add(couch);
+      console.log("Modern couch added to scene");
       onAssetLoaded(); // Couch loaded
     },
     undefined,
@@ -142,6 +144,7 @@ function loadAllAssets() {
       });
       
       scene.add(plant3);
+      console.log("House plant 1 added to scene");
       onAssetLoaded(); // Plant 3 loaded
     },
     undefined,
@@ -172,6 +175,7 @@ function loadAllAssets() {
       });
       
       scene.add(plant4);
+      console.log("House plant 2 added to scene");
       onAssetLoaded(); // Plant 4 loaded
     },
     undefined,
@@ -242,23 +246,28 @@ function checkOrientation() {
       if (portraitWarning) {
         portraitWarning.style.display = 'none';
       }
+      console.log('Device rotated to portrait mode');
       
       // If user was blocked from entering gallery, allow them to try again
       const mainContent = document.querySelector(".main-content");
       if (mainContent && mainContent.style.display === "none" && !controls.isLocked) {
+        console.log('Re-enabling gallery access after portrait rotation');
         mainContent.style.display = "block";
       }
       
       // Orientation controls automatically adjust to new position
+      console.log('Orientation controls will adapt to new portrait position');
     } else {
       // Switched to landscape - show warning regardless of mode
       createPortraitWarning();
       portraitWarning.style.display = 'flex';
+      console.log('Device rotated to landscape mode - showing warning');
       
       // If in gallery mode, also unlock controls to prevent getting stuck
       if (isInGalleryMode && controls && controls.isLocked) {
         setTimeout(() => {
           if (!isPortraitMode && controls.isLocked) {
+            console.log('Auto-unlocking controls due to landscape mode');
             controls.unlock();
           }
         }, 2000); // Give user 2 seconds to rotate back
@@ -283,6 +292,7 @@ function setupMobileControlListeners() {
   const moveRightButton = document.getElementById("move-right");
 
   if (moveUpButton && moveDownButton && moveLeftButton && moveRightButton) {
+    console.log("Setting up mobile control listeners");
     
     moveUpButton.addEventListener("touchstart", () => {
       moveBackward = true;
@@ -316,11 +326,17 @@ function setupMobileControlListeners() {
 
     if (mobilePreviewButton) {
       mobilePreviewButton.addEventListener("touchstart", () => {
+        console.log("Mobile preview button pressed:", {
+          isPreviewing: isPreviewing,
+          currentAlbum: currentAlbum,
+          currentAlbumTitle: currentAlbum ? currentAlbum.title : "no album"
+        });
         if (isPreviewing) {
           stopPreview();
         } else if (currentAlbum) {
           startPreview(currentAlbum);
         } else {
+          console.log("No current album to preview on mobile");
         }
       });
     }
@@ -336,10 +352,16 @@ function setupMobileControlListeners() {
     if (mobileBuyButton) {
       mobileBuyButton.addEventListener("touchend", (e) => {
         e.preventDefault();
+        console.log("Mobile buy button pressed:", {
+          currentAlbum: currentAlbum,
+          currentAlbumTitle: currentAlbum ? currentAlbum.title : "no album",
+          buyUrl: currentAlbum ? currentAlbum.buyUrl : "no url"
+        });
         if (currentAlbum) {
           // Mobile Safari requires navigation to happen immediately in the touch event
           window.location.href = currentAlbum.buyUrl;
         } else {
+          console.log("No current album to buy on mobile");
         }
       });
     }
@@ -359,6 +381,7 @@ function showWelcomeInstructions() {
   
   // For mobile devices, always show instructions regardless of localStorage
   if (!isMobileDevice && hasShownInstructions) {
+    console.log("Skipping instructions for desktop (already shown)");
     return;
   }
   
@@ -367,6 +390,7 @@ function showWelcomeInstructions() {
     localStorage.setItem('grooveMotive_hasShownInstructions', 'true');
   }
   
+  console.log("Showing welcome instructions for device:", isMobileDevice ? "mobile" : "desktop");
   
   // Ensure controls are unlocked and cursor is enabled for the popup
   if (controls && controls.isLocked) {
@@ -503,6 +527,7 @@ function showWelcomeInstructions() {
 
 // Manual function to force show instructions (for debugging)
 function forceShowInstructions() {
+  console.log("Force showing instructions manually");
   showWelcomeInstructions();
 }
 
@@ -511,6 +536,7 @@ function forceShowInstructions() {
 function markSceneReady() {
   if (assetsLoaded >= totalAssets) {
     sceneReady = true;
+    console.log("Essential scene assets loaded, scene ready for entry");
     
     // Update global window properties
     try {
@@ -579,9 +605,11 @@ function preloadAudioFiles() {
   if (audioPreloaded) return;
   audioPreloaded = true;
   
+  console.log('Starting audio preloading...');
   albums.forEach((album, index) => {
     const audio = new Audio();
     audio.addEventListener('canplaythrough', () => {
+      console.log(`Preview audio loaded: ${album.title}`);
     });
     audio.addEventListener('error', (error) => {
       console.error(`Error loading preview audio for ${album.title}:`, error);
@@ -594,10 +622,12 @@ function preloadAudioFiles() {
 function initScene() {
   // Prevent multiple initializations, but allow re-initialization if core components are missing
   if (isSceneInitialized && scene && camera && renderer) {
+    console.log("Scene already initialized and components exist, skipping...");
     return;
   }
   
   if (isSceneInitialized && (!scene || !camera || !renderer)) {
+    console.log("Scene was initialized but components are missing, re-initializing...");
     isSceneInitialized = false;
   }
 
@@ -649,6 +679,7 @@ function initScene() {
   
   // Set up for hero canvas
   if (galleryCanvas) {
+    console.log("Setting up hero canvas for 3D preview");
   }
   moveUpButton = document.getElementById("move-up");
   moveDownButton = document.getElementById("move-down");
@@ -673,6 +704,7 @@ function initScene() {
   
   // enterButton is not required for hero canvas mode
   if (!enterButton) {
+    console.log("No enter button found - this is expected for hero canvas mode");
   }
 
   // Scene setup
@@ -688,10 +720,12 @@ function initScene() {
     // Hero canvas sizing
     canvasWidth = heroPreview.clientWidth;
     canvasHeight = heroPreview.clientHeight;
+    console.log("Hero canvas dimensions:", canvasWidth, "x", canvasHeight);
   } else {
     // Fallback
     canvasWidth = 800;
     canvasHeight = 600;
+    console.log("Using fallback canvas dimensions");
   }
 
   camera = new THREE.PerspectiveCamera(
@@ -720,8 +754,10 @@ function initScene() {
     renderer.setSize(canvasWidth, canvasHeight);
     renderer.outputEncoding = THREE.sRGBEncoding;
     
+    console.log("Renderer created successfully");
 
     controls = new PointerLockControls(camera, galleryCanvas);
+    console.log("Controls created successfully");
   } catch (error) {
     console.error("Error creating renderer or controls:", error);
     return;
@@ -740,6 +776,7 @@ function initScene() {
     document.body.style.cursor = "none";
     
     // TEST: Create separate test UI that won't conflict with React
+    console.log("TEST: Gallery entry detected, creating test UI...");
     
     // Remove any existing test UI first
     const existingTestUI = document.getElementById("test-mobile-ui");
@@ -785,11 +822,19 @@ function initScene() {
     // Append to body
     document.body.appendChild(testUI);
     
+    console.log("TEST: Red test UI created and added to DOM", {
+      element: testUI,
+      parent: testUI.parentElement,
+      styles: testUI.style.cssText,
+      isMobile: isMobile,
+      userAgent: navigator.userAgent
+    });
     
     // Also try to fix the original React UI
     setTimeout(() => {
       const reactUI = document.getElementById("ui");
       const albumTitle = document.getElementById("album-title");
+      console.log("TEST: Looking for React UI elements", { reactUI, albumTitle });
       
       if (reactUI) {
         reactUI.style.cssText = `
@@ -809,6 +854,7 @@ function initScene() {
         if (albumTitle) {
           albumTitle.textContent = "React UI Also Working!";
         }
+        console.log("TEST: React UI also styled");
       }
     }, 100);
     
@@ -816,6 +862,7 @@ function initScene() {
       const mobileControls = document.getElementById("mobile-controls");
       if (mobileControls) {
         mobileControls.style.display = "flex";
+        console.log("Mobile controls shown");
         setupMobileControlListeners();
       } else {
         console.warn("Mobile controls element not found");
@@ -992,6 +1039,7 @@ function initScene() {
         const box = new THREE.Box3().setFromObject(pillar);
         const size = box.getSize(new THREE.Vector3());
         
+        console.log(`Pillar ${index + 1} size after scaling:`, size);
         
         // Position the pillar so its bottom sits on the floor
         pillar.position.set(
@@ -1007,6 +1055,7 @@ function initScene() {
         pillar.traverse((child) => {
           if (child.isMesh) {
             meshCount++;
+            console.log(`Mesh ${meshCount}:`, child.name, 'Vertices:', child.geometry.attributes.position?.count);
             
             // Apply proper material encoding and keep original material
             if (child.material) {
@@ -1025,6 +1074,7 @@ function initScene() {
         
         // If no meshes found, create a placeholder
         if (meshCount === 0) {
+          console.log(`No meshes found in pillar ${index + 1}, creating placeholder`);
           const placeholderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 4, 8);
           const placeholderMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
           const placeholder = new THREE.Mesh(placeholderGeometry, placeholderMaterial);
@@ -1033,6 +1083,7 @@ function initScene() {
         }
         
         scene.add(pillar);
+        console.log(`Pillar ${index + 1} added to scene with ${meshCount} meshes`);
         
         // Add monstera plant on top of each pillar
         gltfLoader.load(
@@ -1054,6 +1105,7 @@ function initScene() {
             });
             
             pillar.add(plant); // Add plant as child of pillar
+            console.log(`Monstera plant added to pillar ${index + 1}`);
             onAssetLoaded(); // Pillar plant loaded
           },
           undefined,
@@ -1076,6 +1128,7 @@ function initScene() {
         const fallbackPillar = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
         fallbackPillar.position.set(position[0], 2.5, position[2]);
         scene.add(fallbackPillar);
+        console.log(`Fallback pillar ${index + 1} created`);
       }
     );
   });
@@ -1192,6 +1245,7 @@ function initScene() {
   // Mark scene as initialized
   isSceneInitialized = true;
   
+  console.log("Scene initialization completed successfully");
 
   // Ensure proper canvas sizing after DOM is fully loaded
   setTimeout(() => {
@@ -1209,12 +1263,17 @@ function initScene() {
 
 // Request device orientation permission with user interaction
 async function requestDeviceOrientationPermission() {
+  console.log('=== Starting orientation permission request ===');
+  console.log('User agent:', navigator.userAgent);
+  console.log('DeviceOrientationEvent available:', typeof DeviceOrientationEvent !== 'undefined');
+  console.log('DeviceOrientationEvent.requestPermission available:', typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function');
   
   // Check if we need to request permission (iOS 13+)
   if (typeof DeviceOrientationEvent !== 'undefined' && 
       typeof DeviceOrientationEvent.requestPermission === 'function') {
     
     try {
+      console.log('Requesting device orientation permission...');
       
       // Create a user interaction button that triggers permission request
       const permissionButton = document.createElement('button');
@@ -1240,7 +1299,9 @@ async function requestDeviceOrientationPermission() {
       const permissionResult = await new Promise((resolve) => {
         permissionButton.addEventListener('click', async () => {
           try {
+            console.log('User clicked permission button, requesting...');
             const result = await DeviceOrientationEvent.requestPermission();
+            console.log('Permission result:', result);
             resolve(result);
           } catch (error) {
             console.error('Error in permission request:', error);
@@ -1253,7 +1314,12 @@ async function requestDeviceOrientationPermission() {
       document.body.removeChild(permissionButton);
       
       if (permissionResult === 'granted') {
+        console.log('Device orientation permission granted');
         setupDeviceOrientationControls();
+      } else if (permissionResult === 'denied') {
+        console.log('Device orientation permission denied');
+      } else {
+        console.log('Device orientation permission error:', permissionResult);
       }
       
     } catch (error) {
@@ -1261,6 +1327,7 @@ async function requestDeviceOrientationPermission() {
     }
   } else {
     // Android or older iOS - no permission required
+    console.log('No permission required for device orientation');
     setupDeviceOrientationControls();
   }
 
@@ -1268,7 +1335,9 @@ async function requestDeviceOrientationPermission() {
   if (typeof DeviceMotionEvent !== 'undefined' && 
       typeof DeviceMotionEvent.requestPermission === 'function') {
     try {
+      console.log('Requesting device motion permission...');
       const motionPermission = await DeviceMotionEvent.requestPermission();
+      console.log('Device motion permission:', motionPermission);
     } catch (error) {
       console.warn('Error requesting device motion permission:', error);
     }
@@ -1280,9 +1349,11 @@ async function requestDeviceOrientationPermission() {
  */
 function setupDeviceOrientationControls() {
   if (!isMobile) {
+    console.log('Not mobile device, skipping orientation setup');
     return;
   }
 
+  console.log('🚀 Setting up Simple Device Orientation Controls...');
 
   // Add device orientation event listener
   const handleDeviceOrientation = (event) => {
@@ -1297,6 +1368,7 @@ function setupDeviceOrientationControls() {
       if (!isCalibrated) {
         orientationCalibration = { ...deviceOrientation };
         isCalibrated = true;
+        console.log('Auto-calibrated orientation:', orientationCalibration);
       }
     }
   };
@@ -1305,10 +1377,12 @@ function setupDeviceOrientationControls() {
   window.addEventListener('deviceorientation', handleDeviceOrientation, false);
   deviceOrientationControls = { enabled: true };
   
+  console.log('Simple device orientation controls initialized');
   updateOrientationStatus('granted', 'Orientation: Ready');
   
   setTimeout(() => {
     if (deviceOrientationControls.enabled) {
+      console.log('Simple device orientation controls active');
       updateOrientationStatus('granted', 'Orientation: Active');
     }
   }, 2000);
@@ -1321,6 +1395,7 @@ function cleanupDeviceOrientation() {
   deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
   orientationCalibration = { alpha: 0, beta: 0, gamma: 0 };
   isCalibrated = false;
+  console.log('Device orientation controls cleaned up');
 }
 
 function resetToInitialState() {
@@ -1434,6 +1509,16 @@ function resetToInitialState() {
 }
 
 function enterGallery() {
+  console.log("=== ENTERING GALLERY ===");
+  console.log("Scene ready:", sceneReady);
+  console.log("Assets loaded:", assetsLoaded, "/", totalAssets);
+  console.log("Scene:", scene);
+  console.log("Scene children:", scene?.children?.length);
+  console.log("Camera:", camera);
+  console.log("Camera position:", camera?.position);
+  console.log("Renderer:", renderer);
+  console.log("Renderer domElement:", !!renderer?.domElement);
+  console.log("Renderer size:", renderer?.domElement?.width, "x", renderer?.domElement?.height);
 
   // Allow immediate entry - assets will load in background
 
@@ -1447,6 +1532,7 @@ function enterGallery() {
       
       // If still not ready, show loading message
       if (!scene || !camera || !renderer) {
+        console.log("Re-initialization failed, showing loading message...");
         const mainContent = document.querySelector(".main-content");
         if (mainContent) {
           const loadingMessage = document.createElement("div");
@@ -1510,6 +1596,7 @@ function enterGallery() {
     
     // Don't proceed if in landscape mode
     if (!isPortraitMode) {
+      console.log('Blocking gallery entry - device in landscape mode');
       createPortraitWarning();
       portraitWarning.style.display = 'flex';
       
@@ -1536,11 +1623,13 @@ function enterGallery() {
     // Set initial camera position for portrait mode
     setTimeout(() => {
       if (deviceOrientationControls && deviceOrientationControls.enabled) {
+        console.log('Setting up calibrated orientation controls');
         
         // Ensure camera is positioned correctly for portrait mode
         camera.position.set(0, 1.6, -2); // Standard viewing position
         camera.rotation.order = 'YXZ';
         
+        console.log('Calibrated orientation controls ready');
       }
     }, 1000);
   }
@@ -1634,8 +1723,10 @@ function enterGallery() {
   // Enable click-to-lock
   clickToLockHandler = (event) => {
     if (controls && event.target.id !== "enter-button" && !controls.isLocked) {
+      console.log("Attempting to lock pointer...");
       try {
         controls.lock();
+        console.log("Pointer lock successful");
       } catch (error) {
         console.warn("Pointer lock failed:", error);
       }
@@ -1645,18 +1736,25 @@ function enterGallery() {
   // Add click listener with slight delay to ensure DOM is ready
   setTimeout(() => {
     document.addEventListener("click", clickToLockHandler);
+    console.log("Click-to-lock handler added");
   }, 200);
 
   // Set camera position for gallery view
   if (camera) {
     camera.position.set(0, 1.6, -2);
     camera.lookAt(0, 1.6, -6);
+    console.log("Camera positioned for gallery view:", camera.position);
   }
 
   // Force render
+  console.log("Forcing render at end of enterGallery");
+  console.log("Scene children count:", scene?.children?.length);
+  console.log("Camera position:", camera?.position);
+  console.log("Scene background:", scene?.background);
   
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
+    console.log("Render completed successfully");
   } else {
     console.error("Cannot render - missing components:", {
       renderer: !!renderer,
@@ -1664,6 +1762,7 @@ function enterGallery() {
       camera: !!camera
     });
   }
+  console.log("=== GALLERY ENTRY COMPLETE ===");
 
   // Show welcome instructions first, then handle controls
   setTimeout(() => {
@@ -1679,6 +1778,7 @@ function enterGallery() {
           try {
             if (controls) {
               controls.lock();
+              console.log("Controls automatically locked after instructions");
             }
           } catch (error) {
             console.warn("Auto-lock failed, user will need to click:", error);
@@ -1698,6 +1798,7 @@ function enterGallery() {
       const mobileControls = document.getElementById("mobile-controls");
       if (mobileControls) {
         mobileControls.style.display = "flex";
+        console.log("Mobile controls ensured visible in enterGallery");
         setupMobileControlListeners();
       }
     }, 100);
@@ -1725,7 +1826,7 @@ function createAlbumMesh(album, index) {
   const textureLoader = new THREE.TextureLoader();
   const texture = textureLoader.load(
     album.cover,
-    undefined,
+    () => console.log("Deferred: Album cover loaded", album.title), // Album cover loaded (deferred)
     undefined,
     (error) => {
       console.error("Error loading album cover:", error);
@@ -1734,9 +1835,11 @@ function createAlbumMesh(album, index) {
   
   // Load the GLB frame from local assets
   const frameLoader = new GLTFLoader();
+  console.log('Loading local GLB frame for:', album.title);
   frameLoader.load(
     "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/frame01_lowpoly.glb",
     (gltf) => {
+      console.log('Local GLB frame loaded successfully for:', album.title);
       const frameModel = gltf.scene;
       frameModel.position.set(position[0], position[1] - 2.0, position[2] + 0.05);
       frameModel.scale.set(14, 14, 2);
@@ -1747,6 +1850,7 @@ function createAlbumMesh(album, index) {
       // Log all meshes found in the frame and make them lighter
       frameModel.traverse((child) => {
         if (child.isMesh) {
+          console.log(`Frame mesh: "${child.name}", material: "${child.material?.name}"`);
           
           // Make frame material lighter
           if (child.material) {
@@ -1784,6 +1888,7 @@ function createAlbumMesh(album, index) {
               metalness: 0.0
             });
             albumArtApplied = true;
+            console.log(`Applied album texture to: ${child.name}`);
           }
           // Keep original materials for frame decorative parts
         }
@@ -1791,6 +1896,7 @@ function createAlbumMesh(album, index) {
       
       // If no specific canvas area found, add a plane in the center
       if (!albumArtApplied) {
+        console.log('No canvas mesh found, creating center plane');
         const albumMaterial = new THREE.MeshStandardMaterial({ 
           map: texture,
           roughness: 0.1,
@@ -1799,15 +1905,19 @@ function createAlbumMesh(album, index) {
         const albumPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.12), albumMaterial);
         albumPlane.position.set(0.077, 0.225, -0.01);
         frameModel.add(albumPlane);
+        console.log('Added center plane for album art');
       }
       
       scene.add(frameModel);
+      console.log(`Local GLB frame added for: ${album.title}`);
       onAssetLoaded(); // Album frame loaded
     },
     (progress) => {
+      console.log('GLB frame loading progress:', (progress.loaded / progress.total * 100).toFixed(1) + '%');
     },
     (error) => {
       console.error(`Error loading local GLB frame for ${album.title}:`, error);
+      console.log('Falling back to custom frame');
       // Fallback to custom frame
       createFramedAlbum(position, texture, album);
       onAssetLoaded(); // Album frame loaded (fallback)
@@ -1878,6 +1988,7 @@ function createFramedAlbum(position, texture, album) {
   frameGroup.userData = { album };
   scene.add(frameGroup);
   
+  console.log(`Created framed album for: ${album.title}`);
   onAssetLoaded(); // Custom frame loaded
 }
 
@@ -1980,10 +2091,12 @@ function startPreview(album) {
         if (audioPlayAttempted || !isPreviewing) return;
         audioPlayAttempted = true;
         
+        console.log('Attempting to play audio:', album.title, 'readyState:', audio.readyState);
         
         const playPromise = audio.play();
         if (playPromise !== undefined) {
           playPromise.then(() => {
+            console.log('Audio playback started successfully');
           }).catch(error => {
             console.warn('Audio play failed, will retry:', error);
             audioPlayAttempted = false;
@@ -2000,6 +2113,7 @@ function startPreview(album) {
       
       // Listen for multiple audio ready events
       const onAudioReady = () => {
+        console.log('Audio ready event fired, readyState:', audio.readyState);
         
         // Clean up listeners
         audio.removeEventListener('canplay', onAudioReady);
@@ -2035,6 +2149,7 @@ function startPreview(album) {
       
       // Fallback timer - start animation even if audio not ready
       audioTimeout = setTimeout(() => {
+        console.log('Audio loading timeout - starting animation anyway');
         
         // Start animation even if audio isn't ready (only once)
         if (!recordAnimationStarted) {
@@ -2288,12 +2403,6 @@ try {
 
 function animate() {
   mainAnimationId = requestAnimationFrame(animate);
-  
-  // Safety check - stop animation if camera doesn't exist
-  if (!camera || !controls || !renderer || !scene) {
-    return;
-  }
-  
   const delta = clock.getDelta();
   if (mixer) mixer.update(delta);
 
@@ -2382,36 +2491,133 @@ function animate() {
   camera.position.y = 1.6;
 
   // Album popups - using working reference logic
-  // For mobile: check if we're in gallery mode by looking for mobile controls being visible
-  const mobileControls = document.getElementById("mobile-controls");
+  const container = document.getElementById("container");
   const isInGalleryMode =
     controls.isLocked ||
-    (isMobile && mobileControls && mobileControls.style.display !== "none");
+    (isMobile && container && container.style.display === "none");
 
+  // DEBUG: Log gallery state every few seconds
+  if (Math.floor(Date.now() / 1000) % 3 === 0) {
+    console.log("MOBILE DEBUG:", {
+      isMobile: isMobile,
+      isInGalleryMode: isInGalleryMode,
+      controlsLocked: controls.isLocked,
+      cameraPosition: {
+        x: camera.position.x.toFixed(2),
+        y: camera.position.y.toFixed(2),
+        z: camera.position.z.toFixed(2)
+      },
+      userAgent: navigator.userAgent.substring(0, 50) + "..."
+    });
+  }
 
   if (isInGalleryMode) {
-    let closestAlbum = null;
-    let closestDistance = Infinity;
-
-    let albumCount = 0;
-    scene.children.forEach((child) => {
-      if (child.userData.album) {
-        albumCount++;
-        const distance = camera.position.distanceTo(child.position);
-        if (distance < 3 && distance < closestDistance) {
-          closestDistance = distance;
-          closestAlbum = child.userData.album;
-        }
-      }
-    });
-
-    if (closestAlbum && closestAlbum !== currentAlbum) {
-      currentAlbum = closestAlbum;
+    // On mobile, always show UI with default message
+    if (isMobile) {
       if (!ui) ui = document.getElementById("ui");
       if (!albumTitle) albumTitle = document.getElementById("album-title");
       
       if (ui && albumTitle) {
-        albumTitle.textContent = currentAlbum.title;
+        // Check if we're close to any album
+        let closestAlbum = null;
+        let closestDistance = Infinity;
+        let albumCount = 0;
+        let nearbyAlbums = [];
+        
+        scene.children.forEach((child) => {
+          if (child.userData.album) {
+            albumCount++;
+            const distance = camera.position.distanceTo(child.position);
+            if (distance < 5) { // Debug all albums within 5 units
+              nearbyAlbums.push({
+                title: child.userData.album.title,
+                distance: distance.toFixed(2),
+                position: {
+                  x: child.position.x.toFixed(2),
+                  y: child.position.y.toFixed(2),
+                  z: child.position.z.toFixed(2)
+                }
+              });
+            }
+            if (distance < 3 && distance < closestDistance) {
+              closestDistance = distance;
+              closestAlbum = child.userData.album;
+            }
+          }
+        });
+        
+        // Debug album detection every few seconds
+        if (Math.floor(Date.now() / 1000) % 5 === 0) {
+          console.log("ALBUM DEBUG:", {
+            totalAlbums: albumCount,
+            nearbyAlbums: nearbyAlbums,
+            closestAlbum: closestAlbum ? closestAlbum.title : "none",
+            closestDistance: closestDistance === Infinity ? "∞" : closestDistance.toFixed(2)
+          });
+        }
+        
+        // Always show debug info in UI for mobile
+        const debugInfo = `
+          📱 Mobile: ${isMobile ? 'YES' : 'NO'}<br>
+          🔒 Gallery Mode: ${isInGalleryMode ? 'YES' : 'NO'}<br>
+          📍 Position: (${camera.position.x.toFixed(1)}, ${camera.position.z.toFixed(1)})<br>
+          🎵 Albums Found: ${albumCount}<br>
+          📏 Closest: ${closestAlbum ? closestAlbum.title + ' (' + closestDistance.toFixed(1) + 'm)' : 'None within 3m'}<br>
+          👀 Nearby: ${nearbyAlbums.length > 0 ? nearbyAlbums.map(a => a.title + '(' + a.distance + 'm)').join(', ') : 'None within 5m'}
+        `;
+        
+        albumTitle.innerHTML = debugInfo;
+        
+        // Show album title if close to one, otherwise show debug
+        if (closestAlbum) {
+          currentAlbum = closestAlbum;
+          
+          // MOBILE TEST: Create visible popup when near album
+          let mobilePopup = document.getElementById("mobile-album-popup");
+          if (!mobilePopup) {
+            mobilePopup = document.createElement("div");
+            mobilePopup.id = "mobile-album-popup";
+            document.body.appendChild(mobilePopup);
+          }
+          
+          mobilePopup.innerHTML = `
+            <div style="font-size: 1.5em; margin-bottom: 10px;">🎵 ${closestAlbum.title} 🎵</div>
+            <div>Distance: ${closestDistance.toFixed(2)}m</div>
+            <div>Tap G to play preview • Tap B to buy</div>
+          `;
+          
+          mobilePopup.style.cssText = `
+            position: fixed !important;
+            top: 20px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4) !important;
+            color: white !important;
+            padding: 20px !important;
+            border-radius: 15px !important;
+            z-index: 999999 !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif !important;
+            text-align: center !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+            border: 2px solid white !important;
+            max-width: 90vw !important;
+            box-sizing: border-box !important;
+            animation: pulse 2s infinite !important;
+          `;
+          
+        } else {
+          currentAlbum = null;
+          
+          // Remove popup when not near album
+          const mobilePopup = document.getElementById("mobile-album-popup");
+          if (mobilePopup) {
+            mobilePopup.remove();
+          }
+        }
+        
         if (ui.style.display !== "block") {
           ui.style.display = "block";
           if (typeof gsap !== 'undefined') {
@@ -2427,34 +2633,75 @@ function animate() {
         }
         ui.classList.add("visible");
       }
-    } else if (!closestAlbum && currentAlbum) {
-      currentAlbum = null;
+    } else {
+      // Desktop behavior - only show UI when close to albums
+      let closestAlbum = null;
+      let closestDistance = Infinity;
+
+      let albumCount = 0;
+      scene.children.forEach((child) => {
+        if (child.userData.album) {
+          albumCount++;
+          const distance = camera.position.distanceTo(child.position);
+          if (distance < 3 && distance < closestDistance) {
+            closestDistance = distance;
+            closestAlbum = child.userData.album;
+          }
+        }
+      });
+
+      if (closestAlbum && closestAlbum !== currentAlbum) {
+        currentAlbum = closestAlbum;
+
+        if (!ui) ui = document.getElementById("ui");
+        if (!albumTitle) albumTitle = document.getElementById("album-title");
         
-      if (ui) {
-        if (typeof gsap !== 'undefined') {
-          gsap.to("#ui", {
-            opacity: 0,
-            scale: 0.8,
-            duration: 0.3,
-            ease: "power2.in",
-            onComplete: () => {
+        if (ui && albumTitle) {
+          albumTitle.textContent = currentAlbum.title;
+          if (ui.style.display !== "block") {
+            ui.style.display = "block";
+            if (typeof gsap !== 'undefined') {
+              gsap.fromTo(
+                "#ui",
+                { opacity: 0, scale: 0.8 },
+                { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.4)" }
+              );
+            } else {
+              ui.style.opacity = "1";
+              ui.style.transform = "translateX(-50%) scale(1)";
+            }
+          }
+          ui.classList.add("visible");
+        }
+      } else if (!closestAlbum && currentAlbum) {
+        currentAlbum = null;
+        
+          if (ui) {
+            if (typeof gsap !== 'undefined') {
+              gsap.to("#ui", {
+                opacity: 0,
+                scale: 0.8,
+                duration: 0.3,
+                ease: "power2.in",
+                onComplete: () => {
+                  ui.style.display = "none";
+                  ui.classList.remove("visible");
+                },
+              });
+            } else {
               ui.style.display = "none";
               ui.classList.remove("visible");
-            },
-          });
-        } else {
-          ui.style.display = "none";
-          ui.classList.remove("visible");
+            }
+          }
         }
       }
-    }
   } else if (currentAlbum) {
     currentAlbum = null;
-    if (!ui) ui = document.getElementById("ui");
-    if (ui) {
-      ui.style.display = "none";
-      ui.classList.remove("visible");
-    }
+      if (!ui) ui = document.getElementById("ui");
+      if (ui) {
+        ui.style.display = "none";
+        ui.classList.remove("visible");
+      }
   }
 
   renderer.render(scene, camera);
@@ -2462,6 +2709,7 @@ function animate() {
 
 // Function to reset scene state when returning to homepage
 function resetSceneForHomepage() {
+  console.log("Resetting scene state for homepage return");
   
   // Cancel any existing preview animation
   if (previewAnimationId) {
@@ -2490,6 +2738,7 @@ function resetSceneForHomepage() {
   isPreviewing = false;
   currentAlbum = null;
   
+  console.log("Scene state reset completed");
 }
 
 // Export functions

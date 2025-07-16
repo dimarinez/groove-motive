@@ -13,7 +13,8 @@
       "Bash(rm:*)",
       "Bash(sed:*)",
       "Bash(awk:*)",
-      "Bash(open \"http://localhost:5173\")"
+      "Bash(open \"http://localhost:5173\")",
+      "Bash(cp:*)"
     ],
     "deny": []
   }
