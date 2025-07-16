@@ -2461,6 +2461,10 @@ function animate() {
           if (isMobile) {
             console.log("Showing album popup on mobile:", currentAlbum.title);
             console.log("UI element found:", ui);
+            console.log("UI styles:", window.getComputedStyle(ui));
+            // Ensure UI is visible on mobile with higher z-index
+            ui.style.zIndex = "3000";
+            ui.style.position = "fixed";
           }
           gsap.fromTo(
             "#ui",

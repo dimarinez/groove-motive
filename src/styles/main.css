@@ -764,11 +764,14 @@ body.gallery-entered canvas {
   
   /* Adjust UI positioning on mobile to avoid conflicts with mobile controls */
   #ui {
-    top: 80px;
+    top: 100px;
     bottom: auto;
-    max-width: 250px;
-    font-size: 0.8em;
+    max-width: 280px;
+    font-size: 0.9em;
     padding: 15px 20px;
+    z-index: 3000;
+    left: 50%;
+    transform: translateX(-50%);
   }
   
   #album-title {
