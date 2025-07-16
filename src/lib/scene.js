@@ -774,9 +774,90 @@ function initScene() {
   
   controls.addEventListener("lock", () => {
     document.body.style.cursor = "none";
-    if (ui) {
-      ui.style.display = "none";
+    
+    // TEST: Create separate test UI that won't conflict with React
+    console.log("TEST: Gallery entry detected, creating test UI...");
+    
+    // Remove any existing test UI first
+    const existingTestUI = document.getElementById("test-mobile-ui");
+    if (existingTestUI) {
+      existingTestUI.remove();
     }
+    
+    // Create a completely separate test UI element
+    const testUI = document.createElement("div");
+    testUI.id = "test-mobile-ui";
+    testUI.innerHTML = `
+      <div style="font-size: 1.5em; font-weight: 600; margin-bottom: 12px; color: #1a1a1a;">
+        🎵 MOBILE TEST UI WORKING! 🎵
+      </div>
+      <div style="font-size: 1em; color: #333; line-height: 1.5;">
+        This proves the UI can show on mobile!<br>
+        Gallery mode is active.
+      </div>
+    `;
+    
+    // Apply all styles directly
+    testUI.style.cssText = `
+      position: fixed !important;
+      top: 50px !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      background: rgba(255, 0, 0, 0.9) !important;
+      color: white !important;
+      padding: 30px !important;
+      border-radius: 15px !important;
+      z-index: 99999 !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif !important;
+      text-align: center !important;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+      border: 3px solid white !important;
+      max-width: 90vw !important;
+      box-sizing: border-box !important;
+    `;
+    
+    // Append to body
+    document.body.appendChild(testUI);
+    
+    console.log("TEST: Red test UI created and added to DOM", {
+      element: testUI,
+      parent: testUI.parentElement,
+      styles: testUI.style.cssText,
+      isMobile: isMobile,
+      userAgent: navigator.userAgent
+    });
+    
+    // Also try to fix the original React UI
+    setTimeout(() => {
+      const reactUI = document.getElementById("ui");
+      const albumTitle = document.getElementById("album-title");
+      console.log("TEST: Looking for React UI elements", { reactUI, albumTitle });
+      
+      if (reactUI) {
+        reactUI.style.cssText = `
+          position: fixed !important;
+          top: 150px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          background: rgba(0, 255, 0, 0.9) !important;
+          color: white !important;
+          padding: 20px !important;
+          border-radius: 12px !important;
+          z-index: 99998 !important;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        `;
+        if (albumTitle) {
+          albumTitle.textContent = "React UI Also Working!";
+        }
+        console.log("TEST: React UI also styled");
+      }
+    }, 100);
+    
     if (isMobile) {
       const mobileControls = document.getElementById("mobile-controls");
       if (mobileControls) {
@@ -1687,30 +1768,28 @@ function enterGallery() {
   setTimeout(() => {
     showWelcomeInstructions();
     
-    // Only auto-lock controls for desktop after instructions are dismissed
-    if (!isMobile) {
-      // Wait for instructions to be dismissed before auto-locking
-      const checkInstructions = () => {
-        const instructionsEl = document.getElementById("welcome-instructions");
-        if (!instructionsEl) {
-          // Instructions have been dismissed, now auto-lock
-          setTimeout(() => {
-            try {
-              if (controls) {
-                controls.lock();
-                console.log("Controls automatically locked after instructions");
-              }
-            } catch (error) {
-              console.warn("Auto-lock failed, user will need to click:", error);
+    // Auto-lock controls after instructions are dismissed
+    // Wait for instructions to be dismissed before auto-locking
+    const checkInstructions = () => {
+      const instructionsEl = document.getElementById("welcome-instructions");
+      if (!instructionsEl) {
+        // Instructions have been dismissed, now auto-lock
+        setTimeout(() => {
+          try {
+            if (controls) {
+              controls.lock();
+              console.log("Controls automatically locked after instructions");
             }
-          }, 500);
-        } else {
-          // Check again in 100ms
-          setTimeout(checkInstructions, 100);
-        }
-      };
-      checkInstructions();
-    }
+          } catch (error) {
+            console.warn("Auto-lock failed, user will need to click:", error);
+          }
+        }, 500);
+      } else {
+        // Check again in 100ms
+        setTimeout(checkInstructions, 100);
+      }
+    };
+    checkInstructions();
   }, 1000);
   
   // Ensure mobile controls visible
@@ -2415,30 +2494,119 @@ function animate() {
   const isInGalleryMode =
     controls.isLocked;
 
-  if (isInGalleryMode) {
-    let closestAlbum = null;
-    let closestDistance = Infinity;
-
-    let albumCount = 0;
-    scene.children.forEach((child) => {
-      if (child.userData.album) {
-        albumCount++;
-        const distance = camera.position.distanceTo(child.position);
-        if (distance < 3 && distance < closestDistance) {
-          closestDistance = distance;
-          closestAlbum = child.userData.album;
-        }
-      }
+  // DEBUG: Log gallery state every few seconds
+  if (Math.floor(Date.now() / 1000) % 3 === 0) {
+    console.log("MOBILE DEBUG:", {
+      isMobile: isMobile,
+      isInGalleryMode: isInGalleryMode,
+      controlsLocked: controls.isLocked,
+      cameraPosition: {
+        x: camera.position.x.toFixed(2),
+        y: camera.position.y.toFixed(2),
+        z: camera.position.z.toFixed(2)
+      },
+      userAgent: navigator.userAgent.substring(0, 50) + "..."
     });
+  }
 
-    if (closestAlbum && closestAlbum !== currentAlbum) {
-      currentAlbum = closestAlbum;
-
+  if (isInGalleryMode) {
+    // On mobile, always show UI with default message
+    if (isMobile) {
       if (!ui) ui = document.getElementById("ui");
       if (!albumTitle) albumTitle = document.getElementById("album-title");
       
       if (ui && albumTitle) {
-        albumTitle.textContent = currentAlbum.title;
+        // Check if we're close to any album
+        let closestAlbum = null;
+        let closestDistance = Infinity;
+        let albumCount = 0;
+        let nearbyAlbums = [];
+        
+        scene.children.forEach((child) => {
+          if (child.userData.album) {
+            albumCount++;
+            const distance = camera.position.distanceTo(child.position);
+            if (distance < 5) { // Debug all albums within 5 units
+              nearbyAlbums.push({
+                title: child.userData.album.title,
+                distance: distance.toFixed(2),
+                position: {
+                  x: child.position.x.toFixed(2),
+                  y: child.position.y.toFixed(2),
+                  z: child.position.z.toFixed(2)
+                }
+              });
+            }
+            if (distance < 3 && distance < closestDistance) {
+              closestDistance = distance;
+              closestAlbum = child.userData.album;
+            }
+          }
+        });
+        
+        // Debug album detection every few seconds
+        if (Math.floor(Date.now() / 1000) % 5 === 0) {
+          console.log("ALBUM DEBUG:", {
+            totalAlbums: albumCount,
+            nearbyAlbums: nearbyAlbums,
+            closestAlbum: closestAlbum ? closestAlbum.title : "none",
+            closestDistance: closestDistance === Infinity ? "∞" : closestDistance.toFixed(2)
+          });
+        }
+        
+        // Show album title if close to one, otherwise show default message
+        if (closestAlbum) {
+          albumTitle.textContent = closestAlbum.title;
+          currentAlbum = closestAlbum;
+          
+          // MOBILE TEST: Create visible popup when near album
+          let mobilePopup = document.getElementById("mobile-album-popup");
+          if (!mobilePopup) {
+            mobilePopup = document.createElement("div");
+            mobilePopup.id = "mobile-album-popup";
+            document.body.appendChild(mobilePopup);
+          }
+          
+          mobilePopup.innerHTML = `
+            <div style="font-size: 1.5em; margin-bottom: 10px;">🎵 ${closestAlbum.title} 🎵</div>
+            <div>Tap G to play preview • Tap B to buy</div>
+          `;
+          
+          mobilePopup.style.cssText = `
+            position: fixed !important;
+            top: 20px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4) !important;
+            color: white !important;
+            padding: 20px !important;
+            border-radius: 15px !important;
+            z-index: 999999 !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif !important;
+            text-align: center !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+            border: 2px solid white !important;
+            max-width: 90vw !important;
+            box-sizing: border-box !important;
+            animation: pulse 2s infinite !important;
+          `;
+          
+          console.log("MOBILE TEST: Album popup created for", closestAlbum.title, "distance:", closestDistance.toFixed(2));
+          
+        } else {
+          albumTitle.textContent = "Explore the Gallery";
+          currentAlbum = null;
+          
+          // Remove popup when not near album
+          const mobilePopup = document.getElementById("mobile-album-popup");
+          if (mobilePopup) {
+            mobilePopup.remove();
+          }
+        }
+        
         if (ui.style.display !== "block") {
           ui.style.display = "block";
           if (typeof gsap !== 'undefined') {
@@ -2454,30 +2622,68 @@ function animate() {
         }
         ui.classList.add("visible");
       }
-    } else if (!closestAlbum && currentAlbum) {
-      currentAlbum = null;
+    } else {
+      // Desktop behavior - only show UI when close to albums
+      let closestAlbum = null;
+      let closestDistance = Infinity;
 
-        // Desktop UI hiding logic
-        if (!ui) ui = document.getElementById("ui");
-        
-        if (ui) {
-          if (typeof gsap !== 'undefined') {
-            gsap.to("#ui", {
-              opacity: 0,
-              scale: 0.8,
-              duration: 0.3,
-              ease: "power2.in",
-              onComplete: () => {
-                ui.style.display = "none";
-                ui.classList.remove("visible");
-              },
-            });
-          } else {
-            ui.style.display = "none";
-            ui.classList.remove("visible");
+      let albumCount = 0;
+      scene.children.forEach((child) => {
+        if (child.userData.album) {
+          albumCount++;
+          const distance = camera.position.distanceTo(child.position);
+          if (distance < 3 && distance < closestDistance) {
+            closestDistance = distance;
+            closestAlbum = child.userData.album;
           }
         }
-    }
+      });
+
+      if (closestAlbum && closestAlbum !== currentAlbum) {
+        currentAlbum = closestAlbum;
+
+        if (!ui) ui = document.getElementById("ui");
+        if (!albumTitle) albumTitle = document.getElementById("album-title");
+        
+        if (ui && albumTitle) {
+          albumTitle.textContent = currentAlbum.title;
+          if (ui.style.display !== "block") {
+            ui.style.display = "block";
+            if (typeof gsap !== 'undefined') {
+              gsap.fromTo(
+                "#ui",
+                { opacity: 0, scale: 0.8 },
+                { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.4)" }
+              );
+            } else {
+              ui.style.opacity = "1";
+              ui.style.transform = "translateX(-50%) scale(1)";
+            }
+          }
+          ui.classList.add("visible");
+        }
+      } else if (!closestAlbum && currentAlbum) {
+        currentAlbum = null;
+        
+          if (ui) {
+            if (typeof gsap !== 'undefined') {
+              gsap.to("#ui", {
+                opacity: 0,
+                scale: 0.8,
+                duration: 0.3,
+                ease: "power2.in",
+                onComplete: () => {
+                  ui.style.display = "none";
+                  ui.classList.remove("visible");
+                },
+              });
+            } else {
+              ui.style.display = "none";
+              ui.classList.remove("visible");
+            }
+          }
+        }
+      }
   } else if (currentAlbum) {
     currentAlbum = null;
       if (!ui) ui = document.getElementById("ui");

@@ -771,7 +771,11 @@ body.gallery-entered canvas {
     padding: 15px 20px;
     z-index: 3000;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) scale(0.95);
+  }
+  
+  #ui.visible {
+    transform: translateX(-50%) scale(1);
   }
   
   #album-title {
