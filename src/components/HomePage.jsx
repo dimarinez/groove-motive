@@ -146,44 +146,6 @@ export default function HomePage({ onEnterListeningRoom }) {
           <div className="preview-container scene-ready">
             <canvas id="hero-gallery-canvas"></canvas>
             
-            {/* Hero Loading Indicator - DISABLED FOR DEBUGGING */}
-            <div id="hero-loading-indicator" className="awwwards-loader" style={{ display: 'none' }}>
-              <div className="loader-container">
-                
-                {/* Premium Animated Logo */}
-                <div className="loader-logo">
-                  <div className="logo-particles">
-                    <div className="particle"></div>
-                    <div className="particle"></div>
-                    <div className="particle"></div>
-                    <div className="particle"></div>
-                    <div className="particle"></div>
-                  </div>
-                </div>
-                
-                {/* Loading Text */}
-                <div className="loader-text-section">
-                  <p className="loader-subtitle">Loading Experience</p>
-                </div>
-                
-                {/* Premium Progress Section */}
-                <div className="loader-progress-section">
-                  {/* Premium Progress Bar */}
-                  <div className="premium-progress-container">
-                    <div className="progress-bg"></div>
-                    <div id="hero-progress-bar" className="premium-progress-bar"></div>
-                    <div className="progress-glow"></div>
-                  </div>
-                  
-                  {/* Percentage Display */}
-                  <div className="progress-stats">
-                    <div id="hero-progress-text" className="progress-percentage">0</div>
-                    <div className="progress-unit">%</div>
-                  </div>
-                </div>
-                
-              </div>
-            </div>
             
             <div className="preview-overlay">
               <div className="preview-hint">
