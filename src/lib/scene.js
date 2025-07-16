@@ -2481,81 +2481,120 @@ function animate() {
     if (closestAlbum && closestAlbum !== currentAlbum) {
       currentAlbum = closestAlbum;
       
-      // Ensure UI elements exist
-      if (!ui) ui = document.getElementById("ui");
-      if (!albumTitle) albumTitle = document.getElementById("album-title");
-      
-      if (ui && albumTitle) {
-        albumTitle.textContent = currentAlbum.title;
-        if (ui.style.display !== "block") {
-          ui.style.display = "block";
-          if (isMobile) {
-            console.log("Showing album popup on mobile:", currentAlbum.title);
-            console.log("UI element found:", ui);
-            console.log("UI styles before:", window.getComputedStyle(ui));
-            
-            // Force mobile-specific styling to override any CSS issues
-            ui.style.cssText = `
-              position: fixed !important;
-              top: 80px !important;
-              left: 50% !important;
-              transform: translateX(-50%) !important;
-              z-index: 9999 !important;
-              display: block !important;
-              opacity: 1 !important;
-              background: rgba(255, 255, 255, 0.95) !important;
-              padding: 15px 20px !important;
-              border-radius: 12px !important;
-              box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
-              max-width: 280px !important;
-              text-align: center !important;
-              font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif !important;
-            `;
-            
-            console.log("UI styles after mobile override:", window.getComputedStyle(ui));
-          }
-          if (typeof gsap !== 'undefined' && !isMobile) {
-            gsap.fromTo(
-              "#ui",
-              { opacity: 0, scale: 0.8 },
-              { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.4)" }
-            );
-          } else {
-            console.log("Skipping GSAP animation on mobile or GSAP not available");
-            ui.style.opacity = "1";
-            ui.style.transform = "translateX(-50%) scale(1)";
-          }
+      if (isMobile) {
+        // Create completely separate mobile popup
+        console.log("Creating mobile album popup for:", currentAlbum.title);
+        
+        // Remove any existing mobile popup
+        const existingMobilePopup = document.getElementById("mobile-album-popup");
+        if (existingMobilePopup) {
+          existingMobilePopup.remove();
         }
-        ui.classList.add("visible");
+        
+        // Create new mobile popup
+        const mobilePopup = document.createElement("div");
+        mobilePopup.id = "mobile-album-popup";
+        mobilePopup.style.cssText = `
+          position: fixed;
+          top: 60px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 10000;
+          background: rgba(0, 0, 0, 0.9);
+          color: white;
+          padding: 20px;
+          border-radius: 15px;
+          text-align: center;
+          font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+          max-width: 300px;
+          border: 2px solid rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(10px);
+        `;
+        
+        mobilePopup.innerHTML = `
+          <div style="font-size: 18px; font-weight: 600; margin-bottom: 10px; color: #fff;">
+            ${currentAlbum.title}
+          </div>
+          <div style="font-size: 14px; color: rgba(255, 255, 255, 0.8); line-height: 1.4;">
+            Tap <strong style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px;">G</strong> to preview<br>
+            Tap <strong style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px;">B</strong> to buy
+          </div>
+        `;
+        
+        document.body.appendChild(mobilePopup);
+        console.log("Mobile popup created and added to body");
+        
+      } else {
+        // Desktop UI logic
+        if (!ui) ui = document.getElementById("ui");
+        if (!albumTitle) albumTitle = document.getElementById("album-title");
+        
+        if (ui && albumTitle) {
+          albumTitle.textContent = currentAlbum.title;
+          if (ui.style.display !== "block") {
+            ui.style.display = "block";
+            if (typeof gsap !== 'undefined') {
+              gsap.fromTo(
+                "#ui",
+                { opacity: 0, scale: 0.8 },
+                { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.4)" }
+              );
+            } else {
+              ui.style.opacity = "1";
+              ui.style.transform = "translateX(-50%) scale(1)";
+            }
+          }
+          ui.classList.add("visible");
+        }
       }
     } else if (!closestAlbum && currentAlbum) {
       currentAlbum = null;
       if (isMobile) {
         console.log("Hiding album popup on mobile");
-      }
-      
-      // Ensure UI element exists
-      if (!ui) ui = document.getElementById("ui");
-      
-      if (ui) {
-        gsap.to("#ui", {
-          opacity: 0,
-          scale: 0.8,
-          duration: 0.3,
-          ease: "power2.in",
-          onComplete: () => {
+        // Remove mobile popup
+        const existingMobilePopup = document.getElementById("mobile-album-popup");
+        if (existingMobilePopup) {
+          existingMobilePopup.remove();
+          console.log("Mobile popup removed");
+        }
+      } else {
+        // Desktop UI hiding logic
+        if (!ui) ui = document.getElementById("ui");
+        
+        if (ui) {
+          if (typeof gsap !== 'undefined') {
+            gsap.to("#ui", {
+              opacity: 0,
+              scale: 0.8,
+              duration: 0.3,
+              ease: "power2.in",
+              onComplete: () => {
+                ui.style.display = "none";
+                ui.classList.remove("visible");
+              },
+            });
+          } else {
             ui.style.display = "none";
             ui.classList.remove("visible");
-          },
-        });
+          }
+        }
       }
     }
   } else if (currentAlbum) {
     currentAlbum = null;
-    if (!ui) ui = document.getElementById("ui");
-    if (ui) {
-      ui.style.display = "none";
-      ui.classList.remove("visible");
+    if (isMobile) {
+      // Remove mobile popup
+      const existingMobilePopup = document.getElementById("mobile-album-popup");
+      if (existingMobilePopup) {
+        existingMobilePopup.remove();
+      }
+    } else {
+      if (!ui) ui = document.getElementById("ui");
+      if (ui) {
+        ui.style.display = "none";
+        ui.classList.remove("visible");
+      }
     }
   }
 
