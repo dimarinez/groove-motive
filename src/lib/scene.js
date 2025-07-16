@@ -377,8 +377,7 @@ function showWelcomeInstructions() {
                          ('ontouchstart' in window) || 
                          (navigator.maxTouchPoints > 0) ||
                          window.innerWidth <= 768;
-  
-  console.log("showWelcomeInstructions called - isMobileDevice:", isMobileDevice, "hasShownInstructions:", hasShownInstructions);
+
   
   // For mobile devices, always show instructions regardless of localStorage
   if (!isMobileDevice && hasShownInstructions) {
@@ -707,14 +706,6 @@ function initScene() {
   if (!enterButton) {
     console.log("No enter button found - this is expected for hero canvas mode");
   }
-
-  // Debug logging for mobile UI element
-  if (isMobile) {
-    console.log("UI element found during init:", ui);
-    console.log("Album title element found during init:", albumTitle);
-  }
-
-  // Mobile button event listeners will be set up when controls are shown
 
   // Scene setup
   scene = new THREE.Scene();
@@ -2421,10 +2412,8 @@ function animate() {
   camera.position.y = 1.6;
 
   // Album popups
-  const container = document.getElementById("container");
   const isInGalleryMode =
-    controls.isLocked ||
-    (container && container.style.display === "none");
+    controls.isLocked;
 
   if (isInGalleryMode) {
     let closestAlbum = null;
