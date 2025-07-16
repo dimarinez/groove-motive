@@ -298,28 +298,28 @@ function setupMobileControlListeners() {
     console.log("Setting up mobile control listeners");
     
     moveUpButton.addEventListener("touchstart", () => {
-      moveForward = true;
-    });
-    moveUpButton.addEventListener("touchend", () => {
-      moveForward = false;
-    });
-    moveDownButton.addEventListener("touchstart", () => {
       moveBackward = true;
     });
-    moveDownButton.addEventListener("touchend", () => {
+    moveUpButton.addEventListener("touchend", () => {
       moveBackward = false;
     });
+    moveDownButton.addEventListener("touchstart", () => {
+      moveForward = true;
+    });
+    moveDownButton.addEventListener("touchend", () => {
+      moveForward = false;
+    });
     moveLeftButton.addEventListener("touchstart", () => {
-      moveLeft = true;
-    });
-    moveLeftButton.addEventListener("touchend", () => {
-      moveLeft = false;
-    });
-    moveRightButton.addEventListener("touchstart", () => {
       moveRight = true;
     });
-    moveRightButton.addEventListener("touchend", () => {
+    moveLeftButton.addEventListener("touchend", () => {
       moveRight = false;
+    });
+    moveRightButton.addEventListener("touchstart", () => {
+      moveLeft = true;
+    });
+    moveRightButton.addEventListener("touchend", () => {
+      moveLeft = false;
     });
 
     // Mobile action button event listeners
@@ -388,12 +388,14 @@ function showWelcomeInstructions() {
     font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif;
     text-align: center;
     z-index: 10000;
-    max-width: ${isMobileDevice ? '90vw' : '90vw'};
-    max-height: ${isMobileDevice ? '90vh' : '90vh'};
+    width: ${isMobileDevice ? '85vw' : 'auto'};
+    max-width: ${isMobileDevice ? '400px' : '90vw'};
+    max-height: ${isMobileDevice ? '85vh' : '90vh'};
     overflow: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(20px);
     border: 2px solid rgba(255, 255, 255, 0.1);
+    box-sizing: border-box;
   `;
   
   instructionalPopup.innerHTML = `
