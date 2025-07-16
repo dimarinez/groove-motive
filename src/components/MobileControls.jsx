@@ -16,6 +16,7 @@ export default function MobileControls() {
       </div>
       <div className="mobile-action-controls">
         <button className="mobile-action-button" id="mobile-preview">G</button>
+        <button className="mobile-action-button" id="mobile-pause">P</button>
         <button className="mobile-action-button" id="mobile-buy">B</button>
       </div>
     </div>

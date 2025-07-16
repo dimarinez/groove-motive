@@ -663,6 +663,7 @@ function initScene() {
 
     // Mobile action button event listeners
     const mobilePreviewButton = document.getElementById("mobile-preview");
+    const mobilePauseButton = document.getElementById("mobile-pause");
     const mobileBuyButton = document.getElementById("mobile-buy");
 
     if (mobilePreviewButton) {
@@ -671,6 +672,14 @@ function initScene() {
           stopPreview();
         } else if (currentAlbum) {
           startPreview(currentAlbum);
+        }
+      });
+    }
+
+    if (mobilePauseButton) {
+      mobilePauseButton.addEventListener("touchstart", () => {
+        if (isPreviewing) {
+          stopPreview();
         }
       });
     }
