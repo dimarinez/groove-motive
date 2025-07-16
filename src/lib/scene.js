@@ -285,6 +285,80 @@ function hidePortraitWarning() {
   }
 }
 
+// Setup mobile control button event listeners
+function setupMobileControlListeners() {
+  if (!isMobile) return;
+  
+  const moveUpButton = document.getElementById("move-up");
+  const moveDownButton = document.getElementById("move-down");
+  const moveLeftButton = document.getElementById("move-left");
+  const moveRightButton = document.getElementById("move-right");
+
+  if (moveUpButton && moveDownButton && moveLeftButton && moveRightButton) {
+    console.log("Setting up mobile control listeners");
+    
+    moveUpButton.addEventListener("touchstart", () => {
+      moveForward = true;
+    });
+    moveUpButton.addEventListener("touchend", () => {
+      moveForward = false;
+    });
+    moveDownButton.addEventListener("touchstart", () => {
+      moveBackward = true;
+    });
+    moveDownButton.addEventListener("touchend", () => {
+      moveBackward = false;
+    });
+    moveLeftButton.addEventListener("touchstart", () => {
+      moveLeft = true;
+    });
+    moveLeftButton.addEventListener("touchend", () => {
+      moveLeft = false;
+    });
+    moveRightButton.addEventListener("touchstart", () => {
+      moveRight = true;
+    });
+    moveRightButton.addEventListener("touchend", () => {
+      moveRight = false;
+    });
+
+    // Mobile action button event listeners
+    const mobilePreviewButton = document.getElementById("mobile-preview");
+    const mobilePauseButton = document.getElementById("mobile-pause");
+    const mobileBuyButton = document.getElementById("mobile-buy");
+
+    if (mobilePreviewButton) {
+      mobilePreviewButton.addEventListener("touchstart", () => {
+        if (isPreviewing) {
+          stopPreview();
+        } else if (currentAlbum) {
+          startPreview(currentAlbum);
+        }
+      });
+    }
+
+    if (mobilePauseButton) {
+      mobilePauseButton.addEventListener("touchstart", () => {
+        if (isPreviewing) {
+          stopPreview();
+        }
+      });
+    }
+
+    if (mobileBuyButton) {
+      mobileBuyButton.addEventListener("touchend", (e) => {
+        e.preventDefault();
+        if (currentAlbum) {
+          // Mobile Safari requires navigation to happen immediately in the touch event
+          window.location.href = currentAlbum.buyUrl;
+        }
+      });
+    }
+  } else {
+    console.warn("Mobile control buttons not found when setting up listeners");
+  }
+}
+
 // Create and show instructional popup
 function showWelcomeInstructions() {
   // Always show instructions on mobile for better UX, otherwise respect localStorage
@@ -314,14 +388,12 @@ function showWelcomeInstructions() {
     font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif;
     text-align: center;
     z-index: 10000;
-    max-width: ${isMobileDevice ? '95vw' : '90vw'};
-    max-height: ${isMobileDevice ? '95vh' : '90vh'};
+    max-width: ${isMobileDevice ? '90vw' : '90vw'};
+    max-height: ${isMobileDevice ? '90vh' : '90vh'};
     overflow: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(20px);
     border: 2px solid rgba(255, 255, 255, 0.1);
-    width: ${isMobileDevice ? 'calc(100vw - 20px)' : 'auto'};
-    margin: ${isMobileDevice ? '10px' : '0'};
   `;
   
   instructionalPopup.innerHTML = `
@@ -633,66 +705,7 @@ function initScene() {
     console.log("Album title element found during init:", albumTitle);
   }
 
-  // Mobile button event listeners
-  if (isMobile && moveUpButton && moveDownButton && moveLeftButton && moveRightButton) {
-    moveUpButton.addEventListener("touchstart", () => {
-      moveForward = true;
-    });
-    moveUpButton.addEventListener("touchend", () => {
-      moveForward = false;
-    });
-    moveDownButton.addEventListener("touchstart", () => {
-      moveBackward = true;
-    });
-    moveDownButton.addEventListener("touchend", () => {
-      moveBackward = false;
-    });
-    moveLeftButton.addEventListener("touchstart", () => {
-      moveLeft = true;
-    });
-    moveLeftButton.addEventListener("touchend", () => {
-      moveLeft = false;
-    });
-    moveRightButton.addEventListener("touchstart", () => {
-      moveRight = true;
-    });
-    moveRightButton.addEventListener("touchend", () => {
-      moveRight = false;
-    });
-
-    // Mobile action button event listeners
-    const mobilePreviewButton = document.getElementById("mobile-preview");
-    const mobilePauseButton = document.getElementById("mobile-pause");
-    const mobileBuyButton = document.getElementById("mobile-buy");
-
-    if (mobilePreviewButton) {
-      mobilePreviewButton.addEventListener("touchstart", () => {
-        if (isPreviewing) {
-          stopPreview();
-        } else if (currentAlbum) {
-          startPreview(currentAlbum);
-        }
-      });
-    }
-
-    if (mobilePauseButton) {
-      mobilePauseButton.addEventListener("touchstart", () => {
-        if (isPreviewing) {
-          stopPreview();
-        }
-      });
-    }
-
-    if (mobileBuyButton) {
-      mobileBuyButton.addEventListener("touchend", (e) => {
-        e.preventDefault();
-        if (currentAlbum) {
-          // Mobile Safari requires navigation to happen immediately in the touch event
-          window.location.href = currentAlbum.buyUrl;
-        }
-      });
-    }
-  }
+  // Mobile button event listeners will be set up when controls are shown
 
   // Scene setup
   scene = new THREE.Scene();
@@ -767,6 +780,7 @@ function initScene() {
       if (mobileControls) {
         mobileControls.style.display = "flex";
         console.log("Mobile controls shown");
+        setupMobileControlListeners();
       } else {
         console.warn("Mobile controls element not found");
       }
@@ -1707,6 +1721,7 @@ function enterGallery() {
       if (mobileControls) {
         mobileControls.style.display = "flex";
         console.log("Mobile controls ensured visible in enterGallery");
+        setupMobileControlListeners();
       }
     }, 100);
   }
