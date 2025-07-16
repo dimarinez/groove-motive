@@ -43,22 +43,23 @@ export default function ReleasesPage() {
   ];
 
   useEffect(() => {
-    // Page enter animation
+    // Page enter animation with linear easing
     gsap.fromTo('.releases-page .page-content', 
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 1.0, ease: 'power1.out' }
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 1.2, ease: 'Power2.out' }
     );
 
-    // Stagger animation for release cards
+    // Sequential animation for release cards (one after another)
     gsap.fromTo('.releases-page .release-card',
-      { opacity: 0, y: 50 },
+      { opacity: 0, y: 30, scale: 0.95 },
       { 
         opacity: 1, 
         y: 0, 
+        scale: 1,
         duration: 0.8, 
-        stagger: 0.08, 
-        delay: 0.4,
-        ease: 'power1.out' 
+        stagger: 0.3, 
+        delay: 0.5,
+        ease: 'none' 
       }
     );
   }, []);

@@ -68,6 +68,18 @@ let mainAnimationId = null;
 let assetsLoaded = 0;
 let totalAssets = 0;
 let sceneReady = false;
+
+// Asset caching system
+let cachedAssets = {
+  recordPlayer: null,
+  table: null,
+  pillars: [],
+  plants: [],
+  couch: null,
+  albums: [],
+  textures: new Map(),
+  isFullyLoaded: false
+};
 let orientationStatus = null;
 let orientationIndicator = null;
 let orientationText = null;
@@ -521,7 +533,8 @@ function forceShowInstructions() {
 
 // Asset loading helpers
 function markSceneReady() {
-  if (assetsLoaded >= totalAssets) {
+  // Mark scene as ready when we have at least 50% of assets loaded (or all assets)
+  if (assetsLoaded >= Math.floor(totalAssets / 2) && !sceneReady) {
     sceneReady = true;
     
     // Update global window properties
@@ -606,6 +619,25 @@ function preloadAudioFiles() {
 function initScene() {
   // Prevent multiple initializations, but allow re-initialization if core components are missing
   if (isSceneInitialized && scene && camera && renderer) {
+    // If scene is already loaded and we have assets, just restart the preview animation
+    if (assetsLoaded >= Math.floor(totalAssets / 2)) {
+      // Reset the canvas to hero canvas
+      galleryCanvas = document.getElementById("hero-gallery-canvas");
+      if (galleryCanvas && renderer) {
+        const heroPreview = galleryCanvas.parentElement;
+        if (heroPreview) {
+          const canvasWidth = heroPreview.clientWidth;
+          const canvasHeight = heroPreview.clientHeight;
+          camera.aspect = canvasWidth / canvasHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(canvasWidth, canvasHeight);
+        }
+      }
+      // Start preview animation immediately
+      setTimeout(() => {
+        animatePreview();
+      }, 100);
+    }
     return;
   }
   
@@ -727,15 +759,37 @@ function initScene() {
   try {
     renderer = new THREE.WebGLRenderer({
       canvas: galleryCanvas,
-      antialias: true,
+      antialias: !isMobile, // Disable antialiasing on mobile for better performance
+      alpha: false,
+      powerPreference: "high-performance"
     });
     renderer.setSize(canvasWidth, canvasHeight);
     renderer.outputEncoding = THREE.sRGBEncoding;
     
+    // Mobile-specific renderer settings
+    if (isMobile) {
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = false; // Disable shadows on mobile
+    }
 
     controls = new PointerLockControls(camera, galleryCanvas);
   } catch (error) {
     console.error("Error creating renderer or controls:", error);
+    
+    // Fallback for mobile devices with WebGL issues
+    if (isMobile) {
+      console.log("WebGL failed on mobile, showing loading message");
+      // Dispatch event to hide loader and show message
+      try {
+        if (globalThis.window) {
+          window.dispatchEvent(new CustomEvent('sceneError', { 
+            detail: { message: 'WebGL not supported on this device' } 
+          }));
+        }
+      } catch (e) {
+        console.warn("Could not dispatch scene error event:", e);
+      }
+    }
     return;
   }
   
@@ -750,80 +804,6 @@ function initScene() {
   
   controls.addEventListener("lock", () => {
     document.body.style.cursor = "none";
-    
-    // TEST: Create separate test UI that won't conflict with React
-    
-    // Remove any existing test UI first
-    const existingTestUI = document.getElementById("test-mobile-ui");
-    if (existingTestUI) {
-      existingTestUI.remove();
-    }
-    
-    // Create a completely separate test UI element
-    const testUI = document.createElement("div");
-    testUI.id = "test-mobile-ui";
-    testUI.innerHTML = `
-      <div style="font-size: 1.5em; font-weight: 600; margin-bottom: 12px; color: #1a1a1a;">
-        🎵 MOBILE TEST UI WORKING! 🎵
-      </div>
-      <div style="font-size: 1em; color: #333; line-height: 1.5;">
-        This proves the UI can show on mobile!<br>
-        Gallery mode is active.
-      </div>
-    `;
-    
-    // Apply all styles directly
-    testUI.style.cssText = `
-      position: fixed !important;
-      top: 50px !important;
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-      background: rgba(255, 0, 0, 0.9) !important;
-      color: white !important;
-      padding: 30px !important;
-      border-radius: 15px !important;
-      z-index: 99999 !important;
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif !important;
-      text-align: center !important;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
-      border: 3px solid white !important;
-      max-width: 90vw !important;
-      box-sizing: border-box !important;
-    `;
-    
-    // Append to body
-    document.body.appendChild(testUI);
-    
-    
-    // Also try to fix the original React UI
-    setTimeout(() => {
-      const reactUI = document.getElementById("ui");
-      const albumTitle = document.getElementById("album-title");
-      
-      if (reactUI) {
-        reactUI.style.cssText = `
-          position: fixed !important;
-          top: 150px !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          background: rgba(0, 255, 0, 0.9) !important;
-          color: white !important;
-          padding: 20px !important;
-          border-radius: 12px !important;
-          z-index: 99998 !important;
-          display: block !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-        `;
-        if (albumTitle) {
-          albumTitle.textContent = "React UI Also Working!";
-        }
-      }
-    }, 100);
-    
     if (isMobile) {
       const mobileControls = document.getElementById("mobile-controls");
       if (mobileControls) {
@@ -925,9 +905,138 @@ function initScene() {
   carpet.userData.isWall = false;
   scene.add(carpet);
   
-  // Mark basic scene as ready - allow immediate gallery entry
+  // Mark basic scene as ready - but DON'T mark sceneReady yet
   onAssetLoaded(); // Basic scene loaded
-  sceneReady = true; // Scene is ready for entry even while assets load
+  // sceneReady will be set to true only after record player loads successfully
+
+  // PRIORITY 1: If assets are already loaded, don't reload them
+  if (assetsLoaded >= Math.floor(totalAssets / 2)) {
+    // Assets already loaded - mark scene as ready immediately
+    sceneReady = true;
+    
+    // Dispatch event to notify the loader
+    try {
+      if (globalThis.window) {
+        window.sceneReady = true;
+        window.dispatchEvent(new CustomEvent('sceneReady', { 
+          detail: { message: 'Scene already loaded', assetsLoaded, totalAssets } 
+        }));
+      }
+    } catch (error) {
+      console.warn("Could not dispatch scene ready event:", error);
+    }
+    
+    return; // Exit early, no need to load assets again
+  }
+
+  // PRIORITY 1: Load record player and table first (most important scene elements)
+  const gltfLoader = new GLTFLoader();
+  gltfLoader.load(
+    "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/vinyl_record_player.glb",
+    (gltf) => {
+      animatedRecordPlayer = gltf.scene;
+      animatedRecordPlayer.position.set(0, 0.9, -6); // Raised to sit on table
+      animatedRecordPlayer.scale.set(0.05, 0.05, 0.05);
+      animatedRecordPlayer.visible = true;
+      scene.add(animatedRecordPlayer);
+
+      // Create table under record player
+      const tableGeometry = new THREE.BoxGeometry(6, 0.2, 4);
+      const tableMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x8B4513, // Brown wood color
+        roughness: 0.7,
+        metalness: 0.1
+      });
+      const table = new THREE.Mesh(tableGeometry, tableMaterial);
+      table.position.set(0, 0.8, -6); // Raised up to be more visible
+      table.userData.isWall = false;
+      scene.add(table);
+      
+      // Add table legs
+      const legGeometry = new THREE.BoxGeometry(0.15, 1.6, 0.15);
+      const legMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x654321, // Darker brown
+        roughness: 0.8,
+        metalness: 0.1
+      });
+      const legPositions = [
+        [2.5, 0, -1.5],
+        [-2.5, 0, -1.5],
+        [2.5, 0, 1.5],
+        [-2.5, 0, 1.5]
+      ];
+      legPositions.forEach(pos => {
+        const leg = new THREE.Mesh(legGeometry, legMaterial);
+        leg.position.set(pos[0], pos[1], pos[2] - 6);
+        leg.userData.isWall = false;
+        scene.add(leg);
+      });
+
+      // Setup animations
+      if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(animatedRecordPlayer);
+        putVinylAction = mixer.clipAction(gltf.animations[0]);
+        putVinylAction.setLoop(THREE.LoopOnce);
+        putVinylAction.clampWhenFinished = true;
+        
+        if (gltf.animations[1]) {
+          spinAction = mixer.clipAction(gltf.animations[1]);
+          spinAction.setLoop(THREE.LoopRepeat);
+        }
+      }
+      
+      onAssetLoaded(); // Record player GLB loaded
+      
+      // Let markSceneReady handle the sceneReady event when enough assets are loaded
+      // markSceneReady will be called by onAssetLoaded()
+      
+      // PRIORITY 2: Load secondary assets after record player is loaded
+      loadSecondaryAssets();
+    },
+    undefined,
+    (error) => {
+      console.error("Error loading record player:", error);
+      onAssetLoaded(); // Still count as loaded even if failed
+      
+      // Create fallback table even if record player fails
+      const tableGeometry = new THREE.BoxGeometry(6, 0.2, 4);
+      const tableMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x8B4513,
+        roughness: 0.7,
+        metalness: 0.1
+      });
+      const fallbackTable = new THREE.Mesh(tableGeometry, tableMaterial);
+      fallbackTable.position.set(0, 0.8, -6);
+      fallbackTable.userData.isWall = false;
+      scene.add(fallbackTable);
+      
+      // Add basic table legs
+      const legGeometry = new THREE.BoxGeometry(0.15, 1.6, 0.15);
+      const legMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x654321,
+        roughness: 0.8,
+        metalness: 0.1
+      });
+      const legPositions = [
+        [2.5, 0, -1.5],
+        [-2.5, 0, -1.5],
+        [2.5, 0, 1.5],
+        [-2.5, 0, 1.5]
+      ];
+      legPositions.forEach(pos => {
+        const leg = new THREE.Mesh(legGeometry, legMaterial);
+        leg.position.set(pos[0], pos[1], pos[2] - 6);
+        leg.userData.isWall = false;
+        scene.add(leg);
+      });
+      
+      // Let markSceneReady handle the sceneReady event when enough assets are loaded
+      // markSceneReady will be called by onAssetLoaded() from other asset loading
+      
+      // Load secondary assets even if record player fails
+      loadSecondaryAssets();
+    }
+  );
 
   // Ceiling
   const ceiling = new THREE.Mesh(
@@ -979,11 +1088,12 @@ function initScene() {
   pointLight.position.set(0, 3, -8);
   scene.add(pointLight);
 
-  // Record player
-  const gltfLoader = new GLTFLoader();
-  
-  // Marble pillars in corners (snug against walls)
-  const pillarPositions = [
+  // Function to load secondary assets (pillars, plants, etc.) after record player
+  function loadSecondaryAssets() {
+    const gltfLoader = new GLTFLoader();
+    
+    // Marble pillars in corners (snug against walls)
+    const pillarPositions = [
     [-9, 0, -9], // Back left corner
     [9, 0, -9],  // Back right corner
     [-9, 0, 9],  // Front left corner
@@ -1091,6 +1201,20 @@ function initScene() {
       }
     );
   });
+  
+  // PRIORITY 3: Load remaining assets after pillars
+  loadAllAssets();
+  }
+
+  // End of loadSecondaryAssets function
+
+  audio = new Audio();
+  audio.volume = 0.3;
+}
+
+// Legacy function - no longer used but kept for compatibility
+function loadLegacyRecordPlayer() {
+  const gltfLoader = new GLTFLoader();
   gltfLoader.load(
     "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/vinyl_record_player.glb",
     (gltf) => {
@@ -2472,6 +2596,106 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+// Function to cache loaded assets before switching modes
+function cacheCurrentAssets() {
+  if (scene && cachedAssets.isFullyLoaded) {
+    return; // Already cached
+  }
+  
+  if (scene) {
+    // Cache all loaded objects
+    cachedAssets.recordPlayer = animatedRecordPlayer;
+    
+    // Find and cache other assets by traversing the scene
+    scene.traverse((child) => {
+      if (child.userData && child.userData.assetType) {
+        switch (child.userData.assetType) {
+          case 'table':
+            cachedAssets.table = child;
+            break;
+          case 'pillar':
+            if (!cachedAssets.pillars.includes(child)) {
+              cachedAssets.pillars.push(child);
+            }
+            break;
+          case 'plant':
+            if (!cachedAssets.plants.includes(child)) {
+              cachedAssets.plants.push(child);
+            }
+            break;
+          case 'couch':
+            cachedAssets.couch = child;
+            break;
+          case 'album':
+            if (!cachedAssets.albums.includes(child)) {
+              cachedAssets.albums.push(child);
+            }
+            break;
+        }
+      }
+    });
+    
+    cachedAssets.isFullyLoaded = true;
+  }
+}
+
+// Function to restore cached assets to the scene
+function restoreCachedAssets() {
+  if (!cachedAssets.isFullyLoaded || !scene) {
+    return false; // No cached assets or no scene
+  }
+  
+  // Restore record player
+  if (cachedAssets.recordPlayer) {
+    scene.add(cachedAssets.recordPlayer);
+    animatedRecordPlayer = cachedAssets.recordPlayer;
+  }
+  
+  // Restore table
+  if (cachedAssets.table) {
+    scene.add(cachedAssets.table);
+  }
+  
+  // Restore pillars
+  cachedAssets.pillars.forEach(pillar => {
+    if (pillar) scene.add(pillar);
+  });
+  
+  // Restore plants
+  cachedAssets.plants.forEach(plant => {
+    if (plant) scene.add(plant);
+  });
+  
+  // Restore couch
+  if (cachedAssets.couch) {
+    scene.add(cachedAssets.couch);
+  }
+  
+  // Restore albums
+  cachedAssets.albums.forEach(album => {
+    if (album) scene.add(album);
+  });
+  
+  // Restore mixer if record player exists
+  if (animatedRecordPlayer && !mixer) {
+    try {
+      mixer = new THREE.AnimationMixer(animatedRecordPlayer);
+      // Restore animation actions if available
+      if (animatedRecordPlayer.userData.animations) {
+        const animations = animatedRecordPlayer.userData.animations;
+        putVinylAction = mixer.clipAction(animations[0]);
+        if (animations[1]) {
+          spinAction = mixer.clipAction(animations[1]);
+        }
+      }
+    } catch (error) {
+      console.warn("Could not restore mixer:", error);
+    }
+  }
+  
+  return true; // Successfully restored from cache
+}
+
 // Function to reset scene state when returning to homepage
 function resetSceneForHomepage() {
   
@@ -2487,15 +2711,22 @@ function resetSceneForHomepage() {
     mainAnimationId = null;
   }
   
-  // Reset scene initialization flag to allow re-initialization
-  isSceneInitialized = false;
+  // DON'T reset scene initialization flag if assets are already loaded
+  // This prevents the scene from being recreated when returning to homepage
+  if (assetsLoaded < Math.floor(totalAssets / 2)) {
+    isSceneInitialized = false;
+  }
   
   // Reset camera position if camera exists
   if (camera) {
     camera.position.set(0, 1.6, -2);
+    camera.rotation.set(0, 0, 0);
     if (isMobile) {
       camera.lookAt(0, 1.6, -6);
+    } else {
+      camera.lookAt(0, 1.6, 0);
     }
+    camera.updateMatrixWorld();
   }
   
   // Reset preview states

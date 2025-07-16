@@ -10,6 +10,7 @@ import UI from './components/UI';
 import MobileControls from './components/MobileControls';
 import HamburgerMenu from './components/HamburgerMenu';
 import InstructionsGroup from './components/InstructionsGroup';
+import PageLoader from './components/PageLoader';
 import { initScene, animate, animatePreview, enterGallery, resetSceneForHomepage } from './lib/scene';
 import { resetHomeAnimationState } from './components/HomePage';
 import gsap from 'gsap';
@@ -17,6 +18,50 @@ import gsap from 'gsap';
 function App() {
   const [currentView, setCurrentView] = useState('home');
   const [isInGallery, setIsInGallery] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Homepage canvas scene loading
+  useEffect(() => {
+    if (currentView === 'home') {
+      setIsLoading(true);
+      
+      // Maximum 5-second timeout
+      const maxTimeout = setTimeout(() => {
+        setIsLoading(false);
+      }, 5000);
+      
+      // Listen for scene ready event
+      const handleSceneReady = () => {
+        clearTimeout(maxTimeout);
+        setIsLoading(false);
+      };
+      
+      // Listen for scene error event
+      const handleSceneError = (event) => {
+        clearTimeout(maxTimeout);
+        setIsLoading(false);
+        console.error('Scene error:', event.detail.message);
+      };
+      
+      // Check if scene is already ready
+      if (window.sceneReady) {
+        clearTimeout(maxTimeout);
+        setIsLoading(false);
+      } else {
+        // Listen for scene events
+        window.addEventListener('sceneReady', handleSceneReady);
+        window.addEventListener('sceneError', handleSceneError);
+      }
+      
+      return () => {
+        clearTimeout(maxTimeout);
+        window.removeEventListener('sceneReady', handleSceneReady);
+        window.removeEventListener('sceneError', handleSceneError);
+      };
+    } else {
+      setIsLoading(false);
+    }
+  }, [currentView]);
 
   const handleEnterGallery = () => {
     try {
@@ -210,6 +255,7 @@ function App() {
 
   return (
     <>
+      {currentView === 'home' && <PageLoader isLoading={isLoading} />}
       <MouseFollower />
       <Navigation onNavigate={handleNavigation} currentView={currentView} />
       

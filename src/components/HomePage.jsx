@@ -81,7 +81,7 @@ export default function HomePage({ onEnterListeningRoom }) {
       hasPlayedInitialAnimation = true;
     } else {
       // Ensure elements are visible immediately when returning to home
-      gsap.set(['.hero-title .title-line', '.arrow', '.hero-3d-preview', '.main-navigation'], { 
+      gsap.set(['.hero-title .title-line', '.arrow', '.main-navigation'], { 
         opacity: 1, 
         y: 0, 
         x: 0,
@@ -89,6 +89,17 @@ export default function HomePage({ onEnterListeningRoom }) {
         rotation: 0,
         scale: 1,
         transform: 'none'
+      });
+      
+      // Reset hero-3d-preview but preserve centering transform
+      gsap.set('.hero-3d-preview', { 
+        opacity: 1, 
+        y: 0, 
+        x: 0,
+        rotationX: 0,
+        rotation: 0,
+        scale: 1,
+        transform: 'translateX(-50%)'
       });
       gsap.set('body', { backgroundColor: '#1a1a1a' });
     }

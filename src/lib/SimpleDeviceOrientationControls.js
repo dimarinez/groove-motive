@@ -40,12 +40,6 @@ export class SimpleDeviceOrientationControls {
     // Check if device orientation is available
     this.isAvailable = typeof DeviceOrientationEvent !== 'undefined';
     
-    console.log('Enhanced SimpleDeviceOrientationControls initialized', {
-      available: this.isAvailable,
-      userAgent: navigator.userAgent,
-      tiltEnabled: this.enableTiltResponse,
-      gyroEnabled: this.enableGyroResponse
-    });
   }
   
   /**
@@ -64,7 +58,6 @@ export class SimpleDeviceOrientationControls {
     window.addEventListener('orientationchange', this.onScreenOrientationChange, false);
     screen.orientation?.addEventListener('change', this.onScreenOrientationChange, false);
     
-    console.log('Device orientation controls connected');
     return true;
   }
   
@@ -79,7 +72,6 @@ export class SimpleDeviceOrientationControls {
     window.removeEventListener('orientationchange', this.onScreenOrientationChange, false);
     screen.orientation?.removeEventListener('change', this.onScreenOrientationChange, false);
     
-    console.log('Device orientation controls disconnected');
   }
   
   /**
@@ -138,11 +130,6 @@ export class SimpleDeviceOrientationControls {
       roll: 0    // Upright
     };
     
-    console.log('Portrait orientation calibrated for upright phone:', {
-      initial: this.initialOrientation,
-      camera: 'Looking straight ahead at wall',
-      position: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z }
-    });
   }
   
   /**
@@ -300,7 +287,6 @@ export class SimpleDeviceOrientationControls {
   setOrientationModes(gyro = true, tilt = true) {
     this.enableGyroResponse = gyro;
     this.enableTiltResponse = tilt;
-    console.log('Orientation modes updated:', { gyro, tilt });
   }
   
   /**
@@ -319,7 +305,6 @@ export class SimpleDeviceOrientationControls {
   setInversions(pitch = false, yaw = false) {
     this.invertPitch = pitch;
     this.invertYaw = yaw;
-    console.log('Inversions updated:', { pitch, yaw });
   }
   
   /**
@@ -328,7 +313,6 @@ export class SimpleDeviceOrientationControls {
    */
   setDirectMode(enabled = true) {
     this.directMode = enabled;
-    console.log('Direct mode:', enabled ? 'enabled (immediate response)' : 'disabled (smoothed)');
   }
   
   /**

@@ -37,22 +37,23 @@ export default function EventsPage() {
   ];
 
   useEffect(() => {
-    // Page enter animation
+    // Page enter animation with linear easing
     gsap.fromTo('.events-page .page-content', 
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 1.0, ease: 'power1.out' }
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 1.2, ease: 'Power2.out' }
     );
 
-    // Stagger animation for event cards
+    // Sequential animation for event cards (one after another)
     gsap.fromTo('.events-page .event-card',
-      { opacity: 0, x: -50 },
+      { opacity: 0, x: -30, y: 20 },
       { 
         opacity: 1, 
         x: 0, 
+        y: 0,
         duration: 0.8, 
-        stagger: 0.12, 
-        delay: 0.4,
-        ease: 'power1.out' 
+        stagger: 0.3, 
+        delay: 0.5,
+        ease: 'none' 
       }
     );
   }, []);
