@@ -329,10 +329,17 @@ function setupMobileControlListeners() {
 
     if (mobilePreviewButton) {
       mobilePreviewButton.addEventListener("touchstart", () => {
+        console.log("Mobile preview button pressed:", {
+          isPreviewing: isPreviewing,
+          currentAlbum: currentAlbum,
+          currentAlbumTitle: currentAlbum ? currentAlbum.title : "no album"
+        });
         if (isPreviewing) {
           stopPreview();
         } else if (currentAlbum) {
           startPreview(currentAlbum);
+        } else {
+          console.log("No current album to preview on mobile");
         }
       });
     }
@@ -348,9 +355,16 @@ function setupMobileControlListeners() {
     if (mobileBuyButton) {
       mobileBuyButton.addEventListener("touchend", (e) => {
         e.preventDefault();
+        console.log("Mobile buy button pressed:", {
+          currentAlbum: currentAlbum,
+          currentAlbumTitle: currentAlbum ? currentAlbum.title : "no album",
+          buyUrl: currentAlbum ? currentAlbum.buyUrl : "no url"
+        });
         if (currentAlbum) {
           // Mobile Safari requires navigation to happen immediately in the touch event
           window.location.href = currentAlbum.buyUrl;
+        } else {
+          console.log("No current album to buy on mobile");
         }
       });
     }
@@ -2424,12 +2438,23 @@ function animate() {
     controls.isLocked ||
     (isMobile && container && container.style.display === "none");
 
+  if (isMobile) {
+    console.log("Mobile gallery mode check:", {
+      controlsLocked: controls.isLocked,
+      containerExists: !!container,
+      containerDisplay: container ? container.style.display : "no container",
+      isInGalleryMode: isInGalleryMode
+    });
+  }
+
   if (isInGalleryMode) {
     let closestAlbum = null;
     let closestDistance = Infinity;
 
+    let albumCount = 0;
     scene.children.forEach((child) => {
       if (child.userData.album) {
+        albumCount++;
         const distance = camera.position.distanceTo(child.position);
         if (distance < 3 && distance < closestDistance) {
           closestDistance = distance;
@@ -2437,6 +2462,12 @@ function animate() {
         }
       }
     });
+
+    if (isMobile && albumCount === 0) {
+      console.log("No albums found in scene on mobile!");
+    } else if (isMobile && albumCount > 0) {
+      console.log(`Found ${albumCount} albums in scene on mobile`);
+    }
 
     if (isMobile && closestAlbum) {
       console.log(
@@ -2461,16 +2492,39 @@ function animate() {
           if (isMobile) {
             console.log("Showing album popup on mobile:", currentAlbum.title);
             console.log("UI element found:", ui);
-            console.log("UI styles:", window.getComputedStyle(ui));
-            // Ensure UI is visible on mobile with higher z-index
-            ui.style.zIndex = "3000";
-            ui.style.position = "fixed";
+            console.log("UI styles before:", window.getComputedStyle(ui));
+            
+            // Force mobile-specific styling to override any CSS issues
+            ui.style.cssText = `
+              position: fixed !important;
+              top: 80px !important;
+              left: 50% !important;
+              transform: translateX(-50%) !important;
+              z-index: 9999 !important;
+              display: block !important;
+              opacity: 1 !important;
+              background: rgba(255, 255, 255, 0.95) !important;
+              padding: 15px 20px !important;
+              border-radius: 12px !important;
+              box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+              max-width: 280px !important;
+              text-align: center !important;
+              font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif !important;
+            `;
+            
+            console.log("UI styles after mobile override:", window.getComputedStyle(ui));
           }
-          gsap.fromTo(
-            "#ui",
-            { opacity: 0, scale: 0.8 },
-            { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.4)" }
-          );
+          if (typeof gsap !== 'undefined' && !isMobile) {
+            gsap.fromTo(
+              "#ui",
+              { opacity: 0, scale: 0.8 },
+              { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.4)" }
+            );
+          } else {
+            console.log("Skipping GSAP animation on mobile or GSAP not available");
+            ui.style.opacity = "1";
+            ui.style.transform = "translateX(-50%) scale(1)";
+          }
         }
         ui.classList.add("visible");
       }
