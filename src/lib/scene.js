@@ -400,7 +400,7 @@ function showWelcomeInstructions() {
   
   instructionalPopup.innerHTML = `
     <div style="margin-bottom: ${isMobileDevice ? '20px' : '30px'};">
-      <h2 style="font-size: ${isMobileDevice ? '22px' : '28px'}; margin-bottom: ${isMobileDevice ? '15px' : '20px'}; color: #fff; font-weight: 600;">
+      <h2 style="font-size: ${isMobileDevice ? '20px' : '28px'}; margin-bottom: ${isMobileDevice ? '15px' : '20px'}; color: #fff; font-weight: 600;">
         Welcome to the Listening Room
       </h2>
       <p style="font-size: ${isMobileDevice ? '16px' : '18px'}; line-height: 1.6; margin-bottom: ${isMobileDevice ? '20px' : '25px'}; color: rgba(255,255,255,0.9);">
@@ -411,22 +411,25 @@ function showWelcomeInstructions() {
     <div style="margin-bottom: ${isMobileDevice ? '20px' : '30px'};">
       <h3 style="font-size: ${isMobileDevice ? '18px' : '20px'}; margin-bottom: ${isMobileDevice ? '12px' : '15px'}; color: #fff;">How to Navigate:</h3>
       ${isMobileDevice ? `
-        <p style="font-size: 14px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
+        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Use the directional arrows at the bottom to move around
         </p>
-        <p style="font-size: 14px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
+        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Tilt and rotate your device to look around
         </p>
-        <p style="font-size: 14px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
+        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Get close to framed artwork to see album details
         </p>
-        <p style="font-size: 14px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
-          • Tap the <strong>P</strong> button to play music
+        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
+          • Tap the <strong>G</strong> button to play music
         </p>
-        <p style="font-size: 14px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
+        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
+          • Tap the <strong>P</strong> to pause during preview
+        </p>
+        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Tap the <strong>B</strong> button to purchase tracks
         </p>
-        <p style="font-size: 14px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
+        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Tap the <strong>Menu</strong> button to exit the gallery
         </p>
       ` : `
