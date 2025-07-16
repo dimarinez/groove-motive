@@ -2491,39 +2491,61 @@ function animate() {
           existingMobilePopup.remove();
         }
         
-        // Create new mobile popup
+        // Create new mobile popup with extreme visibility settings
         const mobilePopup = document.createElement("div");
         mobilePopup.id = "mobile-album-popup";
         mobilePopup.style.cssText = `
-          position: fixed;
-          top: 60px;
-          left: 50%;
-          transform: translateX(-50%);
-          z-index: 10000;
-          background: rgba(0, 0, 0, 0.9);
-          color: white;
-          padding: 20px;
-          border-radius: 15px;
-          text-align: center;
-          font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-          max-width: 300px;
-          border: 2px solid rgba(255, 255, 255, 0.2);
-          backdrop-filter: blur(10px);
+          position: fixed !important;
+          top: 20px !important;
+          left: 20px !important;
+          right: 20px !important;
+          z-index: 999999 !important;
+          background: red !important;
+          color: white !important;
+          padding: 30px !important;
+          border-radius: 15px !important;
+          text-align: center !important;
+          font-family: -apple-system, BlinkMacSystemFont, sans-serif !important;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important;
+          border: 5px solid yellow !important;
+          font-size: 20px !important;
+          font-weight: bold !important;
+          transform: none !important;
+          width: auto !important;
+          height: auto !important;
+          max-width: none !important;
+          min-height: 100px !important;
+          display: block !important;
+          opacity: 1 !important;
+          visibility: visible !important;
+          pointer-events: auto !important;
         `;
         
         mobilePopup.innerHTML = `
-          <div style="font-size: 18px; font-weight: 600; margin-bottom: 10px; color: #fff;">
-            ${currentAlbum.title}
+          <div style="font-size: 24px !important; font-weight: 800 !important; margin-bottom: 15px !important; color: white !important;">
+            🎵 ${currentAlbum.title} 🎵
           </div>
-          <div style="font-size: 14px; color: rgba(255, 255, 255, 0.8); line-height: 1.4;">
-            Tap <strong style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px;">G</strong> to preview<br>
-            Tap <strong style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px;">B</strong> to buy
+          <div style="font-size: 18px !important; color: white !important; line-height: 1.6 !important;">
+            THIS IS A TEST POPUP<br>
+            Tap <strong style="background: yellow; color: black; padding: 5px 10px; border-radius: 8px;">G</strong> to preview<br>
+            Tap <strong style="background: yellow; color: black; padding: 5px 10px; border-radius: 8px;">B</strong> to buy
           </div>
         `;
         
         document.body.appendChild(mobilePopup);
-        console.log("Mobile popup created and added to body");
+        console.log("Mobile popup created and added to body with RED background and extreme z-index");
+        console.log("Popup element:", mobilePopup);
+        console.log("Popup computed styles:", window.getComputedStyle(mobilePopup));
+        console.log("Body children count:", document.body.children.length);
+        
+        // Extra debugging - try to find it again
+        setTimeout(() => {
+          const foundPopup = document.getElementById("mobile-album-popup");
+          console.log("Can find popup after creation?", !!foundPopup);
+          if (foundPopup) {
+            console.log("Found popup styles:", window.getComputedStyle(foundPopup));
+          }
+        }, 100);
         
       } else {
         // Desktop UI logic
