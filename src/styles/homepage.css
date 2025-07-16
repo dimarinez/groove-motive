@@ -865,6 +865,10 @@ body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .hero-section {
+    min-height: 100dvh;
+  }
+
   .desktop-nav {
     display: none;
   }
