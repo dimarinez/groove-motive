@@ -421,10 +421,13 @@ function showWelcomeInstructions() {
           • Get close to framed artwork to see album details
         </p>
         <p style="font-size: 14px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
-          • Tap the <strong>Preview</strong> button to play music
+          • Tap the <strong>P</strong> button to play music
         </p>
         <p style="font-size: 14px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
-          • Tap the <strong>Buy</strong> button to purchase tracks
+          • Tap the <strong>B</strong> button to purchase tracks
+        </p>
+        <p style="font-size: 14px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
+          • Tap the <strong>Menu</strong> button to exit the gallery
         </p>
       ` : `
         <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
