@@ -1316,16 +1316,6 @@ function setupDeviceOrientationControls() {
   }, 2000);
 }
 
-
-
-/**
- * No longer needed with absolute orientation positioning
- * Keeping function for compatibility but it does nothing
- */
-function recalibrateOrientation() {
-  console.log('Recalibration not needed with absolute orientation controls');
-}
-
 // Clean up orientation controls
 function cleanupDeviceOrientation() {
   window.removeEventListener('deviceorientation', () => {});
@@ -2478,110 +2468,26 @@ function animate() {
 
     if (closestAlbum && closestAlbum !== currentAlbum) {
       currentAlbum = closestAlbum;
+
+      if (!ui) ui = document.getElementById("ui");
+      if (!albumTitle) albumTitle = document.getElementById("album-title");
       
-      // Enhanced mobile detection for album popup
-      const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
-                             ('ontouchstart' in window) || 
-                             (navigator.maxTouchPoints > 0) ||
-                             window.innerWidth <= 768;
-      
-      console.log("Album popup - Mobile detection:", {
-        isMobile: isMobile,
-        isMobileDevice: isMobileDevice,
-        userAgent: navigator.userAgent,
-        touchSupport: 'ontouchstart' in window,
-        maxTouchPoints: navigator.maxTouchPoints,
-        windowWidth: window.innerWidth
-      });
-      
-      if (isMobile || isMobileDevice) {
-        // Create completely separate mobile popup
-        console.log("Creating mobile album popup for:", currentAlbum.title);
-        
-        // Remove any existing mobile popup
-        const existingMobilePopup = document.getElementById("mobile-album-popup");
-        if (existingMobilePopup) {
-          existingMobilePopup.remove();
-        }
-        
-        // Create new mobile popup with extreme visibility settings
-        const mobilePopup = document.createElement("div");
-        mobilePopup.id = "mobile-album-popup";
-        mobilePopup.style.cssText = `
-          position: fixed !important;
-          top: 20px !important;
-          left: 20px !important;
-          right: 20px !important;
-          z-index: 999999 !important;
-          background: red !important;
-          color: white !important;
-          padding: 30px !important;
-          border-radius: 15px !important;
-          text-align: center !important;
-          font-family: -apple-system, BlinkMacSystemFont, sans-serif !important;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important;
-          border: 5px solid yellow !important;
-          font-size: 20px !important;
-          font-weight: bold !important;
-          transform: none !important;
-          width: auto !important;
-          height: auto !important;
-          max-width: none !important;
-          min-height: 100px !important;
-          display: block !important;
-          opacity: 1 !important;
-          visibility: visible !important;
-          pointer-events: auto !important;
-        `;
-        
-        mobilePopup.innerHTML = `
-          <div style="font-size: 24px !important; font-weight: 800 !important; margin-bottom: 15px !important; color: white !important;">
-            🎵 ${currentAlbum.title} 🎵
-          </div>
-          <div style="font-size: 18px !important; color: white !important; line-height: 1.6 !important;">
-            THIS IS A TEST POPUP<br>
-            Tap <strong style="background: yellow; color: black; padding: 5px 10px; border-radius: 8px;">G</strong> to preview<br>
-            Tap <strong style="background: yellow; color: black; padding: 5px 10px; border-radius: 8px;">B</strong> to buy
-          </div>
-        `;
-        
-        document.body.appendChild(mobilePopup);
-        console.log("Mobile popup created and added to body with RED background and extreme z-index");
-        console.log("Popup element:", mobilePopup);
-        console.log("Popup computed styles:", window.getComputedStyle(mobilePopup));
-        console.log("Body children count:", document.body.children.length);
-        
-        // Extra debugging - try to find it again
-        setTimeout(() => {
-          const foundPopup = document.getElementById("mobile-album-popup");
-          console.log("Can find popup after creation?", !!foundPopup);
-          if (foundPopup) {
-            console.log("Found popup styles:", window.getComputedStyle(foundPopup));
+      if (ui && albumTitle) {
+        albumTitle.textContent = currentAlbum.title;
+        if (ui.style.display !== "block") {
+          ui.style.display = "block";
+          if (typeof gsap !== 'undefined') {
+            gsap.fromTo(
+              "#ui",
+              { opacity: 0, scale: 0.8 },
+              { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.4)" }
+            );
+          } else {
+            ui.style.opacity = "1";
+            ui.style.transform = "translateX(-50%) scale(1)";
           }
-        }, 100);
-        
-      } else {
-        // Desktop UI logic
-        if (!ui) ui = document.getElementById("ui");
-        if (!albumTitle) albumTitle = document.getElementById("album-title");
-        
-        if (ui && albumTitle) {
-          albumTitle.textContent = currentAlbum.title;
-          if (ui.style.display !== "block") {
-            ui.style.display = "block";
-            if (typeof gsap !== 'undefined') {
-              gsap.fromTo(
-                "#ui",
-                { opacity: 0, scale: 0.8 },
-                { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.4)" }
-              );
-            } else {
-              ui.style.opacity = "1";
-              ui.style.transform = "translateX(-50%) scale(1)";
-            }
-          }
-          ui.classList.add("visible");
         }
+        ui.classList.add("visible");
       }
     } else if (!closestAlbum && currentAlbum) {
       currentAlbum = null;
