@@ -288,7 +288,8 @@ function hidePortraitWarning() {
 // Create and show instructional popup
 function showWelcomeInstructions() {
   // Always show instructions on mobile for better UX, otherwise respect localStorage
-  if (hasShownInstructions && !isMobile) return;
+  const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (hasShownInstructions && !isMobileDevice) return;
   
   hasShownInstructions = true;
   localStorage.setItem('grooveMotive_hasShownInstructions', 'true');
@@ -322,8 +323,6 @@ function showWelcomeInstructions() {
     width: ${isMobileDevice ? 'calc(100vw - 20px)' : 'auto'};
     margin: ${isMobileDevice ? '10px' : '0'};
   `;
-  
-  const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   
   instructionalPopup.innerHTML = `
     <div style="margin-bottom: ${isMobileDevice ? '20px' : '30px'};">
@@ -637,28 +636,28 @@ function initScene() {
   // Mobile button event listeners
   if (isMobile && moveUpButton && moveDownButton && moveLeftButton && moveRightButton) {
     moveUpButton.addEventListener("touchstart", () => {
-      moveBackward = true;
-    });
-    moveUpButton.addEventListener("touchend", () => {
-      moveBackward = false;
-    });
-    moveDownButton.addEventListener("touchstart", () => {
       moveForward = true;
     });
-    moveDownButton.addEventListener("touchend", () => {
+    moveUpButton.addEventListener("touchend", () => {
       moveForward = false;
     });
+    moveDownButton.addEventListener("touchstart", () => {
+      moveBackward = true;
+    });
+    moveDownButton.addEventListener("touchend", () => {
+      moveBackward = false;
+    });
     moveLeftButton.addEventListener("touchstart", () => {
-      moveRight = true;
-    });
-    moveLeftButton.addEventListener("touchend", () => {
-      moveRight = false;
-    });
-    moveRightButton.addEventListener("touchstart", () => {
       moveLeft = true;
     });
-    moveRightButton.addEventListener("touchend", () => {
+    moveLeftButton.addEventListener("touchend", () => {
       moveLeft = false;
+    });
+    moveRightButton.addEventListener("touchstart", () => {
+      moveRight = true;
+    });
+    moveRightButton.addEventListener("touchend", () => {
+      moveRight = false;
     });
 
     // Mobile action button event listeners
