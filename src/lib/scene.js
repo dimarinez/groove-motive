@@ -307,47 +307,49 @@ function showWelcomeInstructions() {
     transform: translate(-50%, -50%);
     background: rgba(0, 0, 0, 0.95);
     color: white;
-    padding: 40px;
+    padding: ${isMobileDevice ? '20px' : '40px'};
     border-radius: 20px;
     font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif;
     text-align: center;
     z-index: 10000;
-    max-width: 90vw;
-    max-height: 90vh;
+    max-width: ${isMobileDevice ? '95vw' : '90vw'};
+    max-height: ${isMobileDevice ? '95vh' : '90vh'};
     overflow: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(20px);
     border: 2px solid rgba(255, 255, 255, 0.1);
+    width: ${isMobileDevice ? 'calc(100vw - 20px)' : 'auto'};
+    margin: ${isMobileDevice ? '10px' : '0'};
   `;
   
   const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   
   instructionalPopup.innerHTML = `
-    <div style="margin-bottom: 30px;">
-      <h2 style="font-size: 28px; margin-bottom: 20px; color: #fff; font-weight: 600;">
+    <div style="margin-bottom: ${isMobileDevice ? '20px' : '30px'};">
+      <h2 style="font-size: ${isMobileDevice ? '22px' : '28px'}; margin-bottom: ${isMobileDevice ? '15px' : '20px'}; color: #fff; font-weight: 600;">
         Welcome to the Listening Room
       </h2>
-      <p style="font-size: 18px; line-height: 1.6; margin-bottom: 25px; color: rgba(255,255,255,0.9);">
+      <p style="font-size: ${isMobileDevice ? '16px' : '18px'}; line-height: 1.6; margin-bottom: ${isMobileDevice ? '20px' : '25px'}; color: rgba(255,255,255,0.9);">
         Explore the gallery and approach the framed artwork to discover music releases.
       </p>
     </div>
     
-    <div style="margin-bottom: 30px;">
-      <h3 style="font-size: 20px; margin-bottom: 15px; color: #fff;">How to Navigate:</h3>
+    <div style="margin-bottom: ${isMobileDevice ? '20px' : '30px'};">
+      <h3 style="font-size: ${isMobileDevice ? '18px' : '20px'}; margin-bottom: ${isMobileDevice ? '12px' : '15px'}; color: #fff;">How to Navigate:</h3>
       ${isMobileDevice ? `
-        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+        <p style="font-size: 14px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Use the directional arrows at the bottom to move around
         </p>
-        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+        <p style="font-size: 14px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Tilt and rotate your device to look around
         </p>
-        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+        <p style="font-size: 14px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Get close to framed artwork to see album details
         </p>
-        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+        <p style="font-size: 14px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Tap the <strong>Preview</strong> button to play music
         </p>
-        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
+        <p style="font-size: 14px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Tap the <strong>Buy</strong> button to purchase tracks
         </p>
       ` : `
@@ -376,15 +378,22 @@ function showWelcomeInstructions() {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       border: none;
-      padding: 15px 30px;
+      padding: ${isMobileDevice ? '12px 24px' : '15px 30px'};
       border-radius: 30px;
-      font-size: 16px;
+      font-size: ${isMobileDevice ? '14px' : '16px'};
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
       font-family: inherit;
+      display: block;
+      margin: ${isMobileDevice ? '20px auto 0' : '0 auto'};
+      width: ${isMobileDevice ? 'auto' : 'auto'};
+      min-width: ${isMobileDevice ? '140px' : '160px'};
+      text-align: center;
     " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 25px rgba(102, 126, 234, 0.4)'" 
-       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"
+       ontouchstart="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.3)'"
+       ontouchend="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
       Start Exploring
     </button>
   `;
@@ -1193,7 +1202,7 @@ async function requestDeviceOrientationPermission() {
       
       if (permissionResult === 'granted') {
         console.log('Device orientation permission granted');
-        setupSimpleDeviceOrientation();
+        setupDeviceOrientationControls();
       } else if (permissionResult === 'denied') {
         console.log('Device orientation permission denied');
       } else {
@@ -1206,7 +1215,7 @@ async function requestDeviceOrientationPermission() {
   } else {
     // Android or older iOS - no permission required
     console.log('No permission required for device orientation');
-    setupSimpleDeviceOrientation();
+    setupDeviceOrientationControls();
   }
 
   // Request motion permission if available
