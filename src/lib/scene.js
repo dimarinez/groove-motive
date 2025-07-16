@@ -70,6 +70,9 @@ let totalAssets = 0;
 let loadingIndicator = null;
 let progressBar = null;
 let progressText = null;
+let heroLoadingIndicator = null;
+let heroProgressBar = null;
+let heroProgressText = null;
 let sceneReady = false;
 let orientationStatus = null;
 let orientationIndicator = null;
@@ -515,29 +518,183 @@ function showWelcomeInstructions() {
   );
 }
 
+// Gradual progress animation - DISABLED
+function startGradualProgress() {
+  console.log("Gradual progress function disabled for debugging");
+}
+
 // Asset loading helpers
 function updateLoadingProgress() {
+  const progress = (assetsLoaded / totalAssets) * 100;
+  console.log(`Loading progress: ${assetsLoaded}/${totalAssets} (${progress.toFixed(1)}%)`);
+  
+  // Update main loading indicator
   if (loadingIndicator) {
-    const progress = (assetsLoaded / totalAssets) * 100;
-    console.log(`Loading progress: ${assetsLoaded}/${totalAssets} (${progress.toFixed(1)}%)`);
-    
-    // Update progress bar
+    // Update progress bar with smooth animation
     if (progressBar) {
+      progressBar.style.transition = 'width 0.4s ease-out';
       progressBar.style.width = `${progress}%`;
     }
     
-    // Update progress text
+    // Update progress text with smooth counting animation
     if (progressText) {
-      progressText.textContent = `${Math.round(progress)}%`;
+      const currentPercent = parseInt(progressText.textContent) || 0;
+      const targetPercent = Math.round(progress);
+      
+      if (targetPercent > currentPercent) {
+        let counter = currentPercent;
+        const increment = () => {
+          counter++;
+          progressText.textContent = `${counter}%`;
+          if (counter < targetPercent) {
+            setTimeout(increment, 20);
+          }
+        };
+        increment();
+      } else {
+        progressText.textContent = `${targetPercent}%`;
+      }
+    }
+  }
+  
+  // DISABLED: Update hero loading indicator for debugging
+  if (false && heroLoadingIndicator) {
+    console.log("Hero loading indicator found, updating progress to:", progress + "%");
+    
+    // Update hero progress bar
+    if (heroProgressBar) {
+      console.log("Updating hero progress bar width to:", progress + "%");
+      heroProgressBar.style.transition = 'width 0.4s ease-out';
+      heroProgressBar.style.width = `${progress}%`;
+      console.log("Hero progress bar updated, current width:", heroProgressBar.style.width);
+    } else {
+      console.warn("Hero progress bar element not found during update!");
+      // Try to find it again
+      heroProgressBar = document.getElementById("hero-progress-bar");
+      console.log("Retried finding hero progress bar:", !!heroProgressBar);
+      if (heroProgressBar) {
+        heroProgressBar.style.transition = 'width 0.4s ease-out';
+        heroProgressBar.style.width = `${progress}%`;
+        console.log("Hero progress bar found on retry and updated to:", progress + "%");
+      }
     }
     
-    if (assetsLoaded >= totalAssets) {
+    // Update hero progress text (just the number, no % sign)
+    if (heroProgressText) {
+      const currentPercent = parseInt(heroProgressText.textContent) || 0;
+      const targetPercent = Math.round(progress);
+      
+      console.log("Updating hero progress text from", currentPercent, "to", targetPercent);
+      
+      if (targetPercent > currentPercent) {
+        let counter = currentPercent;
+        const increment = () => {
+          counter++;
+          heroProgressText.textContent = counter.toString();
+          if (counter < targetPercent) {
+            setTimeout(increment, 15);
+          }
+        };
+        increment();
+      } else {
+        heroProgressText.textContent = targetPercent.toString();
+      }
+    } else {
+      console.warn("Hero progress text element not found during update!");
+      // Try to find it again
+      heroProgressText = document.getElementById("hero-progress-text");
+      console.log("Retried finding hero progress text:", !!heroProgressText);
+      if (heroProgressText) {
+        const targetPercent = Math.round(progress);
+        heroProgressText.textContent = targetPercent.toString();
+        console.log("Hero progress text found on retry and updated to:", targetPercent);
+      }
+    }
+  } else {
+    console.warn("Hero loading indicator not found during update!");
+    // Try to find it again and update anyway
+    heroLoadingIndicator = document.getElementById("hero-loading-indicator");
+    heroProgressBar = document.getElementById("hero-progress-bar");
+    heroProgressText = document.getElementById("hero-progress-text");
+    
+    console.log("Retried finding hero elements:", {
+      heroLoadingIndicator: !!heroLoadingIndicator,
+      heroProgressBar: !!heroProgressBar,
+      heroProgressText: !!heroProgressText
+    });
+    
+    if (heroProgressBar) {
+      heroProgressBar.style.transition = 'width 0.4s ease-out';
+      heroProgressBar.style.width = `${progress}%`;
+      console.log("Hero progress bar found on full retry and updated to:", progress + "%");
+    }
+    
+    if (heroProgressText) {
+      const targetPercent = Math.round(progress);
+      heroProgressText.textContent = targetPercent.toString();
+      console.log("Hero progress text found on full retry and updated to:", targetPercent);
+    }
+  }
+    
+  if (assetsLoaded >= totalAssets) {
       sceneReady = true;
       console.log("Essential scene assets loaded, scene ready for entry");
-      loadingIndicator.style.display = 'none';
+      
+      // Add completion animation to main loading indicator
+      if (progressBar) {
+        progressBar.style.background = 'linear-gradient(90deg, #4CAF50, #8BC34A, #4CAF50)';
+      }
+      if (progressText) {
+        progressText.textContent = '100% - Ready!';
+        progressText.style.color = '#4CAF50';
+      }
+      
+      // Add completion animation to hero loading indicator
+      if (heroProgressBar) {
+        heroProgressBar.style.background = 'linear-gradient(90deg, #4CAF50, #8BC34A, #4CAF50)';
+        heroProgressBar.style.boxShadow = '0 0 20px rgba(76, 175, 80, 0.6)';
+      }
+      if (heroProgressText) {
+        heroProgressText.textContent = '100';
+        heroProgressText.style.color = '#4CAF50';
+        heroProgressText.style.transform = 'scale(1.1)';
+        setTimeout(() => {
+          if (heroProgressText) {
+            heroProgressText.style.transform = 'scale(1)';
+          }
+        }, 300);
+      }
+      
+      // Fade out main loading indicator after a brief delay
+      setTimeout(() => {
+        if (loadingIndicator) {
+          loadingIndicator.style.transition = 'opacity 0.5s ease-out';
+          loadingIndicator.style.opacity = '0';
+          setTimeout(() => {
+            loadingIndicator.style.display = 'none';
+          }, 500);
+        }
+      }, 800);
+      
+      // Fade out hero loading indicator after a brief delay
+      setTimeout(() => {
+        if (heroLoadingIndicator) {
+          heroLoadingIndicator.style.transition = 'opacity 0.5s ease-out';
+          heroLoadingIndicator.style.opacity = '0';
+          setTimeout(() => {
+            heroLoadingIndicator.style.display = 'none';
+          }, 500);
+        }
+      }, 800);
+      
       if (enterButton) {
         enterButton.disabled = false;
         enterButton.style.opacity = '1';
+        enterButton.style.transition = 'all 0.3s ease';
+        enterButton.style.transform = 'scale(1.05)';
+        setTimeout(() => {
+          enterButton.style.transform = 'scale(1)';
+        }, 200);
       }
       
       // Update global window properties
@@ -571,11 +728,12 @@ function updateLoadingProgress() {
       }
     }
   }
-}
 
 function onAssetLoaded() {
   assetsLoaded++;
-  updateLoadingProgress();
+  console.log("Asset loaded! Progress:", assetsLoaded + "/" + totalAssets);
+  // DISABLED updateLoadingProgress to avoid errors
+  console.log("Progress update disabled for debugging");
   
   // Update global progress tracking
   try {
@@ -700,6 +858,22 @@ function initScene() {
   loadingIndicator = document.getElementById("loading-indicator");
   progressBar = document.getElementById("progress-bar");
   progressText = document.getElementById("progress-text");
+  heroLoadingIndicator = document.getElementById("hero-loading-indicator");
+  heroProgressBar = document.getElementById("hero-progress-bar");
+  heroProgressText = document.getElementById("hero-progress-text");
+  
+  // Debug hero elements found during initialization
+  console.log("Hero elements during init:", {
+    heroLoadingIndicator: !!heroLoadingIndicator,
+    heroProgressBar: !!heroProgressBar,
+    heroProgressText: !!heroProgressText,
+    heroLoadingIndicatorStyle: heroLoadingIndicator ? heroLoadingIndicator.style.display : 'not found',
+    progressBarId: heroProgressBar ? heroProgressBar.id : 'not found',
+    progressTextId: heroProgressText ? heroProgressText.id : 'not found'
+  });
+  
+  // Don't start gradual progress yet - wait for assets to start loading
+  console.log("Scene initialization ready, will start progress when assets begin loading...");
   orientationStatus = document.getElementById("orientation-status");
   orientationIndicator = document.getElementById("orientation-indicator");
   orientationText = document.getElementById("orientation-text");
@@ -796,7 +970,9 @@ function initScene() {
   
   controls.addEventListener("lock", () => {
     document.body.style.cursor = "none";
-    ui.style.display = "none";
+    if (ui) {
+      ui.style.display = "none";
+    }
     if (isMobile) {
       const mobileControls = document.getElementById("mobile-controls");
       if (mobileControls) {
@@ -812,8 +988,12 @@ function initScene() {
     document.body.style.cursor = "auto";
     const container = document.getElementById("container");
     if (container) container.style.display = "flex";
-    if (isMobile)
-      document.getElementById("mobile-controls").style.display = "none";
+    if (isMobile) {
+      const mobileControls = document.getElementById("mobile-controls");
+      if (mobileControls) {
+        mobileControls.style.display = "none";
+      }
+    }
   });
 
   document.addEventListener("keydown", onKeyDown);
@@ -826,8 +1006,29 @@ function initScene() {
 
   // Initialize asset loading - load all assets for preview
   // All assets: logo texture, record player, basic scene, couch, plants, album covers, pillar plants
+  // Reset loading state
+  assetsLoaded = 0;
   totalAssets = 14; // logo + record player + basic scene + couch + 4 plants + 4 albums + 4 pillar plants
-  updateLoadingProgress();
+  
+  // Show loading indicators immediately
+  if (loadingIndicator) {
+    loadingIndicator.style.display = 'flex';
+    if (enterButton) {
+      enterButton.disabled = true;
+      enterButton.style.opacity = '0.5';
+    }
+  }
+  
+  if (heroLoadingIndicator) {
+    heroLoadingIndicator.style.display = 'none'; // Force hide for debugging
+    console.log("Hero loading indicator forcibly hidden");
+  }
+  
+  // DISABLED gradual progress for debugging
+  console.log("Gradual progress disabled for debugging - loader hidden");
+  
+  // DISABLED updateLoadingProgress to avoid null reference errors
+  console.log("Loading progress updates disabled for debugging");
   
   // Hide orientation status and values on all devices
   if (orientationStatus) {
@@ -1177,7 +1378,29 @@ function initScene() {
   
   // Mark scene as initialized
   isSceneInitialized = true;
+  
+  // Start preview animation automatically if this is a hero canvas
+  const isHeroCanvas = galleryCanvas && galleryCanvas.id === "hero-gallery-canvas";
+  if (isHeroCanvas) {
+    console.log("Auto-starting preview animation for hero canvas");
+    setTimeout(() => {
+      animatePreview();
+    }, 100);
+  }
   console.log("Scene initialization completed successfully");
+  console.log("Scene objects count:", scene.children.length);
+  console.log("Scene background:", scene.background);
+  console.log("Camera position:", camera.position);
+  console.log("Camera rotation:", camera.rotation);
+  console.log("Renderer size:", renderer.getSize(new THREE.Vector2()));
+  
+  // List all scene objects for debugging
+  console.log("Scene objects:", scene.children.map(child => ({
+    type: child.type,
+    name: child.name || 'unnamed',
+    position: child.position,
+    visible: child.visible
+  })));
 
   // Ensure proper canvas sizing after DOM is fully loaded
   setTimeout(() => {
@@ -2327,6 +2550,15 @@ function animatePreview() {
     camera.lookAt(0, 1.6, -6);
     renderer.render(scene, camera);
     previewAnimationId = requestAnimationFrame(animatePreview);
+    
+    // Animation running normally
+  } else {
+    console.log("AnimatePreview stopped - conditions not met:", {
+      controlsLocked: controls ? controls.isLocked : 'no controls',
+      renderer: !!renderer,
+      scene: !!scene,
+      camera: !!camera
+    });
   }
 }
 

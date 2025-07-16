@@ -5,9 +5,10 @@ export default function RightPanel() {
       <div id="loading-indicator" className="loading-indicator" style={{ display: 'none' }}>
         <div className="loading-content">
           <div className="loading-icon">
-            <div className="vinyl-loader">
-              <div className="vinyl-disc"></div>
-              <div className="vinyl-center"></div>
+            <div className="modern-loader">
+              <div className="loader-circle"></div>
+              <div className="loader-circle"></div>
+              <div className="loader-circle"></div>
             </div>
           </div>
           <h3>Loading gallery assets...</h3>

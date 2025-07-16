@@ -12,7 +12,8 @@
       "WebFetch(domain:5ndhpj66kbzege6f.public.blob.vercel-storage.com)",
       "Bash(rm:*)",
       "Bash(sed:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(open \"http://localhost:5173\")"
     ],
     "deny": []
   }
