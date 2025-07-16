@@ -372,12 +372,26 @@ function setupMobileControlListeners() {
 
 // Create and show instructional popup
 function showWelcomeInstructions() {
-  // Always show instructions on mobile for better UX, otherwise respect localStorage
-  const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if (hasShownInstructions && !isMobileDevice) return;
+  // Enhanced mobile detection for better compatibility
+  const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                         ('ontouchstart' in window) || 
+                         (navigator.maxTouchPoints > 0) ||
+                         window.innerWidth <= 768;
   
-  hasShownInstructions = true;
-  localStorage.setItem('grooveMotive_hasShownInstructions', 'true');
+  console.log("showWelcomeInstructions called - isMobileDevice:", isMobileDevice, "hasShownInstructions:", hasShownInstructions);
+  
+  // For mobile devices, always show instructions regardless of localStorage
+  if (!isMobileDevice && hasShownInstructions) {
+    console.log("Skipping instructions for desktop (already shown)");
+    return;
+  }
+  
+  if (!isMobileDevice) {
+    hasShownInstructions = true;
+    localStorage.setItem('grooveMotive_hasShownInstructions', 'true');
+  }
+  
+  console.log("Showing welcome instructions for device:", isMobileDevice ? "mobile" : "desktop");
   
   // Ensure controls are unlocked and cursor is enabled for the popup
   if (controls && controls.isLocked) {
@@ -510,6 +524,12 @@ function showWelcomeInstructions() {
     { opacity: 0, scale: 0.8 },
     { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.2)" }
   );
+}
+
+// Manual function to force show instructions (for debugging)
+function forceShowInstructions() {
+  console.log("Force showing instructions manually");
+  showWelcomeInstructions();
 }
 
 
@@ -2459,7 +2479,22 @@ function animate() {
     if (closestAlbum && closestAlbum !== currentAlbum) {
       currentAlbum = closestAlbum;
       
-      if (isMobile) {
+      // Enhanced mobile detection for album popup
+      const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                             ('ontouchstart' in window) || 
+                             (navigator.maxTouchPoints > 0) ||
+                             window.innerWidth <= 768;
+      
+      console.log("Album popup - Mobile detection:", {
+        isMobile: isMobile,
+        isMobileDevice: isMobileDevice,
+        userAgent: navigator.userAgent,
+        touchSupport: 'ontouchstart' in window,
+        maxTouchPoints: navigator.maxTouchPoints,
+        windowWidth: window.innerWidth
+      });
+      
+      if (isMobile || isMobileDevice) {
         // Create completely separate mobile popup
         console.log("Creating mobile album popup for:", currentAlbum.title);
         
@@ -2550,7 +2585,12 @@ function animate() {
       }
     } else if (!closestAlbum && currentAlbum) {
       currentAlbum = null;
-      if (isMobile) {
+      const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                             ('ontouchstart' in window) || 
+                             (navigator.maxTouchPoints > 0) ||
+                             window.innerWidth <= 768;
+      
+      if (isMobile || isMobileDevice) {
         console.log("Hiding album popup on mobile");
         // Remove mobile popup
         const existingMobilePopup = document.getElementById("mobile-album-popup");
@@ -2583,7 +2623,12 @@ function animate() {
     }
   } else if (currentAlbum) {
     currentAlbum = null;
-    if (isMobile) {
+    const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                           ('ontouchstart' in window) || 
+                           (navigator.maxTouchPoints > 0) ||
+                           window.innerWidth <= 768;
+    
+    if (isMobile || isMobileDevice) {
       // Remove mobile popup
       const existingMobilePopup = document.getElementById("mobile-album-popup");
       if (existingMobilePopup) {
