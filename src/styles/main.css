@@ -1051,3 +1051,51 @@ body.gallery-entered canvas {
   font-weight: 900;
   font-style: normal;
 }
+
+/* Homepage animation initial states - prevent flash of content */
+.hero-title .title-line {
+  opacity: 0;
+  transform: translateY(80px) rotateX(-60deg);
+}
+
+.arrow {
+  opacity: 0;
+  transform: translateX(-30px) rotate(-90deg);
+}
+
+.hero-3d-preview {
+  opacity: 0;
+  transform: translateY(60px) scale(0.9);
+}
+
+.main-navigation {
+  opacity: 0;
+  transform: translateY(-60px);
+}
+
+.latest-release-section {
+  opacity: 0;
+  transform: translateY(40px);
+}
+
+/* Releases page animation initial states */
+.releases-page .page-content {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.releases-page .release-card {
+  opacity: 0;
+  transform: translateY(50px);
+}
+
+/* Events page animation initial states */
+.events-page .page-content {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.events-page .event-card {
+  opacity: 0;
+  transform: translateX(-50px);
+}

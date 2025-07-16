@@ -38,21 +38,21 @@ export default function EventsPage() {
 
   useEffect(() => {
     // Page enter animation
-    gsap.fromTo('.page-content', 
+    gsap.fromTo('.events-page .page-content', 
       { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }
+      { opacity: 1, y: 0, duration: 1.0, ease: 'power1.out' }
     );
 
     // Stagger animation for event cards
-    gsap.fromTo('.event-card',
+    gsap.fromTo('.events-page .event-card',
       { opacity: 0, x: -50 },
       { 
         opacity: 1, 
         x: 0, 
-        duration: 0.6, 
-        stagger: 0.15, 
-        delay: 0.3,
-        ease: 'power2.out' 
+        duration: 0.8, 
+        stagger: 0.12, 
+        delay: 0.4,
+        ease: 'power1.out' 
       }
     );
   }, []);

@@ -327,8 +327,20 @@ function setupMobileControlListeners() {
 
     if (mobilePauseButton) {
       mobilePauseButton.addEventListener("touchstart", () => {
-        if (isPreviewing) {
-          stopPreview();
+        if (isPreviewing && audio) {
+          if (audio.paused) {
+            audio.play().catch(error => {
+              console.warn("Could not resume audio:", error);
+            });
+            // Update instruction text
+            previewInstruction.innerHTML = 
+              'Press <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">G</span> to stop • <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">P</span> to pause';
+          } else {
+            audio.pause();
+            // Update instruction text
+            previewInstruction.innerHTML = 
+              'Press <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">G</span> to stop • <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">P</span> to resume';
+          }
         }
       });
     }

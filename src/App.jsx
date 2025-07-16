@@ -95,6 +95,9 @@ function App() {
           setCurrentView(section);
           setIsInGallery(false);
           
+          // Scroll to top of page
+          window.scrollTo(0, 0);
+          
           // Fade out transition overlay
           gsap.to('.page-transition', {
             opacity: 0,

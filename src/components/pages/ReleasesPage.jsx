@@ -44,21 +44,21 @@ export default function ReleasesPage() {
 
   useEffect(() => {
     // Page enter animation
-    gsap.fromTo('.page-content', 
+    gsap.fromTo('.releases-page .page-content', 
       { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }
+      { opacity: 1, y: 0, duration: 1.0, ease: 'power1.out' }
     );
 
     // Stagger animation for release cards
-    gsap.fromTo('.release-card',
+    gsap.fromTo('.releases-page .release-card',
       { opacity: 0, y: 50 },
       { 
         opacity: 1, 
         y: 0, 
-        duration: 0.6, 
-        stagger: 0.1, 
-        delay: 0.3,
-        ease: 'power2.out' 
+        duration: 0.8, 
+        stagger: 0.08, 
+        delay: 0.4,
+        ease: 'power1.out' 
       }
     );
   }, []);

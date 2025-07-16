@@ -35,46 +35,46 @@ export default function HomePage({ onEnterListeningRoom }) {
       // Page load animation
       tl.fromTo('body', 
         { backgroundColor: '#000000' },
-        { backgroundColor: '#1a1a1a', duration: 0.8, ease: 'power2.out' }
+        { backgroundColor: '#1a1a1a', duration: 1.2, ease: 'power1.out' }
       )
       .fromTo('.hero-title .title-line', 
-        { opacity: 0, y: 100, rotationX: -90 },
+        { opacity: 0, y: 80, rotationX: -60 },
         { 
           opacity: 1, 
           y: 0, 
           rotationX: 0,
-          duration: 1.2, 
-          stagger: 0.2,
-          ease: 'power3.out' 
+          duration: 1.8, 
+          stagger: 0.15,
+          ease: 'power2.out' 
         },
-        0.3
+        0.4
       )
       .fromTo('.arrow', 
-        { opacity: 0, x: -50, rotation: -180 },
+        { opacity: 0, x: -30, rotation: -90 },
         { 
           opacity: 1, 
           x: 0, 
           rotation: 0,
-          duration: 0.8, 
-          ease: 'back.out(1.7)' 
+          duration: 1.2, 
+          ease: 'power2.out' 
         },
-        '-=0.5'
+        '-=0.8'
       )
       .fromTo('.hero-3d-preview', 
-        { opacity: 0, scale: 0.8, y: 100 },
+        { opacity: 0, scale: 0.9, y: 60 },
         { 
           opacity: 1, 
           scale: 1, 
           y: 0,
-          duration: 1.5, 
-          ease: 'power3.out' 
+          duration: 2.0, 
+          ease: 'power2.out' 
         },
-        '-=0.8'
+        '-=1.2'
       )
       .fromTo('.main-navigation', 
-        { opacity: 0, y: -100 },
-        { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' },
-        '-=1.2'
+        { opacity: 0, y: -60 },
+        { opacity: 1, y: 0, duration: 1.2, ease: 'power2.out' },
+        '-=1.6'
       );
       
       // Mark animation as played
@@ -87,23 +87,24 @@ export default function HomePage({ onEnterListeningRoom }) {
         x: 0,
         rotationX: 0,
         rotation: 0,
-        scale: 1 
+        scale: 1,
+        transform: 'none'
       });
       gsap.set('body', { backgroundColor: '#1a1a1a' });
     }
 
     // Scroll-triggered animations
     gsap.fromTo('.latest-release-section',
-      { opacity: 0, y: 60 },
+      { opacity: 0, y: 40 },
       {
         opacity: 1,
         y: 0,
-        duration: 1,
-        ease: 'power2.out',
+        duration: 1.5,
+        ease: 'power1.out',
         scrollTrigger: {
           trigger: '.latest-release-section',
-          start: 'top 80%',
-          end: 'bottom 20%',
+          start: 'top 85%',
+          end: 'bottom 15%',
           toggleActions: 'play none none reverse'
         }
       }
