@@ -9,7 +9,7 @@ const albums = [
     cover:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM001%20Cover%20Art.jpg",
     previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Luke%20Andy%20%26%20Sophiegrophy%20-%20My%20Side%20%28Radio%29%28FW%20MASTER%201%29.mp3",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Luke%20Andy%20%26%20Sophiegrophy%20-%20My%20Side%20%28Radio%20Edit%29%5BGroove%20Motive%5D.mp3",
     buyUrl: "https://www.beatport.com/track/my-side/20167500",
   },
   {
@@ -752,6 +752,31 @@ function initScene() {
           renderer.setSize(canvasWidth, canvasHeight);
         }
       }
+      // Reset preview state before starting animation
+      isPreviewing = false;
+      currentAlbum = null;
+      if (previewAnimationId) {
+        cancelAnimationFrame(previewAnimationId);
+        previewAnimationId = null;
+      }
+      
+      // Reset mobile setup on re-entry
+      if (isMobile) {
+        // Reset camera position and orientation
+        camera.position.set(0, 1.6, -2);
+        camera.rotation.x = 0;
+        camera.rotation.y = 0;
+        camera.rotation.z = 0;
+        camera.lookAt(0, 1.6, -6);
+        
+        // Reset orientation calibration
+        isCalibrated = false;
+        orientationCalibration = { alpha: 0, beta: 0, gamma: 0 };
+        
+        // Re-setup device orientation controls
+        setupDeviceOrientationControls();
+      }
+      
       // Start preview animation immediately
       setTimeout(() => {
         animatePreview();
@@ -963,6 +988,13 @@ function initScene() {
         mobileControls.style.display = "none";
       }
     }
+    
+    // Reset preview state to prevent mobile from staying in preview mode
+    if (isPreviewing) {
+      stopPreview();
+    }
+    isPreviewing = false;
+    currentAlbum = null;
   });
 
   document.addEventListener("keydown", onKeyDown);
@@ -1900,9 +1932,30 @@ function enterGallery() {
     console.warn("Could not re-expose controls to global scope:", error);
   }
 
-  // Add unlock event listener
+  // Add lock and unlock event listeners
   if (controls) {
+    controls.addEventListener("lock", () => {
+      document.body.style.cursor = "none";
+      if (isMobile) {
+        const mobileControls = document.getElementById("mobile-controls");
+        if (mobileControls) {
+          mobileControls.style.display = "flex";
+          setupMobileControlListeners();
+        }
+      }
+    });
+    
     controls.addEventListener("unlock", () => {
+      document.body.style.cursor = "auto";
+      const container = document.getElementById("container");
+      if (container) container.style.display = "flex";
+      if (isMobile) {
+        const mobileControls = document.getElementById("mobile-controls");
+        if (mobileControls) {
+          mobileControls.style.display = "none";
+        }
+      }
+      
       // Clean up click-to-lock handler
       if (clickToLockHandler) {
         document.removeEventListener("click", clickToLockHandler);
@@ -2731,11 +2784,14 @@ function animate() {
     if (closestAlbum && closestAlbum !== currentAlbum) {
       currentAlbum = closestAlbum;
       
-      // Hide artwork instruction permanently after first approach
+      // Hide artwork instruction permanently after first approach (only on mobile)
       if (artworkInstruction && !hasApproachedArtwork) {
-        artworkInstruction.style.display = "none";
-        hasApproachedArtwork = true;
-        localStorage.setItem('grooveMotive_hasApproachedArtwork', 'true');
+        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobileDevice) {
+          artworkInstruction.style.display = "none";
+          hasApproachedArtwork = true;
+          localStorage.setItem('grooveMotive_hasApproachedArtwork', 'true');
+        }
       }
       
       if (!ui) ui = document.getElementById("ui");
@@ -2745,6 +2801,12 @@ function animate() {
         albumTitle.textContent = currentAlbum.title;
         if (ui.style.display !== "block") {
           ui.style.display = "block";
+          
+          // Hide artwork instruction when album UI shows
+          if (artworkInstruction) {
+            artworkInstruction.style.display = "none";
+          }
+          
           if (typeof gsap !== 'undefined') {
             gsap.fromTo(
               "#ui",
@@ -2773,11 +2835,23 @@ function animate() {
             onComplete: () => {
               ui.style.display = "none";
               ui.classList.remove("visible");
+              
+              // Show artwork instruction when album UI hides (only on desktop)
+              const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+              if (artworkInstruction && !isMobileDevice) {
+                artworkInstruction.style.display = "block";
+              }
             },
           });
         } else {
           ui.style.display = "none";
           ui.classList.remove("visible");
+          
+          // Show artwork instruction when album UI hides (only on desktop)
+          const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          if (artworkInstruction && !isMobileDevice) {
+            artworkInstruction.style.display = "block";
+          }
         }
       }
     }
@@ -2787,6 +2861,12 @@ function animate() {
     if (ui) {
       ui.style.display = "none";
       ui.classList.remove("visible");
+      
+      // Show artwork instruction when album UI hides (only on desktop)
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (artworkInstruction && !isMobileDevice) {
+        artworkInstruction.style.display = "block";
+      }
     }
   }
 
