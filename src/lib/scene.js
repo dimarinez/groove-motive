@@ -9,7 +9,7 @@ const albums = [
     cover:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM001%20Cover%20Art.jpg",
     previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Luke%20Andy%20%26%20Sophiegrophy%20-%20My%20Side%20%28Radio%20Edit%29%5BGroove%20Motive%5D.mp3",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Luke%20Andy%20%26%20Sophiegrophy%20-%20My%20Side%20%28Radio%29%28FW%20MASTER%201%29.mp3",
     buyUrl: "https://www.beatport.com/track/my-side/20167500",
   },
   {
@@ -61,6 +61,7 @@ let orientationCalibration = { alpha: 0, beta: 0, gamma: 0 };
 let isCalibrated = false;
 let clickToLockHandler = null;
 let previewInstruction = null;
+let artworkInstruction = null;
 let previewAnimationId = null;
 let mainAnimationId = null;
 
@@ -80,6 +81,122 @@ let cachedAssets = {
   textures: new Map(),
   isFullyLoaded: false
 };
+
+// Function to create default album cover with logo
+function createDefaultAlbumCover(callback) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  
+  // Black background
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, 512, 512);
+  
+  // Load the logo image and draw it when ready
+  const logoImg = new Image();
+  logoImg.crossOrigin = 'anonymous';
+  logoImg.onload = () => {
+    console.log('Logo loaded successfully:', logoImg.width, 'x', logoImg.height);
+    ctx.clearRect(0, 0, 512, 512);
+    // Black background
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, 512, 512);
+    
+    // Calculate logo dimensions to center it with some padding
+    const padding = 64;
+    const maxWidth = 512 - (padding * 2);
+    const maxHeight = 512 - (padding * 2);
+    
+    // Calculate aspect ratio and sizing
+    const logoAspect = logoImg.width / logoImg.height;
+    let logoWidth, logoHeight;
+    
+    if (logoAspect > 1) {
+      // Logo is wider than tall
+      logoWidth = Math.min(maxWidth, logoImg.width);
+      logoHeight = logoWidth / logoAspect;
+    } else {
+      // Logo is taller than wide
+      logoHeight = Math.min(maxHeight, logoImg.height);
+      logoWidth = logoHeight * logoAspect;
+    }
+    
+    // Center the logo
+    const x = (512 - logoWidth) / 2;
+    const y = (512 - logoHeight) / 2;
+    
+    console.log('Drawing logo at:', x, y, 'size:', logoWidth, logoHeight);
+    ctx.drawImage(logoImg, x, y, logoWidth, logoHeight);
+    
+    // Create and return the texture with logo
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    
+    if (callback) callback(texture);
+  };
+  
+  logoImg.onerror = () => {
+    console.error('Failed to load logo image');
+    // Fallback: just black background
+    const texture = new THREE.CanvasTexture(canvas);
+    if (callback) callback(texture);
+  };
+  
+  logoImg.src = "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM_Wordmark_WHITE_300PPI.svg";
+}
+
+// Function to create wood texture
+function createWoodTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  
+  // Create wood grain pattern (darker colors)
+  const gradient = ctx.createLinearGradient(0, 0, 512, 0);
+  gradient.addColorStop(0, '#5D2F0A');
+  gradient.addColorStop(0.3, '#6B3410');
+  gradient.addColorStop(0.6, '#5D2F0A');
+  gradient.addColorStop(1, '#3E1F08');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 512, 512);
+  
+  // Add wood grain lines
+  for (let i = 0; i < 20; i++) {
+    const x = Math.random() * 512;
+    const opacity = 0.1 + Math.random() * 0.2;
+    ctx.strokeStyle = `rgba(62, 31, 8, ${opacity})`;
+    ctx.lineWidth = 1 + Math.random() * 3;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x + (Math.random() - 0.5) * 100, 512);
+    ctx.stroke();
+  }
+  
+  // Add darker wood knots
+  for (let i = 0; i < 8; i++) {
+    const x = Math.random() * 512;
+    const y = Math.random() * 512;
+    const radius = 10 + Math.random() * 20;
+    const opacity = 0.2 + Math.random() * 0.3;
+    
+    const knotGradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+    knotGradient.addColorStop(0, `rgba(35, 18, 5, ${opacity})`);
+    knotGradient.addColorStop(1, 'transparent');
+    ctx.fillStyle = knotGradient;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  const woodTexture = new THREE.CanvasTexture(canvas);
+  woodTexture.wrapS = THREE.RepeatWrapping;
+  woodTexture.wrapT = THREE.RepeatWrapping;
+  woodTexture.repeat.set(2, 1);
+  
+  return woodTexture;
+}
 let orientationStatus = null;
 let orientationIndicator = null;
 let orientationText = null;
@@ -98,6 +215,8 @@ let isPortraitMode = true;
 // Scene initialization flag
 let isSceneInitialized = false;
 let hasShownInstructions = localStorage.getItem('grooveMotive_hasShownInstructions') === 'true';
+// Reset this for testing - you can change this back to localStorage later
+let hasApproachedArtwork = false; // localStorage.getItem('grooveMotive_hasApproachedArtwork') === 'true';
 
 // Load all assets immediately for preview
 function loadAllAssets() {
@@ -684,6 +803,26 @@ function initScene() {
     document.body.appendChild(previewInstruction);
   }
 
+  // Add artwork interaction instruction
+  if (!artworkInstruction) {
+    artworkInstruction = document.createElement("div");
+    artworkInstruction.id = "artwork-instruction";
+    artworkInstruction.style.cssText =
+      'position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; background: rgba(0, 0, 0, 0.8); padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; text-align: center; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.15); z-index: 1000; font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: 0.3px; max-width: 85vw; line-height: 1.4; display: none;';
+    
+    // Add mobile-specific styles
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobileDevice) {
+      artworkInstruction.style.fontSize = '13px';
+      artworkInstruction.style.padding = '10px 16px';
+      artworkInstruction.style.bottom = '15px';
+      artworkInstruction.style.maxWidth = '90vw';
+    }
+    artworkInstruction.innerHTML =
+      'Approach artwork to preview and buy music';
+    document.body.appendChild(artworkInstruction);
+  }
+
   // DOM elements
   ui = document.getElementById("ui");
   albumTitle = document.getElementById("album-title");
@@ -838,7 +977,7 @@ function initScene() {
   // All assets: logo texture, record player, basic scene, couch, plants, album covers, pillar plants
   // Reset loading state
   assetsLoaded = 0;
-  totalAssets = 14; // logo + record player + basic scene + couch + 4 plants + 4 albums + 4 pillar plants
+  totalAssets = 15; // logo + record player + basic scene + couch + 4 plants + 5 albums + 4 pillar plants
   
   
   // Hide orientation status and values on all devices
@@ -942,10 +1081,11 @@ function initScene() {
 
       // Create table under record player
       const tableGeometry = new THREE.BoxGeometry(6, 0.2, 4);
+      const woodTexture = createWoodTexture();
       const tableMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x8B4513, // Brown wood color
-        roughness: 0.7,
-        metalness: 0.1
+        map: woodTexture,
+        roughness: 0.8,
+        metalness: 0.05
       });
       const table = new THREE.Mesh(tableGeometry, tableMaterial);
       table.position.set(0, 0.8, -6); // Raised up to be more visible
@@ -954,10 +1094,11 @@ function initScene() {
       
       // Add table legs
       const legGeometry = new THREE.BoxGeometry(0.15, 1.6, 0.15);
+      const legWoodTexture = createWoodTexture();
       const legMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x654321, // Darker brown
-        roughness: 0.8,
-        metalness: 0.1
+        map: legWoodTexture,
+        roughness: 0.9,
+        metalness: 0.02
       });
       const legPositions = [
         [2.5, 0, -1.5],
@@ -984,6 +1125,15 @@ function initScene() {
           spinAction.setLoop(THREE.LoopRepeat);
         }
       }
+      
+      // Set default album with logo
+      const defaultAlbum = {
+        title: "Coming Soon",
+        cover: "DEFAULT_LOGO",
+        previewUrl: "",
+        buyUrl: "",
+      };
+      applyCoverTexture(defaultAlbum);
       
       onAssetLoaded(); // Record player GLB loaded
       
@@ -1226,10 +1376,11 @@ function loadLegacyRecordPlayer() {
 
       // Create table under record player
       const tableGeometry = new THREE.BoxGeometry(6, 0.2, 4);
+      const woodTexture = createWoodTexture();
       const tableMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x8B4513, // Brown wood color
-        roughness: 0.7,
-        metalness: 0.1
+        map: woodTexture,
+        roughness: 0.8,
+        metalness: 0.05
       });
       const table = new THREE.Mesh(tableGeometry, tableMaterial);
       table.position.set(0, 0.8, -6); // Raised up to be more visible
@@ -1475,6 +1626,11 @@ function resetToInitialState() {
   if (ui) ui.style.display = "none";
   currentAlbum = null;
   if (albumTitle) albumTitle.textContent = "";
+  
+  // Hide artwork instruction
+  if (artworkInstruction) {
+    artworkInstruction.style.display = "none";
+  }
 
   // Move instructions back to original position
   const instructionsGroup = document.getElementById("instructions-group");
@@ -1838,6 +1994,13 @@ function enterGallery() {
       }
     }, 100);
   }
+
+  // Show artwork instruction after a delay (only if user hasn't approached artwork before)
+  setTimeout(() => {
+    if (artworkInstruction && !hasApproachedArtwork) {
+      artworkInstruction.style.display = "block";
+    }
+  }, 3000); // Show after 3 seconds to let user get oriented
 }
 
 function findVinylMesh(object) {
@@ -2047,47 +2210,71 @@ function applyVinylTexture(album) {
 }
 
 function applyCoverTexture(album, onComplete) {
-  const textureLoader = new THREE.TextureLoader();
-  textureLoader.load(
-    album.cover,
-    (texture) => {
-      texture.encoding = THREE.sRGBEncoding;
-      if (animatedRecordPlayer) {
-        animatedRecordPlayer.traverse((child) => {
-          if (
-            child.isMesh &&
-            child.material &&
-            child.material.name === "album_cover"
-          ) {
-            const geometry = child.geometry;
-            geometry.computeBoundingBox();
-            const width =
-              geometry.boundingBox.max.x - geometry.boundingBox.min.x;
-            const height =
-              geometry.boundingBox.max.y - geometry.boundingBox.min.y;
-            const aspectTexture = texture.image.width / texture.image.height;
-            const aspectGeometry = width / height;
-            const shrinkFactor = 1.95;
-            let repeatX = shrinkFactor;
-            let repeatY = shrinkFactor * (aspectGeometry / aspectTexture);
-            if (aspectTexture > aspectGeometry) {
-              repeatX = shrinkFactor * (aspectTexture / aspectGeometry);
-              repeatY = shrinkFactor;
-            }
-            texture.offset.set((1.1 - repeatX) / 2, (2.8 - repeatY) / 2);
-            texture.repeat.set(repeatX, repeatY);
-            texture.center.set(0.5, 0.5);
-            texture.needsUpdate = true;
-            child.material.map = texture;
-            child.material.needsUpdate = true;
-          }
-        });
-      }
+  if (album.cover === "DEFAULT_LOGO") {
+    // Use the generated default album cover with callback
+    createDefaultAlbumCover((texture) => {
+      applyTextureToVinyl(texture);
       if (onComplete) onComplete();
-    },
-    undefined,
-    (error) => console.error("Error loading texture:", error)
-  );
+    });
+  } else {
+    // Load texture from URL
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load(
+      album.cover,
+      (texture) => {
+        texture.encoding = THREE.sRGBEncoding;
+        applyTextureToVinyl(texture);
+        if (onComplete) onComplete();
+      },
+      undefined,
+      (error) => console.error("Error loading texture:", error)
+    );
+  }
+}
+
+function applyTextureToVinyl(texture) {
+  if (animatedRecordPlayer) {
+    animatedRecordPlayer.traverse((child) => {
+      if (
+        child.isMesh &&
+        child.material &&
+        child.material.name === "album_cover"
+      ) {
+        const geometry = child.geometry;
+        geometry.computeBoundingBox();
+        const width =
+          geometry.boundingBox.max.x - geometry.boundingBox.min.x;
+        const height =
+          geometry.boundingBox.max.y - geometry.boundingBox.min.y;
+        // Handle both canvas textures and image textures
+        let aspectTexture;
+        if (texture.image) {
+          // Image texture (loaded from URL)
+          aspectTexture = texture.image.width / texture.image.height;
+        } else if (texture.source && texture.source.data) {
+          // Canvas texture
+          aspectTexture = texture.source.data.width / texture.source.data.height;
+        } else {
+          // Fallback to square aspect ratio
+          aspectTexture = 1;
+        }
+        const aspectGeometry = width / height;
+        const shrinkFactor = 1.95;
+        let repeatX = shrinkFactor;
+        let repeatY = shrinkFactor * (aspectGeometry / aspectTexture);
+        if (aspectTexture > aspectGeometry) {
+          repeatX = shrinkFactor * (aspectTexture / aspectGeometry);
+          repeatY = shrinkFactor;
+        }
+        texture.offset.set((1.1 - repeatX) / 2, (2.8 - repeatY) / 2);
+        texture.repeat.set(repeatX, repeatY);
+        texture.center.set(0.5, 0.5);
+        texture.needsUpdate = true;
+        child.material.map = texture;
+        child.material.needsUpdate = true;
+      }
+    });
+  }
 }
 
 function startPreview(album) {
@@ -2543,6 +2730,14 @@ function animate() {
 
     if (closestAlbum && closestAlbum !== currentAlbum) {
       currentAlbum = closestAlbum;
+      
+      // Hide artwork instruction permanently after first approach
+      if (artworkInstruction && !hasApproachedArtwork) {
+        artworkInstruction.style.display = "none";
+        hasApproachedArtwork = true;
+        localStorage.setItem('grooveMotive_hasApproachedArtwork', 'true');
+      }
+      
       if (!ui) ui = document.getElementById("ui");
       if (!albumTitle) albumTitle = document.getElementById("album-title");
       
@@ -2565,6 +2760,8 @@ function animate() {
       }
     } else if (!closestAlbum && currentAlbum) {
       currentAlbum = null;
+      
+      // Don't show artwork instruction again if user has already approached artwork
         
       if (ui) {
         if (typeof gsap !== 'undefined') {

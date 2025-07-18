@@ -23,18 +23,14 @@ export default function EventsPage() {
       image: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/exhibition-2.jpg',
       link: 'https://shotgun.live/en/events/groovemotive',
       status: 'upcoming'
-    },
-    {
-      id: 3,
-      title: 'Underground Sessions Vol. 1',
-      date: 'TBA',
-      location: 'New York, NY',
-      description: 'Coming soon - an immersive audio-visual experience in the heart of Brooklyn.',
-      image: null,
-      link: '#',
-      status: 'announced'
     }
   ];
+
+  // Sort events: upcoming first, then past events
+  const sortedEvents = events.sort((a, b) => {
+    const statusOrder = { 'upcoming': 1, 'past': 2 };
+    return statusOrder[a.status] - statusOrder[b.status];
+  });
 
   useEffect(() => {
     // Page enter animation with linear easing
@@ -68,7 +64,7 @@ export default function EventsPage() {
           </div>
 
           <div className="events-list">
-            {events.map((event) => (
+            {sortedEvents.map((event) => (
               <div key={event.id} className={`event-card ${event.status}`}>
                 <div className="event-date">
                   <span className="date-text">{event.date}</span>
@@ -101,11 +97,6 @@ export default function EventsPage() {
                         >
                           Get Tickets
                         </a>
-                      )}
-                      {event.status === 'announced' && (
-                        <button className="event-link disabled">
-                          Coming Soon
-                        </button>
                       )}
                     </div>
                   </div>

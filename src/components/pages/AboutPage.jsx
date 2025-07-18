@@ -20,6 +20,7 @@ export default function AboutPage() {
             <p className="page-subtitle">A New Label Built from Passion</p>
           </div>
 
+          {/* Our Story Section */}
           <div className="about-content">
             <div className="about-photo-section">
               <div className="about-photo-placeholder">
@@ -40,7 +41,22 @@ export default function AboutPage() {
               <p>
                 Founded in 2024, we emerged from the vibrant underground electronic music scene with a vision to bridge the gap between experimental artistry and accessible listening experiences. Our approach combines traditional record label expertise with cutting-edge digital innovation, creating new ways for listeners to discover and engage with music.
               </p>
+            </div>
+          </div>
 
+          {/* Our Mission Section */}
+          <div className="about-content">
+            <div className="about-photo-section">
+              <div className="about-photo-placeholder">
+                <img 
+                  src="https://i.ytimg.com/vi/rGYFKKNghoE/hqdefault.jpg?sqp=-oaymwEnCOADEI4CSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLBd47-LRS2qUrTckCvGnPTH4YGBJw" 
+                  alt="Our Mission" 
+                  className="about-photo"
+                />
+              </div>
+            </div>
+            
+            <div className="about-text">
               <h2>Our Mission</h2>
               <p>
                 Our mission is simple yet profound: discover and nurture emerging talent while providing a platform that respects both the artist's vision and the listener's experience. We believe that great music deserves great presentation, and every release should tell a story that resonates beyond the speakers.
@@ -49,7 +65,22 @@ export default function AboutPage() {
               <p>
                 We're committed to supporting artists at every stage of their journey, from initial creation to global distribution. Through our innovative listening room experience and traditional release channels, we ensure that each track finds its intended audience while maintaining the integrity of the underground culture that inspires us.
               </p>
+            </div>
+          </div>
 
+          {/* Our Approach Section */}
+          <div className="about-content">
+            <div className="about-photo-section">
+              <div className="about-photo-placeholder">
+                <img 
+                  src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/3d-preview.png" 
+                  alt="Our Approach" 
+                  className="about-photo"
+                />
+              </div>
+            </div>
+            
+            <div className="about-text">
               <h2>Our Approach</h2>
               <p>
                 At Groove Motive, we believe in the power of immersion. Our 3D listening room represents more than just a novel way to experience music—it's a digital gallery space where each release becomes a living, breathing artwork. This innovative approach allows listeners to engage with music in a more meaningful way, creating lasting connections between sound and space.

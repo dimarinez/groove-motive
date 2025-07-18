@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { gsap } from 'gsap';
 import Footer from '../Footer';
@@ -6,52 +7,44 @@ export default function VideosPage() {
   const videos = [
     {
       id: 1,
-      title: 'Groove Motive x Tikis - Event Recap',
-      description: 'Behind the scenes and highlights from our intimate showcase',
-      thumbnail: 'https://img.youtube.com/vi/rGYFKKNghoE/maxresdefault.jpg',
-      url: 'https://www.youtube.com/watch?v=rGYFKKNghoE',
-      duration: '3:42'
+      title: "Groove Motive Presents Dateless @ Tiki's | June 2025",
+      description: 'Groove Motive Records proudly presents the full video of Dateless’ set...',
+      thumbnail: 'https://img.youtube.com/vi/4SknkCdDLjo/maxresdefault.jpg',
+      url: 'https://youtu.be/4SknkCdDLjo?si=hMpTIHhJMRMgrrPO',
+      duration: '1:26:40'
     },
     {
       id: 2,
-      title: 'BRN - Machines (Official Visualizer)',
-      description: 'Industrial soundscapes meet visual artistry',
-      thumbnail: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg',
-      url: '#',
-      duration: '6:15'
+      title: "Groove Motive Presents Luke Andy @ Tiki's | June 2025",
+      description: "Groove Motive Records proudly presents the full video of Luke Andy's set...",
+      thumbnail: 'https://img.youtube.com/vi/rGYFKKNghoE/hqdefault.jpg',
+      url: 'https://youtu.be/rGYFKKNghoE?si=vDMgz3-0Fb3LCpfn',
+      duration: '1:33:50'
     },
     {
       id: 3,
-      title: 'Dateless - Like Me (Studio Session)',
-      description: 'Watch the creative process behind our latest release',
-      thumbnail: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM003.jpg',
-      url: '#',
-      duration: '4:28'
+      title: 'Get to know Groove Motive Records',
+      description: 'This is the story of how Groove Motive Records came to life. Luke Andy...',
+      thumbnail: 'https://img.youtube.com/vi/WTkBW3y-0OY/maxresdefault.jpg',
+      url: 'https://youtu.be/WTkBW3y-0OY?si=W7rocJ0CzpqHpkhe',
+      duration: '6:28'
     },
     {
       id: 4,
-      title: 'KiRiK - Truth (Live Performance)',
-      description: 'Raw energy captured in an intimate live setting',
-      thumbnail: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM002.jpg',
-      url: '#',
-      duration: '5:33'
+      title: 'My Side - Luke Andy & Sophiegrophy',
+      description: 'GM001 - My Side - Luke Andy & Sophiegrophy',
+      thumbnail: 'https://img.youtube.com/vi/7Nc6QjXoN9E/maxresdefault.jpg',
+      url: 'https://youtu.be/7Nc6QjXoN9E?si=NBz3as-9iUpoKX51',
+      duration: '4:50'
     },
     {
       id: 5,
-      title: 'Luke Andy x Sophiegrophy - My Side (Collaboration Story)',
-      description: 'The story behind our debut collaborative release',
-      thumbnail: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM001%20Cover%20Art.jpg',
-      url: '#',
+      title: 'Luke Andy & Sophiegrophy - My Side (Official Visualizer)',
+      description: 'Listen to the single "My Side". Out Now!',
+      thumbnail: 'https://img.youtube.com/vi/5PXRkHTwdtk/maxresdefault.jpg',
+      url: 'https://youtu.be/5PXRkHTwdtk?si=3-3hhxAtCZN8mjUT',
       duration: '7:12'
     },
-    {
-      id: 6,
-      title: 'Groove Motive - Label Documentary',
-      description: 'The journey from passion project to underground label',
-      thumbnail: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM_Wordmark_CLEAR_BLACK.png',
-      url: '#',
-      duration: '12:45'
-    }
   ];
 
 
@@ -88,9 +81,28 @@ export default function VideosPage() {
 
           <div className="videos-grid">
             {videos.map((video) => (
-              <div key={video.id} className="video-card">
+              <div 
+                key={video.id} 
+                className="video-card"
+                onClick={() => window.open(video.url, '_blank', 'noopener,noreferrer')}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="video-thumbnail">
-                  <img src={video.thumbnail} alt={video.title} />
+                  <img 
+                    src={video.thumbnail} 
+                    alt={video.title}
+                    loading="lazy"
+                    onError={(e) => {
+                      // Fallback chain: maxresdefault -> hqdefault -> mqdefault -> default
+                      if (e.target.src.includes('maxresdefault')) {
+                        e.target.src = e.target.src.replace('maxresdefault', 'hqdefault');
+                      } else if (e.target.src.includes('hqdefault')) {
+                        e.target.src = e.target.src.replace('hqdefault', 'mqdefault');
+                      } else if (e.target.src.includes('mqdefault')) {
+                        e.target.src = e.target.src.replace('mqdefault', 'default');
+                      }
+                    }}
+                  />
                   <div className="video-overlay">
                     <div className="play-button">
                       <svg viewBox="0 0 24 24" fill="currentColor">
@@ -102,8 +114,10 @@ export default function VideosPage() {
                 </div>
                 
                 <div className="video-info">
-                  <h3 className="video-title">{video.title}</h3>
-                  <p className="video-description">{video.description}</p>
+                  <div className="video-content">
+                    <h3 className="video-title">{video.title}</h3>
+                    <p className="video-description">{video.description}</p>
+                  </div>
                   
                   <div className="video-actions">
                     <a 
@@ -111,6 +125,9 @@ export default function VideosPage() {
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="watch-btn"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent card click when link is clicked
+                      }}
                     >
                       Watch Now
                     </a>
