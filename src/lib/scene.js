@@ -26,16 +26,16 @@ const albums = [
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM003.jpg",
     previewUrl:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Dateless%20-%20Like%20Me_Groove%20Motive.mp3",
-    buyUrl: "https://example.com/buy3",
+    buyUrl: "https://www.beatport.com/track/like-me/20633536",
   },
-  {
-    title: "BRN",
-    cover:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg",
-    previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/BRN%20-%20Machines%20%28Radio%29%28FW%20MASTER%201%29.mp3",
-    buyUrl: "https://example.com/buy3",
-  },
+  // {
+  //   title: "BRN",
+  //   cover:
+  //     "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg",
+  //   previewUrl:
+  //     "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/BRN%20-%20Machines%20%28Radio%29%28FW%20MASTER%201%29.mp3",
+  //   buyUrl: "https://example.com/buy3",
+  // },
 ];
 
 let scene, camera, renderer, controls;

@@ -669,6 +669,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   justify-content: center;
+  text-decoration: none;
 }
 
 .platform-logo.soundcloud img {
@@ -709,6 +710,16 @@ body {
 
 .platform-logo.spotify span {
   color: #1db954;
+  font-weight: 600;
+}
+
+.platform-logo.apple-music img {
+  width: 24px;
+  height: 24px;
+}
+
+.platform-logo.apple-music span {
+  color: #000000;
   font-weight: 600;
 }
 
@@ -905,7 +916,7 @@ body {
   }
 
   .release-links {
-    justify-content: center;
+    justify-content: space-between;
   }
 
   .footer-content {

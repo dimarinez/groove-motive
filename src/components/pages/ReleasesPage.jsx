@@ -38,15 +38,15 @@ export default function ReleasesPage() {
       spotify: 'https://open.spotify.com/track/6MCGngj0MVPGSNqAUKIaMw?si=61b7876e5af64f34',
       buyUrl: 'https://www.beatport.com/track/like-me/20633536'
     },
-    {
-      id: 'GM004',
-      title: 'Machines',
-      artist: 'BRN',
-      cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg',
-      date: '2025',
-      description: 'A deep dive into industrial soundscapes and rhythmic complexity.',
-      buyUrl: 'https://example.com/buy3'
-    }
+    // {
+    //   id: 'GM004',
+    //   title: 'Machines',
+    //   artist: 'BRN',
+    //   cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg',
+    //   date: '2025',
+    //   description: 'A deep dive into industrial soundscapes and rhythmic complexity.',
+    //   buyUrl: 'https://example.com/buy3'
+    // }
   ];
 
   useEffect(() => {
