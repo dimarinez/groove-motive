@@ -775,6 +775,7 @@
   
   .about-text {
     order: 2;
+    margin-bottom: 0;
   }
   
   .photo-placeholder {
