@@ -13,25 +13,20 @@ export default function HamburgerMenu() {
     }
     
     // Desktop fallback - use existing logic
-    console.log('Hamburger menu clicked - exiting gallery');
-    
     try {
       // Directly call resetToInitialState if available for proper transitions
       if (window.resetToInitialState) {
-        console.log('Calling resetToInitialState directly');
         window.resetToInitialState();
         return;
       }
       
       // Fallback: Use controls unlock method
       if (window.controls && window.controls.unlock) {
-        console.log('Using controls.unlock() method');
         window.controls.unlock();
         return;
       }
       
       // Last resort: dispatch escape event
-      console.log('Using escape key fallback');
       const escEvent = new KeyboardEvent('keydown', {
         key: 'Escape',
         keyCode: 27,
