@@ -1,5 +1,18 @@
 export default function HamburgerMenu() {
   const handleExit = () => {
+    // Check if on mobile device
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                     ('ontouchstart' in window) || 
+                     (navigator.maxTouchPoints > 0) ||
+                     window.innerWidth <= 768;
+    
+    if (isMobile) {
+      // Simple page refresh on mobile for clean reset
+      window.location.reload();
+      return;
+    }
+    
+    // Desktop fallback - use existing logic
     console.log('Hamburger menu clicked - exiting gallery');
     
     try {

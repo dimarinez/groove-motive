@@ -1942,6 +1942,12 @@ function enterGallery() {
           mobileControls.style.display = "flex";
           setupMobileControlListeners();
         }
+        
+        // Also ensure hamburger menu is visible for exit option
+        const hamburgerMenu = document.querySelector(".hamburger-menu");
+        if (hamburgerMenu) {
+          hamburgerMenu.classList.add("show");
+        }
       }
     });
     
@@ -2037,7 +2043,7 @@ function enterGallery() {
     checkInstructions();
   }, 1000);
   
-  // Ensure mobile controls visible
+  // Ensure mobile controls are visible and initialized
   if (isMobile) {
     setTimeout(() => {
       const mobileControls = document.getElementById("mobile-controls");
