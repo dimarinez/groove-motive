@@ -59,6 +59,8 @@ let deviceOrientationControls = null;
 let deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
 let orientationCalibration = { alpha: 0, beta: 0, gamma: 0 };
 let isCalibrated = false;
+let continuousYaw = 0; // Track continuous rotation without wrapping
+let lastAlpha = 0; // Track previous alpha for smooth rotation
 let clickToLockHandler = null;
 let previewInstruction = null;
 let artworkInstruction = null;
@@ -1616,6 +1618,10 @@ function setupDeviceOrientationControls() {
       if (!isCalibrated) {
         orientationCalibration = { ...deviceOrientation };
         isCalibrated = true;
+        
+        // Reset continuous rotation tracking on calibration
+        continuousYaw = 0;
+        lastAlpha = deviceOrientation.alpha || 0;
       }
     }
   };
@@ -1640,6 +1646,10 @@ function cleanupDeviceOrientation() {
   deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
   orientationCalibration = { alpha: 0, beta: 0, gamma: 0 };
   isCalibrated = false;
+  
+  // Reset continuous rotation tracking
+  continuousYaw = 0;
+  lastAlpha = 0;
 }
 
 function resetToInitialState() {
@@ -1849,6 +1859,10 @@ function enterGallery() {
     // Reset orientation calibration for fresh setup
     isCalibrated = false;
     orientationCalibration = { alpha: 0, beta: 0, gamma: 0 };
+    
+    // Reset continuous rotation tracking
+    continuousYaw = 0;
+    lastAlpha = 0;
     
     // Re-setup device orientation controls if they were cleaned up
     if (!deviceOrientationControls || !deviceOrientationControls.enabled) {
@@ -2731,11 +2745,23 @@ function animate() {
     
     // Calculate relative rotation from calibrated upright position
     const deltaBeta = beta - orientationCalibration.beta;
-    let deltaAlpha = alpha - orientationCalibration.alpha;
     
-    // Handle alpha wraparound
-    if (deltaAlpha > 180) deltaAlpha -= 360;
-    if (deltaAlpha < -180) deltaAlpha += 360;
+    // Handle continuous yaw rotation without jumping at 360°/0° boundary
+    let alphaDiff = alpha - lastAlpha;
+    
+    // Detect wraparound and adjust for continuous rotation
+    if (alphaDiff > 180) {
+      alphaDiff -= 360; // Going from 359° to 1°
+    } else if (alphaDiff < -180) {
+      alphaDiff += 360; // Going from 1° to 359°
+    }
+    
+    // Add the difference to our continuous yaw tracking
+    continuousYaw += alphaDiff;
+    lastAlpha = alpha;
+    
+    // Calculate yaw relative to calibration point
+    const calibratedYaw = continuousYaw - (orientationCalibration.alpha || 0);
     
     camera.rotation.order = 'YXZ';
     
@@ -2746,15 +2772,15 @@ function animate() {
     const pitchSensitivity = 0.8;
     camera.rotation.x = THREE.MathUtils.degToRad(deltaBeta) * pitchSensitivity;
     
-    // Map relative alpha to camera yaw (left/right turning)
+    // Map continuous yaw to camera rotation (no limits for 360° rotation)
     const yawSensitivity = 0.8;
-    camera.rotation.y = THREE.MathUtils.degToRad(deltaAlpha) * yawSensitivity;
+    camera.rotation.y = THREE.MathUtils.degToRad(calibratedYaw) * yawSensitivity;
     
     // Gamma (roll) - minimal effect for stability
     const deltaGamma = gamma - orientationCalibration.gamma;
     camera.rotation.z = THREE.MathUtils.degToRad(deltaGamma) * 0.05;
     
-    // Clamp rotations for comfortable viewing
+    // Clamp rotations for comfortable viewing (but allow full yaw rotation)
     camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -Math.PI/2, Math.PI/2);
     camera.rotation.z = THREE.MathUtils.clamp(camera.rotation.z, -Math.PI/12, Math.PI/12);
   }
