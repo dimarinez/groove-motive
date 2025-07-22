@@ -2522,7 +2522,7 @@ function onKeyDown(event) {
       break;
     case "Escape":
       if (controls && controls.isLocked) {
-        controls.unlock();
+        window.location.reload();
       }
       break;
     case "KeyG":
