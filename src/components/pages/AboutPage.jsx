@@ -49,7 +49,7 @@ export default function AboutPage() {
             <div className="about-photo-section">
               <div className="about-photo-placeholder">
                 <img 
-                  src="https://i.ytimg.com/vi/rGYFKKNghoE/hqdefault.jpg?sqp=-oaymwEnCOADEI4CSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLBd47-LRS2qUrTckCvGnPTH4YGBJw" 
+                  src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/FF7AA9D7-02C9-454A-AB6E-826FE9A21313.jpeg" 
                   alt="Our Mission" 
                   className="about-photo"
                 />
