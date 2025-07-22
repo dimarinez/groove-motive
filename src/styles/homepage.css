@@ -638,11 +638,6 @@ body {
   transition: all 0.3s ease;
 }
 
-.artwork-container:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
-}
-
 .artwork-image {
   width: 100%;
   height: 100%;
