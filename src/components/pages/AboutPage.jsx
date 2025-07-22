@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Footer from '../Footer';
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function AboutPage() {
   useEffect(() => {
@@ -9,6 +12,33 @@ export default function AboutPage() {
       { opacity: 0, y: 30 },
       { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }
     );
+
+    // Quote scroll animation
+    const quote = document.querySelector('.founder-quote');
+    if (quote) {
+      ScrollTrigger.create({
+        trigger: quote,
+        start: 'top 80%',
+        end: 'bottom 20%',
+        onEnter: () => {
+          quote.classList.add('animate-in');
+        },
+        onLeave: () => {
+          quote.classList.remove('animate-in');
+        },
+        onEnterBack: () => {
+          quote.classList.add('animate-in');
+        },
+        onLeaveBack: () => {
+          quote.classList.remove('animate-in');
+        }
+      });
+    }
+
+    // Cleanup
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+    };
   }, []);
 
   return (
@@ -17,7 +47,7 @@ export default function AboutPage() {
         <div className="page-container">
           <div className="page-header">
             <h1 className="page-title">About</h1>
-            <p className="page-subtitle">A New Label Built from Passion</p>
+            <p className="page-subtitle">A Creative Platform for Authentic Electronic Music</p>
           </div>
 
           {/* Our Story Section */}
@@ -33,14 +63,15 @@ export default function AboutPage() {
             </div>
             
             <div className="about-text">
-              <h2>Our Story</h2>
+              <h2>Our Vision</h2>
               <p>
-                Groove Motive is an electronic music label born from a deep love for underground sounds and innovative artistry. We create immersive experiences where music transcends traditional boundaries, connecting artists with audiences through carefully curated releases and unique presentation methods.
+                Groove Motive was launched in 2025 by Luke Andy as a label and creative platform dedicated to authenticity and innovation in electronic music. It started with a vision to create a home for emerging and experimental artists, to push boundaries and connect with their audience in a new way.
               </p>
               
-              <p>
-                Founded in 2024, we emerged from the vibrant underground electronic music scene with a vision to bridge the gap between experimental artistry and accessible listening experiences. Our approach combines traditional record label expertise with cutting-edge digital innovation, creating new ways for listeners to discover and engage with music.
-              </p>
+              <blockquote className="founder-quote">
+                "I want artists to be themselves and make dope s***."
+                <cite>– Luke Andy</cite>
+              </blockquote>
             </div>
           </div>
 
@@ -57,37 +88,13 @@ export default function AboutPage() {
             </div>
             
             <div className="about-text">
-              <h2>Our Mission</h2>
+              <h2>Our Motive</h2>
               <p>
-                Our mission is simple yet profound: discover and nurture emerging talent while providing a platform that respects both the artist's vision and the listener's experience. We believe that great music deserves great presentation, and every release should tell a story that resonates beyond the speakers.
+                Our mission is to foster community through music — amplifying bold, forward-thinking voices and allowing artists to explore, evolve, and stay true to their sound. Our catalog spans various electronic sub-genres, always unified by our commitment to quality.
               </p>
               
               <p>
-                We're committed to supporting artists at every stage of their journey, from initial creation to global distribution. Through our innovative listening room experience and traditional release channels, we ensure that each track finds its intended audience while maintaining the integrity of the underground culture that inspires us.
-              </p>
-            </div>
-          </div>
-
-          {/* Our Approach Section */}
-          <div className="about-content">
-            <div className="about-photo-section">
-              <div className="about-photo-placeholder">
-                <img 
-                  src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/3d-preview.png" 
-                  alt="Our Approach" 
-                  className="about-photo"
-                />
-              </div>
-            </div>
-            
-            <div className="about-text">
-              <h2>Our Approach</h2>
-              <p>
-                At Groove Motive, we believe in the power of immersion. Our 3D listening room represents more than just a novel way to experience music—it's a digital gallery space where each release becomes a living, breathing artwork. This innovative approach allows listeners to engage with music in a more meaningful way, creating lasting connections between sound and space.
-              </p>
-              
-              <p>
-                We carefully curate each release, working closely with artists to ensure their creative vision is preserved while reaching new audiences. Our catalog spans various electronic sub-genres, unified by a commitment to quality, innovation, and authentic underground spirit.
+                At any Groove Motive event, you can expect that the music comes first and the energy is real. Whether it's a single release or a live set, everything we do is about supporting artists and creating something worth showing up for.
               </p>
             </div>
           </div>

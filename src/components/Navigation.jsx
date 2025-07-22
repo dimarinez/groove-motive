@@ -9,6 +9,7 @@ export default function Navigation({ onNavigate, currentView = 'home' }) {
 
   const navigationItems = [
     { id: 'about', label: 'About', href: '#about' },
+    { id: 'artists', label: 'Artists', href: '#artists' },
     { id: 'releases', label: 'Releases', href: '#releases' },
     { id: 'events', label: 'Events', href: '#events' },
     { id: 'videos', label: 'Videos', href: '#videos' }
