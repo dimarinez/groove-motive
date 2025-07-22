@@ -769,7 +769,7 @@ function initScene() {
         camera.rotation.x = 0;
         camera.rotation.y = 0;
         camera.rotation.z = 0;
-        camera.lookAt(0, 1.6, -6);
+        camera.lookAt(0, 1.6, -8);
         
         // Reset orientation calibration
         isCalibrated = false;
@@ -918,8 +918,8 @@ function initScene() {
     camera.rotation.x = 0;
     camera.rotation.y = 0;
     camera.rotation.z = 0;
-    // Point camera toward the wall
-    camera.lookAt(0, 1.6, -6);
+    // Point camera toward the artwork wall
+    camera.lookAt(0, 1.6, -8);
   }
 
   try {
@@ -1715,7 +1715,7 @@ function resetToInitialState() {
   if (camera) {
     camera.position.set(0, 1.6, -2);
     camera.rotation.set(0, 0, 0);
-    camera.lookAt(0, 1.6, -6);
+    camera.lookAt(0, 1.6, -8);
   }
 
   // Reset device orientation
@@ -1876,7 +1876,7 @@ function enterGallery() {
       if (deviceOrientationControls && deviceOrientationControls.enabled) {
         
         // Ensure camera is positioned correctly for portrait mode
-        camera.position.set(0, 1.6, -2); // Standard viewing position
+        camera.position.set(0, 1.6, -2); // Standard viewing position facing artwork wall
         camera.rotation.order = 'YXZ';
         
       }
@@ -2021,7 +2021,7 @@ function enterGallery() {
   // Set camera position for gallery view
   if (camera) {
     camera.position.set(0, 1.6, -2);
-    camera.lookAt(0, 1.6, -6);
+    camera.lookAt(0, 1.6, -8);
   }
 
   // Force render
@@ -2471,7 +2471,7 @@ function startPreview(album) {
         duration: 1,
         ease: "power2.inOut",
         onUpdate: () => {
-          camera.lookAt(0, 1.2, -6);
+          camera.lookAt(0, 1.2, -8);
         },
         onComplete: () => {
           controls.update();
@@ -2667,7 +2667,7 @@ function animatePreview() {
       camera.position.y = 1.6;
     }
     
-    camera.lookAt(0, 1.6, -6);
+    camera.lookAt(0, 1.6, -8);
     renderer.render(scene, camera);
     previewAnimationId = requestAnimationFrame(animatePreview);
     
@@ -3037,9 +3037,9 @@ function resetSceneForHomepage() {
     camera.position.set(0, 1.6, -2);
     camera.rotation.set(0, 0, 0);
     if (isMobile) {
-      camera.lookAt(0, 1.6, -6);
+      camera.lookAt(0, 1.6, -8);
     } else {
-      camera.lookAt(0, 1.6, 0);
+      camera.lookAt(0, 1.6, -8);
     }
     camera.updateMatrixWorld();
   }
