@@ -1974,27 +1974,8 @@ function enterGallery() {
     });
     
     controls.addEventListener("unlock", () => {
-      document.body.style.cursor = "auto";
-      const container = document.getElementById("container");
-      if (container) container.style.display = "flex";
-      if (isMobile) {
-        const mobileControls = document.getElementById("mobile-controls");
-        if (mobileControls) {
-          mobileControls.style.display = "none";
-        }
-      }
-      
-      // Clean up click-to-lock handler
-      if (clickToLockHandler) {
-        document.removeEventListener("click", clickToLockHandler);
-        clickToLockHandler = null;
-      }
-
-      // Clean up orientation listeners
-      cleanupDeviceOrientation();
-
-      // Reset to initial state
-      resetToInitialState();
+      // Simple page refresh for clean reset on all devices
+      window.location.reload();
     });
   }
 
