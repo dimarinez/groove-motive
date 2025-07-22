@@ -2778,11 +2778,9 @@ function animate() {
     const pitchSensitivity = 0.8;
     camera.rotation.x = THREE.MathUtils.degToRad(deltaBeta) * pitchSensitivity;
     
-    // Map continuous yaw to camera rotation with artwork wall offset
-    // Add 180° offset so calibrated upright position faces artwork wall (Z = -8)
+    // Map continuous yaw to camera rotation (no limits for 360° rotation)
     const yawSensitivity = 0.8;
-    const artworkWallOffset = 180; // degrees to face artwork wall
-    camera.rotation.y = THREE.MathUtils.degToRad(calibratedYaw + artworkWallOffset) * yawSensitivity;
+    camera.rotation.y = THREE.MathUtils.degToRad(calibratedYaw) * yawSensitivity;
     
     // Gamma (roll) - minimal effect for stability
     const deltaGamma = gamma - orientationCalibration.gamma;
