@@ -1881,6 +1881,12 @@ function enterGallery() {
         camera.position.set(0, 1.6, -2); // Standard viewing position facing artwork wall
         camera.rotation.order = 'YXZ';
         
+        // Reset camera to face the artwork wall (same as initial setup)
+        camera.rotation.x = 0;
+        camera.rotation.y = 0;
+        camera.rotation.z = 0;
+        camera.lookAt(0, 1.6, -8);
+        
       }
     }, 1000);
   }
