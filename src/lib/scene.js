@@ -1998,6 +1998,12 @@ function enterGallery() {
 
   // Enable click-to-lock
   clickToLockHandler = (event) => {
+    // Don't lock if welcome instructions are open
+    const welcomeInstructions = document.getElementById("welcome-instructions");
+    if (welcomeInstructions) {
+      return;
+    }
+    
     if (controls && event.target.id !== "enter-button" && !controls.isLocked) {
       try {
         controls.lock();
