@@ -8,6 +8,14 @@ export default defineConfig({
   server: {
     mimeTypes: {
       '.jsx': 'text/javascript'
+    },
+    historyApiFallback: true
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
     }
   }
 });

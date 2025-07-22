@@ -176,6 +176,14 @@ function App() {
     }
   };
 
+  // Make navigation visible on non-home pages
+  useEffect(() => {
+    if (currentView !== 'home' && !isInGallery) {
+      // Ensure navigation is visible for content pages
+      gsap.set('.main-navigation', { opacity: 1, y: 0 });
+    }
+  }, [currentView, isInGallery]);
+
   useEffect(() => {
     if (currentView === 'home' && !isInGallery) {
       // Initialize Three.js scene for preview in hero section
