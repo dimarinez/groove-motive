@@ -14,7 +14,9 @@
       "Bash(sed:*)",
       "Bash(awk:*)",
       "Bash(open \"http://localhost:5173\")",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(find:*)",
+      "WebFetch(domain:www.groovemotiverecs.com)"
     ],
     "deny": []
   }
