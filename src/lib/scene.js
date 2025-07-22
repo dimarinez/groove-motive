@@ -61,6 +61,7 @@ let orientationCalibration = { alpha: 0, beta: 0, gamma: 0 };
 let isCalibrated = false;
 let continuousYaw = 0; // Track continuous rotation without wrapping
 let lastAlpha = 0; // Track previous alpha for smooth rotation
+let calibrationStartTime = 0; // Timer for delayed calibration
 let clickToLockHandler = null;
 let previewInstruction = null;
 let artworkInstruction = null;
@@ -1614,8 +1615,8 @@ function setupDeviceOrientationControls() {
         gamma: event.gamma
       };
       
-      // Auto-calibrate on first reading (assumes phone is upright when entering gallery)
-      if (!isCalibrated) {
+      // Auto-calibrate after camera is positioned (delayed calibration)
+      if (!isCalibrated && Date.now() > calibrationStartTime + 1500) {
         orientationCalibration = { ...deviceOrientation };
         isCalibrated = true;
         
@@ -1629,6 +1630,7 @@ function setupDeviceOrientationControls() {
   // Add event listener
   window.addEventListener('deviceorientation', handleDeviceOrientation, false);
   deviceOrientationControls = { enabled: true };
+  calibrationStartTime = Date.now(); // Start timer for delayed calibration
   
   updateOrientationStatus('granted', 'Orientation: Ready');
   
