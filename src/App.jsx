@@ -16,9 +16,27 @@ import { resetHomeAnimationState } from './components/HomePage';
 import gsap from 'gsap';
 
 function App() {
-  const [currentView, setCurrentView] = useState('home');
+  const [currentView, setCurrentView] = useState(() => {
+    // Initialize state from URL
+    const path = window.location.pathname;
+    if (path === '/') return 'home';
+    return path.slice(1); // Remove leading slash
+  });
   const [isInGallery, setIsInGallery] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = (event) => {
+      const path = window.location.pathname;
+      const newView = path === '/' ? 'home' : path.slice(1);
+      setCurrentView(newView);
+      setIsInGallery(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Homepage canvas scene loading
   useEffect(() => {
@@ -125,6 +143,10 @@ function App() {
     if (section === 'listening-room') {
       handleEnterGallery();
     } else {
+      // Update URL
+      const url = section === 'home' ? '/' : `/${section}`;
+      window.history.pushState({ view: section }, '', url);
+      
       // Clean up scene preview when navigating away from home
       try {
         resetSceneForHomepage();
