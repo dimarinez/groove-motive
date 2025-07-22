@@ -1195,6 +1195,10 @@ body.gallery-entered canvas {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .page-loader {
+    height: 100dvh;
+  }
+  
   .loader-content {
     width: 300px;
     gap: 24px;

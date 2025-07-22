@@ -29,7 +29,7 @@ export default function Footer() {
             </div>
           </div>
           <div className="footer-contact">
-            <span>contact@groovemotive.com</span>
+            <span>contact@groovemotiverecs.com</span>
           </div>
         </div>
       </div>
