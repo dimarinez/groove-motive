@@ -37,7 +37,7 @@
 
 .page-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   padding: 2rem 0;
 }
 
@@ -45,17 +45,11 @@
   font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: clamp(2.5rem, 5vw, 4rem);
   font-weight: 900;
-  margin: 0 0 1rem 0;
+  margin: 0;
   color: #1a1a1a;
   letter-spacing: -0.02em;
 }
 
-.page-subtitle {
-  font-size: 1.25rem;
-  color: rgba(26, 26, 26, 0.7);
-  font-weight: 400;
-  margin: 0;
-}
 
 /* About Page */
 .about-content {
@@ -383,10 +377,6 @@
     gap: 1rem;
   }
 
-  .page-subtitle {
-    max-width: 280px;
-    margin: 0 auto;
-  }
   
   .artist-overlay {
     padding: 1.5rem;

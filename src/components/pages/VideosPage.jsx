@@ -75,7 +75,6 @@ export default function VideosPage() {
         <div className="page-container">
           <div className="page-header">
             <h1 className="page-title">Videos</h1>
-            <p className="page-subtitle">Visual stories from the Groove Motive universe</p>
           </div>
 
 

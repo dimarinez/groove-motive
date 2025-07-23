@@ -224,7 +224,6 @@ export default function AboutPage() {
         <div className="page-container">
           <div className="page-header">
             <h1 className="page-title">About</h1>
-            <p className="page-subtitle">A Creative Platform for Authentic Electronic Music</p>
           </div>
 
           {/* Our Story Section */}

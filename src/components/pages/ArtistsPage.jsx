@@ -93,7 +93,6 @@ export default function ArtistsPage() {
         <div className="page-container">
           <div className="page-header">
             <h1 className="page-title">Artists</h1>
-            <p className="page-subtitle">The Creative Minds Behind Groove Motive</p>
           </div>
 
           <div className="artists-grid">

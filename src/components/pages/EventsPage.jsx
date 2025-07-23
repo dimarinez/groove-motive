@@ -60,7 +60,6 @@ export default function EventsPage() {
         <div className="page-container">
           <div className="page-header">
             <h1 className="page-title">Events</h1>
-            <p className="page-subtitle">Experience our music in intimate, curated settings</p>
           </div>
 
           <div className="events-list">

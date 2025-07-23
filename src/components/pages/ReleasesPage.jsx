@@ -77,7 +77,6 @@ export default function ReleasesPage() {
         <div className="page-container">
           <div className="page-header">
             <h1 className="page-title">Releases</h1>
-            <p className="page-subtitle">Our carefully curated catalog of electronic music</p>
           </div>
 
           <div className="releases-grid">
