@@ -116,93 +116,100 @@ export default function AboutPage() {
         }
       });
 
-      // Enhanced hover animations (simplified)
+      // Enhanced hover animations (simplified) - Desktop only
       const artistCards = document.querySelectorAll('.about-artists-section .artist-card');
-      artistCards.forEach(card => {
-        const image = card.querySelector('.artist-photo img');
-        const overlay = card.querySelector('.artist-overlay');
-        const name = card.querySelector('.artist-name');
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                       ('ontouchstart' in window) || 
+                       (navigator.maxTouchPoints > 0) ||
+                       window.innerWidth <= 768;
 
-        // Mouse enter
-        card.addEventListener('mouseenter', () => {
-          gsap.timeline()
-            .to(card, { 
-              y: -12,
-              scale: 1.03,
-              duration: 0.4,
-              ease: 'power2.out'
-            })
-            .to(image, { 
-              scale: 1.1,
-              filter: 'brightness(1.1) contrast(1.05)',
-              duration: 0.4,
-              ease: 'power2.out'
-            }, 0)
-            .to(overlay, {
-              opacity: 1,
-              backdropFilter: 'blur(3px)',
-              duration: 0.3
-            }, 0)
-            .fromTo(name, 
-              { y: 20, opacity: 0 },
-              { y: 0, opacity: 1, duration: 0.3, ease: 'power2.out' },
-              0.1
-            );
+      if (!isMobile) {
+        artistCards.forEach(card => {
+          const image = card.querySelector('.artist-photo img');
+          const overlay = card.querySelector('.artist-overlay');
+          const name = card.querySelector('.artist-name');
+
+          // Mouse enter
+          card.addEventListener('mouseenter', () => {
+            gsap.timeline()
+              .to(card, { 
+                y: -12,
+                scale: 1.03,
+                duration: 0.4,
+                ease: 'power2.out'
+              })
+              .to(image, { 
+                scale: 1.1,
+                filter: 'brightness(1.1) contrast(1.05)',
+                duration: 0.4,
+                ease: 'power2.out'
+              }, 0)
+              .to(overlay, {
+                opacity: 1,
+                backdropFilter: 'blur(3px)',
+                duration: 0.3
+              }, 0)
+              .fromTo(name, 
+                { y: 20, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.3, ease: 'power2.out' },
+                0.1
+              );
+          });
+
+          // Mouse leave
+          card.addEventListener('mouseleave', () => {
+            gsap.timeline()
+              .to(card, { 
+                y: 0,
+                scale: 1,
+                duration: 0.4,
+                ease: 'power2.out'
+              })
+              .to(image, { 
+                scale: 1,
+                filter: 'brightness(1) contrast(1)',
+                duration: 0.4,
+                ease: 'power2.out'
+              }, 0)
+              .to(overlay, {
+                opacity: 0,
+                backdropFilter: 'blur(0px)',
+                duration: 0.3
+              }, 0)
+              .to(name, {
+                y: 20,
+                opacity: 0,
+                duration: 0.3,
+                ease: 'power2.in'
+              }, 0);
+          });
         });
 
-        // Mouse leave
-        card.addEventListener('mouseleave', () => {
-          gsap.timeline()
-            .to(card, { 
-              y: 0,
-              scale: 1,
-              duration: 0.4,
-              ease: 'power2.out'
-            })
-            .to(image, { 
-              scale: 1,
-              filter: 'brightness(1) contrast(1)',
-              duration: 0.4,
-              ease: 'power2.out'
-            }, 0)
-            .to(overlay, {
-              opacity: 0,
-              backdropFilter: 'blur(0px)',
-              duration: 0.3
-            }, 0)
-            .to(name, {
-              y: 20,
-              opacity: 0,
+        // Magnetic cursor effect for artist cards - Desktop only
+        artistCards.forEach(card => {
+          card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            
+            gsap.to(card, {
+              x: x * 0.1,
+              y: y * 0.1,
               duration: 0.3,
-              ease: 'power2.in'
-            }, 0);
-        });
-      });
+              ease: 'power2.out'
+            });
+          });
 
-      // Magnetic cursor effect for artist cards
-      artistCards.forEach(card => {
-        card.addEventListener('mousemove', (e) => {
-          const rect = card.getBoundingClientRect();
-          const x = e.clientX - rect.left - rect.width / 2;
-          const y = e.clientY - rect.top - rect.height / 2;
-          
-          gsap.to(card, {
-            x: x * 0.1,
-            y: y * 0.1,
-            duration: 0.3,
-            ease: 'power2.out'
+          card.addEventListener('mouseleave', () => {
+            gsap.to(card, {
+              x: 0,
+              y: 0,
+              duration: 0.4,
+              ease: 'power2.out'
+            });
           });
         });
-
-        card.addEventListener('mouseleave', () => {
-          gsap.to(card, {
-            x: 0,
-            y: 0,
-            duration: 0.4,
-            ease: 'power2.out'
-          });
-        });
-      });
+      }
     }
 
     // Cleanup
@@ -246,7 +253,7 @@ export default function AboutPage() {
           </div>
 
           {/* Our Mission Section */}
-          <div className="about-content">
+          <div className="about-content about-our-motive">
             <div className="about-photo-section">
               <div className="about-photo-placeholder">
                 <img 
@@ -263,7 +270,7 @@ export default function AboutPage() {
                 Our mission is to foster community through music — amplifying bold, forward-thinking voices and allowing artists to explore, evolve, and stay true to their sound. Our catalog spans various electronic sub-genres, always unified by our commitment to quality.
               </p>
               
-              <p>
+              <p className="about-paragraph">
                 At any Groove Motive event, you can expect that the music comes first and the energy is real. Whether it's a single release or a live set, everything we do is about supporting artists and creating something worth showing up for.
               </p>
             </div>
@@ -289,6 +296,11 @@ export default function AboutPage() {
                       />
                       <div className="artist-overlay">
                         <div className="artist-name">{artist.name}</div>
+                        <div className="instagram-icon mobile-only">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                          </svg>
+                        </div>
                       </div>
                     </div>
                   </a>
