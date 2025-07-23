@@ -24,40 +24,47 @@ export default function Navigation({ onNavigate, currentView = 'home' }) {
   }, []);
 
   const handleMenuToggle = () => {
-    setIsMenuOpen(!isMenuOpen);
+    const newState = !isMenuOpen;
+    setIsMenuOpen(newState);
     
-    if (!isMenuOpen) {
-      gsap.to('.mobile-nav-menu', {
-        opacity: 1,
-        visibility: 'visible',
-        duration: 0.3,
-        ease: 'power2.out'
-      });
+    const mobileMenu = document.querySelector('.mobile-nav-menu');
+    
+    if (newState) {
+      // Opening menu
+      mobileMenu.classList.add('show');
       gsap.fromTo('.mobile-nav-item',
-        { opacity: 0, x: 50 },
-        { opacity: 1, x: 0, duration: 0.4, stagger: 0.1, delay: 0.2 }
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.4, stagger: 0.1, delay: 0.2 }
       );
     } else {
-      gsap.to('.mobile-nav-menu', {
+      // Closing menu
+      gsap.to('.mobile-nav-item', {
         opacity: 0,
-        visibility: 'hidden',
+        y: -30,
         duration: 0.3,
-        ease: 'power2.in'
+        stagger: 0.05,
+        onComplete: () => {
+          mobileMenu.classList.remove('show');
+        }
       });
     }
   };
 
   const handleNavClick = (itemId, href) => {
-    setIsMenuOpen(false);
-    
     onNavigate(itemId);
 
-    // Close mobile menu
+    // Close mobile menu if open
     if (isMenuOpen) {
-      gsap.to('.mobile-nav-menu', {
+      const mobileMenu = document.querySelector('.mobile-nav-menu');
+      gsap.to('.mobile-nav-item', {
         opacity: 0,
-        visibility: 'hidden',
-        duration: 0.3
+        y: -30,
+        duration: 0.3,
+        stagger: 0.05,
+        onComplete: () => {
+          mobileMenu.classList.remove('show');
+          setIsMenuOpen(false);
+        }
       });
     }
   };

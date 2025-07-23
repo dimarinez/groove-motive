@@ -346,7 +346,11 @@
   .artists-grid {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
-    margin-top: 3rem;
+  }
+
+  .page-subtitle {
+    max-width: 280px;
+    margin: 0 auto;
   }
   
   .artist-overlay {

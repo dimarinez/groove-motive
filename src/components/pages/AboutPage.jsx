@@ -13,24 +13,14 @@ export default function AboutPage() {
       { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }
     );
 
-    // Quote scroll animation
+    // Quote scroll animation - fade in once and stay
     const quote = document.querySelector('.founder-quote');
     if (quote) {
       ScrollTrigger.create({
         trigger: quote,
         start: 'top 80%',
-        end: 'bottom 20%',
         onEnter: () => {
           quote.classList.add('animate-in');
-        },
-        onLeave: () => {
-          quote.classList.remove('animate-in');
-        },
-        onEnterBack: () => {
-          quote.classList.add('animate-in');
-        },
-        onLeaveBack: () => {
-          quote.classList.remove('animate-in');
         }
       });
     }

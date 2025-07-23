@@ -299,6 +299,11 @@ body {
   transition: all 0.3s ease;
 }
 
+.mobile-nav-menu.show {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* Mobile menu backgrounds for different themes */
 .mobile-nav-menu.nav-dark-bg {
   background: rgba(0, 0, 0, 0.95);
@@ -926,6 +931,7 @@ body {
   .nav-container {
     padding: 0 1rem;
   }
+
 
   /* Hide mouse follower on mobile */
   .mouse-follower,
