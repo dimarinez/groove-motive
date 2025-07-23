@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import Navigation from './components/Navigation';
 import HomePage from './components/HomePage';
 import AboutPage from './components/pages/AboutPage';
-import ArtistsPage from './components/pages/ArtistsPage';
 import ReleasesPage from './components/pages/ReleasesPage';
 import EventsPage from './components/pages/EventsPage';
 import VideosPage from './components/pages/VideosPage';
@@ -271,8 +270,6 @@ function App() {
         return <HomePage onEnterListeningRoom={handleEnterGallery} />;
       case 'about':
         return <AboutPage />;
-      case 'artists':
-        return <ArtistsPage />;
       case 'releases':
         return <ReleasesPage />;
       case 'events':
