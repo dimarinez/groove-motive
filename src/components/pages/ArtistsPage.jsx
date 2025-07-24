@@ -62,6 +62,11 @@ const artists = [
     name: 'Carvalho (BR)',
     photo: 'Carvalho(BR).JPG',
     instagram: 'https://www.instagram.com/carvalhodj/'
+  },
+  {
+    name: 'John Luzz',
+    photo: 'JohnLuzz.png',
+    instagram: 'https://www.instagram.com/johnluzzz/'
   }
 ];
 
