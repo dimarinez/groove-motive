@@ -326,6 +326,11 @@
   will-change: transform, opacity;
 }
 
+.instagram-icon {
+  color: #ffffff;
+  opacity: 0.9;
+}
+
 .instagram-icon.mobile-only {
   color: #ffffff;
   opacity: 0.9;
