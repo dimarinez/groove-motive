@@ -37,7 +37,7 @@
 
 .page-header {
   text-align: center;
-  padding: 2.5rem 0 2rem;
+  padding: 4rem 0 2rem;
 }
 
 .page-title {
@@ -191,6 +191,10 @@
 
 /* Responsive design */
 @media (max-width: 768px) {
+  div.page-header {
+    padding: 2rem 0 1rem;
+  }
+  
   p.about-paragraph {
     margin-bottom: 1rem;
   }
