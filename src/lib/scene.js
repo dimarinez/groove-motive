@@ -1532,6 +1532,13 @@ function loadLegacyRecordPlayer() {
 // Request device orientation permission with user interaction
 async function requestDeviceOrientationPermission() {
   
+  // Only show permission request if instructions haven't been shown yet (first visit)
+  if (hasShownInstructions) {
+    // On subsequent visits, just set up controls without asking again
+    setupDeviceOrientationControls();
+    return;
+  }
+  
   // Check if we need to request permission (iOS 13+)
   if (typeof DeviceOrientationEvent !== 'undefined' && 
       typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -1540,21 +1547,34 @@ async function requestDeviceOrientationPermission() {
       
       // Create a user interaction button that triggers permission request
       const permissionButton = document.createElement('button');
-      permissionButton.textContent = 'Enable Device Orientation';
+      permissionButton.textContent = 'Start Exploring';
       permissionButton.style.cssText = `
         position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
         z-index: 10000;
-        background: #007AFF;
+        background: #1a1a1a;
         color: white;
         border: none;
-        padding: 15px 30px;
-        border-radius: 8px;
-        font-size: 16px;
+        padding: 1.2em 2.5em;
+        border-radius: 50px;
+        font-size: 1.1em;
+        font-weight: 500;
         cursor: pointer;
+        transition: transform 0.3s ease, background 0.3s ease;
+        font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif;
       `;
+      
+      // Add hover effect
+      permissionButton.addEventListener('mouseenter', () => {
+        permissionButton.style.background = '#333';
+        permissionButton.style.transform = 'translate(-50%, -50%) scale(1.05)';
+      });
+      permissionButton.addEventListener('mouseleave', () => {
+        permissionButton.style.background = '#1a1a1a';
+        permissionButton.style.transform = 'translate(-50%, -50%) scale(1)';
+      });
       
       document.body.appendChild(permissionButton);
       
