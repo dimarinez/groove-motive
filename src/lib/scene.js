@@ -1589,14 +1589,23 @@ function setupDeviceOrientationControls() {
         gamma: event.gamma
       };
       
-      // Auto-calibrate immediately on first valid reading
+      // Auto-calibrate after a brief delay to get stable readings
       if (!isCalibrated && deviceOrientation.alpha !== null && deviceOrientation.beta !== null && deviceOrientation.gamma !== null) {
-        orientationCalibration = { ...deviceOrientation };
-        isCalibrated = true;
-        
-        // Reset continuous rotation tracking on calibration
-        continuousYaw = 0;
-        lastAlpha = deviceOrientation.alpha || 0;
+        // Delay calibration to allow for stable readings and let user settle phone position
+        setTimeout(() => {
+          if (!isCalibrated) {
+            // Calibrate to current phone position but preserve camera's forward direction
+            orientationCalibration = { ...deviceOrientation };
+            isCalibrated = true;
+            
+            // Initialize continuous rotation tracking to match current camera direction
+            // This prevents the camera from suddenly jumping when calibration happens
+            continuousYaw = orientationCalibration.alpha || 0;
+            lastAlpha = deviceOrientation.alpha || 0;
+            
+            console.log('Device orientation calibrated');
+          }
+        }, 1000);
       }
     }
   };
@@ -1607,11 +1616,42 @@ function setupDeviceOrientationControls() {
   
   updateOrientationStatus('granted', 'Orientation: Ready');
   
+  // Check if orientation is working after a delay
   setTimeout(() => {
     if (deviceOrientationControls.enabled) {
-      updateOrientationStatus('granted', 'Orientation: Active');
+      // Check if we're getting orientation data
+      if (!deviceOrientation.alpha && !deviceOrientation.beta && !deviceOrientation.gamma) {
+        updateOrientationStatus('denied', 'Orientation: No data - tap to retry');
+        
+        // Create retry button
+        const retryButton = document.createElement('button');
+        retryButton.textContent = 'Enable Orientation';
+        retryButton.style.cssText = `
+          position: fixed;
+          bottom: 120px;
+          right: 20px;
+          z-index: 1000;
+          background: rgba(255, 255, 255, 0.9);
+          color: #000;
+          border: 2px solid #000;
+          padding: 10px 20px;
+          border-radius: 8px;
+          font-size: 14px;
+          cursor: pointer;
+          font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif;
+        `;
+        
+        retryButton.addEventListener('click', async () => {
+          await requestDeviceOrientationPermission();
+          document.body.removeChild(retryButton);
+        });
+        
+        document.body.appendChild(retryButton);
+      } else {
+        updateOrientationStatus('granted', 'Orientation: Active');
+      }
     }
-  }, 2000);
+  }, 3000); // Give more time for orientation data to come in
 }
 
 // Clean up orientation controls
