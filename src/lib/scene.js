@@ -1572,9 +1572,8 @@ function setupDeviceOrientationControls() {
     return;
   }
 
-  // Reset orientation state for clean setup
+  // Reset orientation state for clean setup (keep cameraInitialized state)
   isCalibrated = false;
-  cameraInitialized = false;
   orientationCalibration = { alpha: 0, beta: 0, gamma: 0 };
   deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
   continuousYaw = 0;
