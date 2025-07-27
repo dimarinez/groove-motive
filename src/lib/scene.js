@@ -503,15 +503,14 @@ function showWelcomeInstructions() {
                          window.innerWidth <= 768;
 
   
-  // For mobile devices, always show instructions regardless of localStorage
-  if (!isMobileDevice && hasShownInstructions) {
+  // Don't show instructions if they've already been shown
+  if (hasShownInstructions) {
     return;
   }
   
-  if (!isMobileDevice) {
-    hasShownInstructions = true;
-    localStorage.setItem('grooveMotive_hasShownInstructions', 'true');
-  }
+  // Mark instructions as shown
+  hasShownInstructions = true;
+  localStorage.setItem('grooveMotive_hasShownInstructions', 'true');
   
   
   // Ensure controls are unlocked and cursor is enabled for the popup
@@ -1839,22 +1838,18 @@ function enterGallery() {
       setupDeviceOrientationControls();
     }
     
-    // Set initial camera position for portrait mode
-    setTimeout(() => {
-      if (deviceOrientationControls && deviceOrientationControls.enabled) {
-        
-        // Ensure camera is positioned correctly for portrait mode
-        camera.position.set(0, 1.6, -2); // Standard viewing position facing artwork wall
-        camera.rotation.order = 'YXZ';
-        
-        // Reset camera to face the artwork wall (same as initial setup)
-        camera.rotation.x = 0;
-        camera.rotation.y = 0;
-        camera.rotation.z = 0;
-        camera.lookAt(0, 1.6, -8);
-        
-      }
-    }, 1000);
+    // Set initial camera position for portrait mode immediately
+    if (hasShownInstructions) {
+      // Ensure camera is positioned correctly for portrait mode
+      camera.position.set(0, 1.6, -2); // Standard viewing position facing artwork wall
+      camera.rotation.order = 'YXZ';
+      
+      // Reset camera to face the artwork wall (same as initial setup)
+      camera.rotation.x = 0;
+      camera.rotation.y = 0;
+      camera.rotation.z = 0;
+      camera.lookAt(0, 1.6, -8);
+    }
   }
   
   // Audio will be loaded when needed for previews
