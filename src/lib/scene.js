@@ -62,6 +62,7 @@ let isCalibrated = false;
 let continuousYaw = 0; // Track continuous rotation without wrapping
 let lastAlpha = 0; // Track previous alpha for smooth rotation
 let calibrationStartTime = 0; // Timer for delayed calibration
+let cameraInitialized = false; // Track if camera has been set to initial position
 let clickToLockHandler = null;
 let previewInstruction = null;
 let artworkInstruction = null;
@@ -1571,6 +1572,14 @@ function setupDeviceOrientationControls() {
     return;
   }
 
+  // Reset orientation state for clean setup
+  isCalibrated = false;
+  cameraInitialized = false;
+  orientationCalibration = { alpha: 0, beta: 0, gamma: 0 };
+  deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
+  continuousYaw = 0;
+  lastAlpha = 0;
+
 
   // Add device orientation event listener
   const handleDeviceOrientation = (event) => {
@@ -1825,29 +1834,33 @@ function enterGallery() {
     
     // Reset orientation calibration for fresh setup
     isCalibrated = false;
+    cameraInitialized = false;
     orientationCalibration = { alpha: 0, beta: 0, gamma: 0 };
     
     // Reset continuous rotation tracking
     continuousYaw = 0;
     lastAlpha = 0;
     
-    // Re-setup device orientation controls if they were cleaned up
-    // Only set up controls if instructions have been shown (permission already requested)
-    if (hasShownInstructions && (!deviceOrientationControls || !deviceOrientationControls.enabled)) {
-      setupDeviceOrientationControls();
-    }
+    // Always set camera to correct initial position first
+    camera.position.set(0, 1.6, -2); // Standard viewing position facing artwork wall
+    camera.rotation.order = 'YXZ';
     
-    // Set initial camera position for portrait mode immediately
+    // Reset camera to face the artwork wall (same as initial setup)
+    camera.rotation.x = 0;
+    camera.rotation.y = 0;
+    camera.rotation.z = 0;
+    camera.lookAt(0, 1.6, -8);
+    
+    // Mark camera as properly initialized
+    cameraInitialized = true;
+    
+    // Delay device orientation setup to ensure camera is in correct position first
     if (hasShownInstructions) {
-      // Ensure camera is positioned correctly for portrait mode
-      camera.position.set(0, 1.6, -2); // Standard viewing position facing artwork wall
-      camera.rotation.order = 'YXZ';
-      
-      // Reset camera to face the artwork wall (same as initial setup)
-      camera.rotation.x = 0;
-      camera.rotation.y = 0;
-      camera.rotation.z = 0;
-      camera.lookAt(0, 1.6, -8);
+      setTimeout(() => {
+        if (!deviceOrientationControls || !deviceOrientationControls.enabled) {
+          setupDeviceOrientationControls();
+        }
+      }, 200); // Brief delay to ensure camera is positioned
     }
   }
   
@@ -2692,7 +2705,8 @@ function animate() {
   }
 
   // Apply calibrated device orientation for mobile camera control
-  if (isMobile && deviceOrientationControls && deviceOrientationControls.enabled && deviceOrientation && isCalibrated) {
+  // Only apply orientation after camera is in correct initial position
+  if (isMobile && deviceOrientationControls && deviceOrientationControls.enabled && deviceOrientation && isCalibrated && cameraInitialized) {
     // Use calibrated orientation values (relative to upright position)
     const alpha = deviceOrientation.alpha || 0;
     const beta = deviceOrientation.beta || 0;
