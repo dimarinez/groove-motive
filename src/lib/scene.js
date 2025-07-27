@@ -1581,8 +1581,8 @@ function setupDeviceOrientationControls() {
         gamma: event.gamma
       };
       
-      // Auto-calibrate after camera is positioned (delayed calibration)
-      if (!isCalibrated && Date.now() > calibrationStartTime + 1500) {
+      // Auto-calibrate immediately on first valid reading
+      if (!isCalibrated && deviceOrientation.alpha !== null && deviceOrientation.beta !== null && deviceOrientation.gamma !== null) {
         orientationCalibration = { ...deviceOrientation };
         isCalibrated = true;
         
@@ -1596,7 +1596,6 @@ function setupDeviceOrientationControls() {
   // Add event listener
   window.addEventListener('deviceorientation', handleDeviceOrientation, false);
   deviceOrientationControls = { enabled: true };
-  calibrationStartTime = Date.now(); // Start timer for delayed calibration
   
   updateOrientationStatus('granted', 'Orientation: Ready');
   
