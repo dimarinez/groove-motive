@@ -628,7 +628,12 @@ function showWelcomeInstructions() {
   
   // Add click handler to close button
   const closeButton = document.getElementById("close-instructions");
-  closeButton.addEventListener("click", () => {
+  closeButton.addEventListener("click", async () => {
+    // Request device orientation permission on mobile when user clicks "Start Exploring"
+    if (isMobileDevice) {
+      await requestDeviceOrientationPermission();
+    }
+    
     gsap.to(instructionalPopup, {
       opacity: 0,
       scale: 0.8,
@@ -1529,75 +1534,17 @@ function loadLegacyRecordPlayer() {
   }, 100);
 }
 
-// Request device orientation permission with user interaction
+// Request device orientation permission (called from welcome instructions button)
 async function requestDeviceOrientationPermission() {
-  
-  // Only show permission request if instructions haven't been shown yet (first visit)
-  if (hasShownInstructions) {
-    // On subsequent visits, just set up controls without asking again
-    setupDeviceOrientationControls();
-    return;
-  }
-  
   // Check if we need to request permission (iOS 13+)
   if (typeof DeviceOrientationEvent !== 'undefined' && 
       typeof DeviceOrientationEvent.requestPermission === 'function') {
     
     try {
-      
-      // Create a user interaction button that triggers permission request
-      const permissionButton = document.createElement('button');
-      permissionButton.textContent = 'Start Exploring';
-      permissionButton.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 10000;
-        background: #1a1a1a;
-        color: white;
-        border: none;
-        padding: 1.2em 2.5em;
-        border-radius: 50px;
-        font-size: 1.1em;
-        font-weight: 500;
-        cursor: pointer;
-        transition: transform 0.3s ease, background 0.3s ease;
-        font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif;
-      `;
-      
-      // Add hover effect
-      permissionButton.addEventListener('mouseenter', () => {
-        permissionButton.style.background = '#333';
-        permissionButton.style.transform = 'translate(-50%, -50%) scale(1.05)';
-      });
-      permissionButton.addEventListener('mouseleave', () => {
-        permissionButton.style.background = '#1a1a1a';
-        permissionButton.style.transform = 'translate(-50%, -50%) scale(1)';
-      });
-      
-      document.body.appendChild(permissionButton);
-      
-      // Wait for user to click the button
-      const permissionResult = await new Promise((resolve) => {
-        permissionButton.addEventListener('click', async () => {
-          try {
-            const result = await DeviceOrientationEvent.requestPermission();
-            resolve(result);
-          } catch (error) {
-            console.error('Error in permission request:', error);
-            resolve('error');
-          }
-        });
-      });
-      
-      // Remove the button
-      document.body.removeChild(permissionButton);
-      
-      if (permissionResult === 'granted') {
+      const result = await DeviceOrientationEvent.requestPermission();
+      if (result === 'granted') {
         setupDeviceOrientationControls();
       }
-      
     } catch (error) {
       console.error('Error requesting device orientation permission:', error);
     }
@@ -1887,11 +1834,10 @@ function enterGallery() {
     lastAlpha = 0;
     
     // Re-setup device orientation controls if they were cleaned up
-    if (!deviceOrientationControls || !deviceOrientationControls.enabled) {
+    // Only set up controls if instructions have been shown (permission already requested)
+    if (hasShownInstructions && (!deviceOrientationControls || !deviceOrientationControls.enabled)) {
       setupDeviceOrientationControls();
     }
-    
-    requestDeviceOrientationPermission();
     
     // Set initial camera position for portrait mode
     setTimeout(() => {
