@@ -563,6 +563,9 @@ function showWelcomeInstructions() {
         <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Tilt and rotate your device to look around
         </p>
+        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8); background: rgba(102, 126, 234, 0.15); padding: 6px 8px; border-radius: 4px;">
+          • You may need to allow orientation permissions when prompted
+        </p>
         <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Get close to framed artwork to see album details
         </p>
@@ -1621,32 +1624,7 @@ function setupDeviceOrientationControls() {
     if (deviceOrientationControls.enabled) {
       // Check if we're getting orientation data
       if (!deviceOrientation.alpha && !deviceOrientation.beta && !deviceOrientation.gamma) {
-        updateOrientationStatus('denied', 'Orientation: No data - tap to retry');
-        
-        // Create retry button
-        const retryButton = document.createElement('button');
-        retryButton.textContent = 'Enable Orientation';
-        retryButton.style.cssText = `
-          position: fixed;
-          bottom: 120px;
-          right: 20px;
-          z-index: 1000;
-          background: rgba(255, 255, 255, 0.9);
-          color: #000;
-          border: 2px solid #000;
-          padding: 10px 20px;
-          border-radius: 8px;
-          font-size: 14px;
-          cursor: pointer;
-          font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif;
-        `;
-        
-        retryButton.addEventListener('click', async () => {
-          await requestDeviceOrientationPermission();
-          document.body.removeChild(retryButton);
-        });
-        
-        document.body.appendChild(retryButton);
+        updateOrientationStatus('denied', 'Orientation: No data - permissions may be required');
       } else {
         updateOrientationStatus('granted', 'Orientation: Active');
       }
