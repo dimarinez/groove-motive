@@ -219,6 +219,7 @@ let isPortraitMode = true;
 // Scene initialization flag
 let isSceneInitialized = false;
 let hasShownInstructions = localStorage.getItem('grooveMotive_hasShownInstructions') === 'true';
+let hasRequestedOrientationPermission = localStorage.getItem('grooveMotive_hasRequestedOrientationPermission') === 'true';
 // Reset this for testing - you can change this back to localStorage later
 let hasApproachedArtwork = false; // localStorage.getItem('grooveMotive_hasApproachedArtwork') === 'true';
 
@@ -504,8 +505,8 @@ function showWelcomeInstructions() {
                          window.innerWidth <= 768;
 
   
-  // Don't show instructions if they've already been shown
-  if (hasShownInstructions) {
+  // Show instructions if they haven't been shown OR if orientation permission hasn't been requested
+  if (hasShownInstructions && hasRequestedOrientationPermission) {
     return;
   }
   
@@ -563,9 +564,12 @@ function showWelcomeInstructions() {
         <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Tilt and rotate your device to look around
         </p>
-        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8); background: rgba(102, 126, 234, 0.15); padding: 6px 8px; border-radius: 4px;">
-          • You may need to allow orientation permissions when prompted
+        ${!hasRequestedOrientationPermission ? `
+        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.9); background: rgba(255, 193, 7, 0.2); padding: 8px 10px; border-radius: 6px; border-left: 3px solid #ffc107;">
+          📱 <strong>Device orientation permissions required</strong><br>
+          Click "Allow Orientation" below to enable device tilting for camera control
         </p>
+        ` : ''}
         <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Get close to framed artwork to see album details
         </p>
@@ -623,7 +627,7 @@ function showWelcomeInstructions() {
        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"
        ontouchstart="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.3)'"
        ontouchend="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-      Start Exploring
+      ${isMobileDevice && !hasRequestedOrientationPermission ? 'Allow Orientation' : 'Start Exploring'}
     </button>
   `;
   
@@ -632,9 +636,12 @@ function showWelcomeInstructions() {
   // Add click handler to close button
   const closeButton = document.getElementById("close-instructions");
   closeButton.addEventListener("click", async () => {
-    // Request device orientation permission on mobile when user clicks "Start Exploring"
-    if (isMobileDevice) {
+    // Request device orientation permission on mobile when user clicks the button
+    if (isMobileDevice && !hasRequestedOrientationPermission) {
       await requestDeviceOrientationPermission();
+      // Mark that we've requested orientation permission
+      hasRequestedOrientationPermission = true;
+      localStorage.setItem('grooveMotive_hasRequestedOrientationPermission', 'true');
     }
     
     gsap.to(instructionalPopup, {
