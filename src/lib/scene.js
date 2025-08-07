@@ -563,12 +563,10 @@ function showWelcomeInstructions() {
         <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Tilt and rotate your device to look around
         </p>
-        ${!hasRequestedOrientationPermission ? `
         <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.9); background: rgba(255, 193, 7, 0.2); padding: 8px 10px; border-radius: 6px; border-left: 3px solid #ffc107;">
-          📱 <strong>Device orientation permissions required</strong><br>
-          Click "Allow Orientation" below to enable device tilting for camera control
+          📱 <strong>Enable device tilting for camera control</strong><br>
+          Click "Allow Orientation" below to use your device's tilt sensors
         </p>
-        ` : ''}
         <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
           • Get close to framed artwork to see album details
         </p>
@@ -626,7 +624,7 @@ function showWelcomeInstructions() {
        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"
        ontouchstart="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.3)'"
        ontouchend="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-      ${isMobileDevice && !hasRequestedOrientationPermission ? 'Allow Orientation' : 'Start Exploring'}
+      ${isMobileDevice ? 'Allow Orientation' : 'Start Exploring'}
     </button>
   `;
   
@@ -635,8 +633,8 @@ function showWelcomeInstructions() {
   // Add click handler to close button
   const closeButton = document.getElementById("close-instructions");
   closeButton.addEventListener("click", async () => {
-    // Request device orientation permission on mobile when user clicks the button
-    if (isMobileDevice && !hasRequestedOrientationPermission) {
+    // Always request device orientation permission on mobile when user clicks the button
+    if (isMobileDevice) {
       await requestDeviceOrientationPermission();
       // Mark that we've requested orientation permission
       hasRequestedOrientationPermission = true;
