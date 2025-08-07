@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { gsap } from 'gsap';
 import Footer from '../Footer';
+import * as analytics from '../../lib/analytics.js';
 
 export default function VideosPage() {
   const videos = [
@@ -83,7 +84,10 @@ export default function VideosPage() {
               <div 
                 key={video.id} 
                 className="video-card"
-                onClick={() => window.open(video.url, '_blank', 'noopener,noreferrer')}
+                onClick={() => {
+                  analytics.trackVideoClick(video.title, video.url, video.id);
+                  window.open(video.url, '_blank', 'noopener,noreferrer');
+                }}
                 style={{ cursor: 'pointer' }}
               >
                 <div className="video-thumbnail">
@@ -126,6 +130,7 @@ export default function VideosPage() {
                       className="watch-btn"
                       onClick={(e) => {
                         e.stopPropagation(); // Prevent card click when link is clicked
+                        analytics.trackVideoClick(video.title, video.url, video.id);
                       }}
                     >
                       Watch Now

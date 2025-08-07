@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { gsap } from 'gsap';
 import Footer from '../Footer';
 import appleMusicIcon from '../../assets/Apple_Music_icon.svg';
+import * as analytics from '../../lib/analytics.js';
 
 export default function ReleasesPage() {
   const releases = [
@@ -38,15 +39,15 @@ export default function ReleasesPage() {
       spotify: 'https://open.spotify.com/track/6MCGngj0MVPGSNqAUKIaMw?si=61b7876e5af64f34',
       buyUrl: 'https://www.beatport.com/track/like-me/20633536'
     },
-    // {
-    //   id: 'GM004',
-    //   title: 'Machines',
-    //   artist: 'BRN',
-    //   cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg',
-    //   date: '2025',
-    //   description: 'A deep dive into industrial soundscapes and rhythmic complexity.',
-    //   buyUrl: 'https://example.com/buy3'
-    // }
+    {
+      id: 'GM004',
+      title: 'Machines',
+      artist: 'BRN',
+      cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg',
+      date: '2025',
+      description: 'A deep dive into industrial soundscapes and rhythmic complexity.',
+      buyUrl: 'https://www.beatport.com/track/machines/20752666'
+    }
   ];
 
   useEffect(() => {
@@ -84,7 +85,10 @@ export default function ReleasesPage() {
               <div 
                 key={release.id} 
                 className="release-card"
-                onClick={() => window.open(release.buyUrl, '_blank', 'noopener,noreferrer')}
+                onClick={() => {
+                  analytics.trackPurchaseByTrack(release.title, release.artist, release.buyUrl, 'releases_page');
+                  window.open(release.buyUrl, '_blank', 'noopener,noreferrer');
+                }}
                 style={{ cursor: 'pointer' }}
               >
                 <div className="release-artwork">
@@ -107,7 +111,10 @@ export default function ReleasesPage() {
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="buy-link"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        analytics.trackPurchaseByTrack(release.title, release.artist, release.buyUrl, 'releases_page_buy_link');
+                      }}
                     >
                       Buy Now
                     </a>

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { gsap } from 'gsap';
 import Footer from '../Footer';
+import * as analytics from '../../lib/analytics.js';
 
 const artists = [
   {
@@ -108,6 +109,9 @@ export default function ArtistsPage() {
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="artist-link"
+                  onClick={() => {
+                    analytics.trackArtistClick(artist.name, artist.instagram, 'artists_page');
+                  }}
                 >
                   <div className="artist-photo">
                     <img 

@@ -2,10 +2,12 @@ import * as THREE from "three";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import gsap from "gsap";
+import * as analytics from './analytics.js';
 
 const albums = [
   {
     title: "Luke Andy x Sophiegrophy",
+    trackName: "My Side",
     cover:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM001%20Cover%20Art.jpg",
     previewUrl:
@@ -14,6 +16,7 @@ const albums = [
   },
   {
     title: "KiRiK",
+    trackName: "Truth",
     cover:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM002.jpg",
     previewUrl:
@@ -22,20 +25,22 @@ const albums = [
   },
   {
     title: "Dateless",
+    trackName: "Like Me",
     cover:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM003.jpg",
     previewUrl:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Dateless%20-%20Like%20Me_Groove%20Motive.mp3",
     buyUrl: "https://www.beatport.com/track/like-me/20633536",
   },
-  // {
-  //   title: "BRN",
-  //   cover:
-  //     "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg",
-  //   previewUrl:
-  //     "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/BRN%20-%20Machines%20%28Radio%29%28FW%20MASTER%201%29.mp3",
-  //   buyUrl: "https://example.com/buy3",
-  // },
+  {
+    title: "BRN",
+    trackName: "Machines",
+    cover:
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg",
+    previewUrl:
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/BRN%20-%20Machines%20%28Radio%29%28FW%20MASTER%201%29.mp3",
+    buyUrl: "https://www.beatport.com/track/machines/20752666",
+  },
 ];
 
 let scene, camera, renderer, controls;
@@ -505,14 +510,8 @@ function showWelcomeInstructions() {
                          window.innerWidth <= 768;
 
   
-  // Show instructions if they haven't been shown OR if orientation permission hasn't been requested
-  if (hasShownInstructions && hasRequestedOrientationPermission) {
-    return;
-  }
-  
-  // Mark instructions as shown
-  hasShownInstructions = true;
-  localStorage.setItem('grooveMotive_hasShownInstructions', 'true');
+  // Always show instructions when scene is initialized
+  // This ensures users see orientation permission options every time
   
   
   // Ensure controls are unlocked and cursor is enabled for the popup
@@ -1529,6 +1528,9 @@ function loadLegacyRecordPlayer() {
   // Mark scene as initialized
   isSceneInitialized = true;
   
+  // Initialize analytics
+  analytics.initializeAnalytics();
+  analytics.trackSceneEntry();
 
   // Ensure proper canvas sizing after DOM is fully loaded
   setTimeout(() => {
@@ -2347,6 +2349,9 @@ function startPreview(album) {
     isPreviewing = true;
     currentAlbum = album;
     
+    // Track play event with detailed info
+    analytics.trackTrackPlayDetailed(album.trackName, album.title, album.previewUrl);
+    
     applyVinylTexture(album);
     applyCoverTexture(album, () => {
       
@@ -2469,6 +2474,12 @@ function startPreview(album) {
 
 function stopPreview() {
   if (!animatedRecordPlayer) return;
+  
+  // Track pause event with duration if audio was playing
+  if (isPreviewing && currentAlbum && audio.currentTime > 0) {
+    analytics.trackTrackPauseDetailed(currentAlbum.trackName, currentAlbum.title, audio.currentTime);
+  }
+  
   isPreviewing = false;
   recordAnimationStarted = false; // Reset animation flag
   audio.pause();
@@ -2537,6 +2548,9 @@ function onKeyDown(event) {
       break;
     case "KeyB":
       if (currentAlbum) {
+        // Track buy button click with detailed info
+        analytics.trackPurchaseByTrack(currentAlbum.trackName, currentAlbum.title, currentAlbum.buyUrl);
+        
         try {
           if (globalThis.window) {
             // Create a temporary anchor element for better Safari compatibility
@@ -2808,6 +2822,9 @@ function animate() {
 
     if (closestAlbum && closestAlbum !== currentAlbum) {
       currentAlbum = closestAlbum;
+      
+      // Track artwork approach
+      analytics.trackArtworkApproach(`${closestAlbum.trackName} by ${closestAlbum.title}`);
       
       // Hide artwork instruction permanently after first approach (only on mobile)
       if (artworkInstruction && !hasApproachedArtwork) {
