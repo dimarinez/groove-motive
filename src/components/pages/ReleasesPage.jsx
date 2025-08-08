@@ -46,6 +46,8 @@ export default function ReleasesPage() {
       cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg',
       date: '2025',
       description: 'A deep dive into industrial soundscapes and rhythmic complexity.',
+      appleMusic: 'https://music.apple.com/us/song/machines/1826087172',
+      spotify: 'https://open.spotify.com/track/4FMOsst9oel1TTQd3frinz?si=3af6f918b87145ef',
       buyUrl: 'https://www.beatport.com/track/machines/20752666'
     }
   ];
