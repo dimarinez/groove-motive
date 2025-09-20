@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import gsap from "gsap";
 import * as analytics from './analytics.js';
 
@@ -230,7 +231,12 @@ let hasApproachedArtwork = false; // localStorage.getItem('grooveMotive_hasAppro
 
 // Load all assets immediately for preview
 function loadAllAssets() {
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+  dracoLoader.setDecoderConfig({ type: 'js' });
+  
   const gltfLoader = new GLTFLoader();
+  gltfLoader.setDRACOLoader(dracoLoader);
   
   // Modern Couch - turned around and positioned further back
   gltfLoader.load(
@@ -1116,7 +1122,12 @@ function initScene() {
   }
 
   // PRIORITY 1: Load record player and table first (most important scene elements)
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+  dracoLoader.setDecoderConfig({ type: 'js' });
+  
   const gltfLoader = new GLTFLoader();
+  gltfLoader.setDRACOLoader(dracoLoader);
   gltfLoader.load(
     "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/vinyl_record_player.glb",
     (gltf) => {
@@ -1287,7 +1298,12 @@ function initScene() {
 
   // Function to load secondary assets (pillars, plants, etc.) after record player
   function loadSecondaryAssets() {
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+    dracoLoader.setDecoderConfig({ type: 'js' });
+    
     const gltfLoader = new GLTFLoader();
+    gltfLoader.setDRACOLoader(dracoLoader);
     
     // Marble pillars in corners (snug against walls)
     const pillarPositions = [
@@ -1411,7 +1427,12 @@ function initScene() {
 
 // Legacy function - no longer used but kept for compatibility
 function loadLegacyRecordPlayer() {
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+  dracoLoader.setDecoderConfig({ type: 'js' });
+  
   const gltfLoader = new GLTFLoader();
+  gltfLoader.setDRACOLoader(dracoLoader);
   gltfLoader.load(
     "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/vinyl_record_player.glb",
     (gltf) => {
@@ -2097,7 +2118,12 @@ function createAlbumMesh(album, index) {
   );
   
   // Load the GLB frame from local assets
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+  dracoLoader.setDecoderConfig({ type: 'js' });
+  
   const frameLoader = new GLTFLoader();
+  frameLoader.setDRACOLoader(dracoLoader);
   frameLoader.load(
     "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/frame01_lowpoly.glb",
     (gltf) => {
