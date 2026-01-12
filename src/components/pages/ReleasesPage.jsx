@@ -7,26 +7,48 @@ import * as analytics from '../../lib/analytics.js';
 export default function ReleasesPage() {
   const releases = [
     {
-      id: 'GM001',
-      title: 'My Side',
-      artist: 'Luke Andy x Sophiegrophy',
-      cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM001%20Cover%20Art.jpg',
-      date: '2025',
-      description: 'Our debut release showcasing the collaborative spirit that defines Groove Motive.',
-      appleMusic: 'https://music.apple.com/us/song/my-side/1798361061',
-      spotify: 'https://open.spotify.com/track/7w7ipS58fvd95UnkTNSyGy?si=2f74432eff7b4cad',
-      buyUrl: 'https://www.beatport.com/track/my-side/20167500'
+      id: 'GM007',
+      title: 'Maguá',
+      artist: 'John Luz BR',
+      cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM007_Magua.jpg',
+      date: '2026',
+      description: 'Brazilian rhythms merge with deep house grooves in this captivating production.',
+      appleMusic: 'https://music.apple.com/us/song/maguá/1850771741',
+      spotify: 'https://open.spotify.com/track/78k4BoWmiC0S91URwAuymJ',
+      buyUrl: 'https://www.beatport.com/track/magua/22412243'
     },
     {
-      id: 'GM002',
-      title: 'Truth',
-      artist: 'KiRiK',
-      cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM002.jpg',
+      id: 'GM006',
+      title: 'UNVRS',
+      artist: 'Lonely & Boss Doms',
+      cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM006_LifeLinesEP.jpg',
       date: '2025',
-      description: 'Raw energy meets sophisticated production in this powerful release.',
-      appleMusic: 'https://music.apple.com/us/song/truth/1807433737',
-      spotify: 'https://open.spotify.com/track/2ORoncSZeAueAezwbe9jvm?si=a9ef0ef6dd0d46fa',
-      buyUrl: 'https://www.beatport.com/track/truth/20398456'
+      description: 'Cosmic soundscapes and driving basslines create an otherworldly experience.',
+      appleMusic: 'https://music.apple.com/us/song/unvrs/1840491031',
+      spotify: 'https://open.spotify.com/track/5seJJJqVq7Hdx3N1r6qcNa',
+      buyUrl: 'https://www.beatport.com/track/unvrs/21676838'
+    },
+    {
+      id: 'GM005',
+      title: 'Caveman Shit',
+      artist: 'Allendes, Havoc & Lawn',
+      cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM005_Caveman.jpg',
+      date: '2025',
+      description: 'Primal energy and cutting-edge production collide in this club weapon.',
+      appleMusic: 'https://music.apple.com/us/song/caveman/1833641050',
+      spotify: 'https://open.spotify.com/track/388Mi0GSdeNpj715egTcLG',
+      buyUrl: 'https://www.beatport.com/track/caveman/21281331'
+    },
+    {
+      id: 'GM004',
+      title: 'Machines',
+      artist: 'BRN',
+      cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg',
+      date: '2025',
+      description: 'A deep dive into industrial soundscapes and rhythmic complexity.',
+      appleMusic: 'https://music.apple.com/us/song/machines/1826087172',
+      spotify: 'https://open.spotify.com/track/4FMOsst9oel1TTQd3frinz?si=3af6f918b87145ef',
+      buyUrl: 'https://www.beatport.com/track/machines/20752666'
     },
     {
       id: 'GM003',
@@ -40,15 +62,26 @@ export default function ReleasesPage() {
       buyUrl: 'https://www.beatport.com/track/like-me/20633536'
     },
     {
-      id: 'GM004',
-      title: 'Machines',
-      artist: 'BRN',
-      cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg',
+      id: 'GM002',
+      title: 'Truth',
+      artist: 'KiRiK',
+      cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM002.jpg',
       date: '2025',
-      description: 'A deep dive into industrial soundscapes and rhythmic complexity.',
-      appleMusic: 'https://music.apple.com/us/song/machines/1826087172',
-      spotify: 'https://open.spotify.com/track/4FMOsst9oel1TTQd3frinz?si=3af6f918b87145ef',
-      buyUrl: 'https://www.beatport.com/track/machines/20752666'
+      description: 'Raw energy meets sophisticated production in this powerful release.',
+      appleMusic: 'https://music.apple.com/us/song/truth/1807433737',
+      spotify: 'https://open.spotify.com/track/2ORoncSZeAueAezwbe9jvm?si=a9ef0ef6dd0d46fa',
+      buyUrl: 'https://www.beatport.com/track/truth/20398456'
+    },
+    {
+      id: 'GM001',
+      title: 'My Side',
+      artist: 'Luke Andy x Sophiegrophy',
+      cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM001%20Cover%20Art.jpg',
+      date: '2025',
+      description: 'Our debut release showcasing the collaborative spirit that defines Groove Motive.',
+      appleMusic: 'https://music.apple.com/us/song/my-side/1798361061',
+      spotify: 'https://open.spotify.com/track/7w7ipS58fvd95UnkTNSyGy?si=2f74432eff7b4cad',
+      buyUrl: 'https://www.beatport.com/track/my-side/20167500'
     }
   ];
 

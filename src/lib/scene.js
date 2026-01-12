@@ -42,6 +42,33 @@ const albums = [
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/BRN%20-%20Machines%20%28Radio%29%28FW%20MASTER%201%29.mp3",
     buyUrl: "https://www.beatport.com/track/machines/20752666",
   },
+  {
+    title: "Allendes, Havoc & Lawn",
+    trackName: "Caveman Shit",
+    cover:
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM005_Caveman.jpg",
+    previewUrl:
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Allendes%2C%20Havoc%20%26%20Lawn%20-%20Caveman%20Shit%20%28FW%20Master%29%20%5BRADIO%5D.wav",
+    buyUrl: "https://www.beatport.com/track/caveman/21281331",
+  },
+  {
+    title: "Lonely & Boss Doms",
+    trackName: "UNVRS",
+    cover:
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM006_LifeLinesEP.jpg",
+    previewUrl:
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Lonely%20%26%20Boss%20Doms%20-%20UNVRS%20%28FW%20Master%202%29%20%5BRadio%20v2%5D.wav",
+    buyUrl: "https://www.beatport.com/track/unvrs/21676838",
+  },
+  {
+    title: "John Luz BR",
+    trackName: "Maguá",
+    cover:
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM007_Magua.jpg",
+    previewUrl:
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/John%20Luz%20BR%20-%20Magu%C3%A1%20%28Radio%20Master%29.wav",
+    buyUrl: "https://www.beatport.com/track/magua/22412243",
+  },
 ];
 
 let scene, camera, renderer, controls;
@@ -303,7 +330,7 @@ function loadAllAssets() {
     "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/house_plant.glb",
     (gltf) => {
       const plant4 = gltf.scene;
-      plant4.position.set(9, 0, 0); // Right wall middle
+      plant4.position.set(9, 0, 5); // Right wall front (moved to avoid artwork)
       plant4.scale.set(0.6, 0.6, 0.6); // Half the size of monstera
       plant4.rotation.y = -Math.PI / 2; // Face towards center
       plant4.visible = true;
@@ -2104,7 +2131,15 @@ function findVinylMesh(object) {
 }
 
 function createAlbumMesh(album, index) {
-  const position = [-8 + index * 4, 1.8, -9.8];
+  // First 4 artworks on back wall, remaining 3 on right wall
+  let position;
+  if (index < 4) {
+    // Back wall: evenly spaced, 4 units from left edge
+    position = [-6 + index * 4, 1.8, -9.8];
+  } else {
+    // Right wall: continue with same 4-unit spacing, starting 4 units from back wall
+    position = [9.8, 1.8, -6 + (index - 4) * 4];
+  }
   
   // Load the album texture
   const textureLoader = new THREE.TextureLoader();
@@ -2131,6 +2166,11 @@ function createAlbumMesh(album, index) {
       frameModel.position.set(position[0], position[1] - 2.0, position[2] + 0.05);
       frameModel.scale.set(14, 14, 2);
       frameModel.userData = { album };
+
+      // Rotate frames on side wall to face inward
+      if (index >= 4) {
+        frameModel.rotation.y = -Math.PI / 2; // Face left into the room
+      }
       
       let albumArtApplied = false;
       
@@ -2199,16 +2239,21 @@ function createAlbumMesh(album, index) {
     (error) => {
       console.error(`Error loading local GLB frame for ${album.title}:`, error);
       // Fallback to custom frame
-      createFramedAlbum(position, texture, album);
+      createFramedAlbum(position, texture, album, index);
       onAssetLoaded(); // Album frame loaded (fallback)
     }
   );
 }
 
-function createFramedAlbum(position, texture, album) {
+function createFramedAlbum(position, texture, album, index) {
   // Create a group to hold frame and artwork
   const frameGroup = new THREE.Group();
   frameGroup.position.set(position[0], position[1], position[2]);
+
+  // Rotate frames on side wall to face inward
+  if (index >= 4) {
+    frameGroup.rotation.y = -Math.PI / 2; // Face left into the room
+  }
   
   // Create 3D frame using basic geometry
   const frameDepth = 0;
