@@ -174,22 +174,22 @@ export default function HomePage({ onEnterListeningRoom }) {
         <div className="section-container">
           <h2 className="section-title">Latest Release:</h2>
           <div className="release-content">
-            <h3 className="release-title">Like Me by Dateless</h3>
-            
+            <h3 className="release-title">Maguá by John Luz BR</h3>
+
             <div className="release-showcase">
               <div className="release-artwork">
                 <div className="artwork-container">
-                  <img 
-                    src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM003.jpg" 
-                    alt="Like Me by Dateless"
+                  <img
+                    src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM007_Magua.jpg"
+                    alt="Maguá by John Luz BR"
                     className="artwork-image"
                   />
                 </div>
               </div>
-              
+
               <div className="release-platforms">
-                <a 
-                  href="https://www.beatport.com/track/like-me/20633536"
+                <a
+                  href="https://www.beatport.com/track/magua/22412243"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="platform-logo beatport"
@@ -197,17 +197,17 @@ export default function HomePage({ onEnterListeningRoom }) {
                   <img src={beatportIcon} alt="Beatport" />
                   <span>Beatport</span>
                 </a>
-                <a 
-                  href="https://soundcloud.com/groove-motive/like-me"
+                <a
+                  href="https://music.apple.com/us/song/maguá/1850771741"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="platform-logo soundcloud"
+                  className="platform-logo apple-music"
                 >
-                  <img src={soundcloudIcon} alt="SoundCloud" />
-                  <span>SoundCloud</span>
+                  <img src={appleMusicIcon} alt="Apple Music" />
+                  <span>Apple Music</span>
                 </a>
-                <a 
-                  href="https://open.spotify.com/track/6MCGngj0MVPGSNqAUKIaMw?si=61b7876e5af64f34"
+                <a
+                  href="https://open.spotify.com/track/78k4BoWmiC0S91URwAuymJ"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="platform-logo spotify"
