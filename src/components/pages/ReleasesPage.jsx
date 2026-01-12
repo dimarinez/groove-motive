@@ -24,8 +24,8 @@ export default function ReleasesPage() {
       cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM006_LifeLinesEP.jpg',
       date: '2025',
       description: 'Cosmic soundscapes and driving basslines create an otherworldly experience.',
-      appleMusic: 'https://music.apple.com/us/song/unvrs/1840491031',
-      spotify: 'https://open.spotify.com/track/5seJJJqVq7Hdx3N1r6qcNa',
+      appleMusic: 'https://music.apple.com/us/song/life-lines/1840491030',
+      spotify: 'https://open.spotify.com/track/0UCKN8FoPTvWUBcgl0GLFd',
       buyUrl: 'https://www.beatport.com/track/unvrs/21676838'
     },
     {
