@@ -44,7 +44,7 @@ const albums = [
   },
   {
     title: "Allendes, Havoc & Lawn",
-    trackName: "Caveman Shit",
+    trackName: "Caveman",
     cover:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM005_Caveman.jpg",
     previewUrl:
@@ -53,11 +53,11 @@ const albums = [
   },
   {
     title: "Lonely & Boss Doms",
-    trackName: "UNVRS",
+    trackName: "Life Lines",
     cover:
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM006_LifeLinesEP.jpg",
     previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Lonely%20%26%20Boss%20Doms%20-%20UNVRS%20%28FW%20Master%202%29%20%5BRadio%20v2%5D.wav",
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Lonely%20%26%20Boss%20Doms%20-%20Life%20Lines%20%28FW%20Master%204%29%20%5BRadio%20v2%5D.wav",
     buyUrl: "https://www.beatport.com/track/unvrs/21676838",
   },
   {

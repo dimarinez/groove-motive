@@ -19,7 +19,7 @@ export default function ReleasesPage() {
     },
     {
       id: 'GM006',
-      title: 'UNVRS',
+      title: 'Life Lines',
       artist: 'Lonely & Boss Doms',
       cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM006_LifeLinesEP.jpg',
       date: '2025',
@@ -30,7 +30,7 @@ export default function ReleasesPage() {
     },
     {
       id: 'GM005',
-      title: 'Caveman Shit',
+      title: 'Caveman',
       artist: 'Allendes, Havoc & Lawn',
       cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM005_Caveman.jpg',
       date: '2025',
