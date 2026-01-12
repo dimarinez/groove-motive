@@ -198,6 +198,15 @@ export default function HomePage({ onEnterListeningRoom }) {
                   <span>Beatport</span>
                 </a>
                 <a
+                  href="https://soundcloud.com/groove-motive/john-luz-br-magua"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="platform-logo soundcloud"
+                >
+                  <img src={soundcloudIcon} alt="SoundCloud" />
+                  <span>SoundCloud</span>
+                </a>
+                <a
                   href="https://music.apple.com/us/song/maguá/1850771741"
                   target="_blank"
                   rel="noopener noreferrer"
