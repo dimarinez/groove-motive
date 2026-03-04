@@ -22,7 +22,7 @@ export default function EventsPage() {
       description: 'A curated night of electronic music featuring Groove Motive artists and special guests.',
       image: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/exhibition-2.jpg',
       link: 'https://shotgun.live/en/events/groovemotive',
-      status: 'upcoming'
+      status: 'past'
     }
   ];
 

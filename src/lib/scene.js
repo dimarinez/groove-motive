@@ -69,6 +69,24 @@ const albums = [
       "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/John%20Luz%20BR%20-%20Magu%C3%A1%20%28Radio%20Master%29.wav",
     buyUrl: "https://www.beatport.com/track/magua/22412243",
   },
+  {
+    title: "AJK (US)",
+    trackName: "My Body",
+    cover:
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM008Cover.jpg",
+    previewUrl:
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/AJK%20%28US%29%20-%20My%20Body%20%5Bstreaming%20Master%5D.mp3",
+    buyUrl: "https://www.beatport.com/track/my-body/23597585",
+  },
+  {
+    title: "Franklyn Watts",
+    trackName: "Teteo",
+    cover:
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/teteocover.jpg",
+    previewUrl:
+      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Franklyn%20Watts%20-%20Teteo%20%28Radio%20Edit%29.mp3",
+    buyUrl: "https://www.beatport.com/track/teteo/23976370",
+  },
 ];
 
 let scene, camera, renderer, controls;
@@ -1057,7 +1075,7 @@ function initScene() {
   // All assets: logo texture, record player, basic scene, couch, plants, album covers, pillar plants
   // Reset loading state
   assetsLoaded = 0;
-  totalAssets = 15; // logo + record player + basic scene + couch + 4 plants + 5 albums + 4 pillar plants
+  totalAssets = 17; // logo + record player + basic scene + couch + 4 plants + 9 albums + 4 pillar plants
   
   
   // Hide orientation status and values on all devices
@@ -2131,14 +2149,21 @@ function findVinylMesh(object) {
 }
 
 function createAlbumMesh(album, index) {
-  // First 4 artworks on back wall, remaining 3 on right wall
+  // First 4 artworks on back wall, next 3 on right wall, remaining on left wall
   let position;
+  let wallType = 'back'; // track which wall for rotation
   if (index < 4) {
     // Back wall: evenly spaced, 4 units from left edge
     position = [-6 + index * 4, 1.8, -9.8];
-  } else {
+    wallType = 'back';
+  } else if (index < 7) {
     // Right wall: continue with same 4-unit spacing, starting 4 units from back wall
     position = [9.8, 1.8, -6 + (index - 4) * 4];
+    wallType = 'right';
+  } else {
+    // Left wall: for new releases, starting from back
+    position = [-9.8, 1.8, -6 + (index - 7) * 4];
+    wallType = 'left';
   }
   
   // Load the album texture
@@ -2167,9 +2192,11 @@ function createAlbumMesh(album, index) {
       frameModel.scale.set(14, 14, 2);
       frameModel.userData = { album };
 
-      // Rotate frames on side wall to face inward
-      if (index >= 4) {
+      // Rotate frames on side walls to face inward
+      if (wallType === 'right') {
         frameModel.rotation.y = -Math.PI / 2; // Face left into the room
+      } else if (wallType === 'left') {
+        frameModel.rotation.y = Math.PI / 2; // Face right into the room
       }
       
       let albumArtApplied = false;
@@ -2250,9 +2277,11 @@ function createFramedAlbum(position, texture, album, index) {
   const frameGroup = new THREE.Group();
   frameGroup.position.set(position[0], position[1], position[2]);
 
-  // Rotate frames on side wall to face inward
-  if (index >= 4) {
-    frameGroup.rotation.y = -Math.PI / 2; // Face left into the room
+  // Rotate frames on side walls to face inward
+  if (index >= 4 && index < 7) {
+    frameGroup.rotation.y = -Math.PI / 2; // Right wall: face left into the room
+  } else if (index >= 7) {
+    frameGroup.rotation.y = Math.PI / 2; // Left wall: face right into the room
   }
   
   // Create 3D frame using basic geometry

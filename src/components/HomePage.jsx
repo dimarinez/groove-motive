@@ -3,8 +3,6 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Footer from './Footer';
 import beatportIcon from '../assets/beatport.svg';
-import soundcloudIcon from '../assets/soundcloud.svg';
-import appleMusicIcon from '../assets/Apple_Music_icon.svg';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -174,14 +172,14 @@ export default function HomePage({ onEnterListeningRoom }) {
         <div className="section-container">
           <h2 className="section-title">Latest Release:</h2>
           <div className="release-content">
-            <h3 className="release-title">Maguá by John Luz BR</h3>
+            <h3 className="release-title">Teteo by Franklyn Watts</h3>
 
             <div className="release-showcase">
               <div className="release-artwork">
                 <div className="artwork-container">
                   <img
-                    src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM007_Magua.jpg"
-                    alt="Maguá by John Luz BR"
+                    src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/teteocover.jpg"
+                    alt="Teteo by Franklyn Watts"
                     className="artwork-image"
                   />
                 </div>
@@ -189,42 +187,13 @@ export default function HomePage({ onEnterListeningRoom }) {
 
               <div className="release-platforms">
                 <a
-                  href="https://www.beatport.com/track/magua/22412243"
+                  href="https://www.beatport.com/track/teteo/23976370"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="platform-logo beatport"
                 >
                   <img src={beatportIcon} alt="Beatport" />
                   <span>Beatport</span>
-                </a>
-                <a
-                  href="https://soundcloud.com/groove-motive/john-luz-br-magua"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="platform-logo soundcloud"
-                >
-                  <img src={soundcloudIcon} alt="SoundCloud" />
-                  <span>SoundCloud</span>
-                </a>
-                <a
-                  href="https://music.apple.com/us/song/maguá/1850771741"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="platform-logo apple-music"
-                >
-                  <img src={appleMusicIcon} alt="Apple Music" />
-                  <span>Apple Music</span>
-                </a>
-                <a
-                  href="https://open.spotify.com/track/78k4BoWmiC0S91URwAuymJ"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="platform-logo spotify"
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z" fill="#1DB954"/>
-                  </svg>
-                  <span>Spotify</span>
                 </a>
               </div>
             </div>
