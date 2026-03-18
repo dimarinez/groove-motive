@@ -829,11 +829,11 @@ function initScene() {
       // Reset mobile setup on re-entry
       if (isMobile) {
         // Reset camera position and orientation
-        camera.position.set(0, 1.6, -2);
+        camera.position.set(0, 2.6, -2);
         camera.rotation.x = 0;
         camera.rotation.y = 0;
         camera.rotation.z = 0;
-        camera.lookAt(0, 1.6, -8);
+        camera.lookAt(0, 2.6, -8);
         
         // Reset orientation calibration
         isCalibrated = false;
@@ -974,7 +974,7 @@ function initScene() {
     0.1,
     1000
   );
-  camera.position.set(0, 1.6, -2);
+  camera.position.set(0, 2.6, -2);
   
   // Set initial camera orientation for mobile devices
   if (isMobile) {
@@ -983,7 +983,7 @@ function initScene() {
     camera.rotation.y = 0;
     camera.rotation.z = 0;
     // Point camera toward the artwork wall
-    camera.lookAt(0, 1.6, -8);
+    camera.lookAt(0, 2.6, -8);
   }
 
   try {
@@ -1779,9 +1779,9 @@ function resetToInitialState() {
 
   // Reset camera to initial position
   if (camera) {
-    camera.position.set(0, 1.6, -2);
+    camera.position.set(0, 2.6, -2);
     camera.rotation.set(0, 0, 0);
-    camera.lookAt(0, 1.6, -8);
+    camera.lookAt(0, 2.6, -8);
   }
 
   // Reset device orientation
@@ -1932,14 +1932,14 @@ function enterGallery() {
     lastAlpha = 0;
     
     // Always set camera to correct initial position first
-    camera.position.set(0, 1.6, -2); // Standard viewing position facing artwork wall
+    camera.position.set(0, 2.6, -2); // Standard viewing position facing artwork wall
     camera.rotation.order = 'YXZ';
     
     // Reset camera to face the artwork wall (same as initial setup)
     camera.rotation.x = 0;
     camera.rotation.y = 0;
     camera.rotation.z = 0;
-    camera.lookAt(0, 1.6, -8);
+    camera.lookAt(0, 2.6, -8);
     
     // Mark camera as properly initialized
     cameraInitialized = true;
@@ -2072,8 +2072,8 @@ function enterGallery() {
 
   // Set camera position for gallery view
   if (camera) {
-    camera.position.set(0, 1.6, -2);
-    camera.lookAt(0, 1.6, -8);
+    camera.position.set(0, 2.6, -2);
+    camera.lookAt(0, 2.6, -8);
   }
 
   // Force render
@@ -2555,12 +2555,12 @@ function startPreview(album) {
       // Animate camera to face record player from further back
       gsap.to(camera.position, {
         x: 0,
-        y: 1.8,
+        y: 2.6,
         z: -1.5,
         duration: 1,
         ease: "power2.inOut",
         onUpdate: () => {
-          camera.lookAt(0, 1.2, -8);
+          camera.lookAt(0, 2.0, -8);
         },
         onComplete: () => {
           controls.update();
@@ -2757,15 +2757,15 @@ function animatePreview() {
       // Slower, more elegant movement for hero preview
       camera.position.x = Math.sin(time * 0.15) * 4;
       camera.position.z = -4 + Math.cos(time * 0.15) * 2;
-      camera.position.y = 1.6 + Math.sin(time * 0.1) * 0.2;
+      camera.position.y = 2.6 + Math.sin(time * 0.1) * 0.2;
     } else {
       // Original movement for right panel
       camera.position.x = Math.sin(time * 0.2) * 5;
       camera.position.z = -5 + Math.cos(time * 0.2) * 3;
-      camera.position.y = 1.6;
+      camera.position.y = 2.6;
     }
-    
-    camera.lookAt(0, 1.6, -8);
+
+    camera.lookAt(0, 2.6, -8);
     renderer.render(scene, camera);
     previewAnimationId = requestAnimationFrame(animatePreview);
     
@@ -2892,7 +2892,9 @@ function animate() {
 
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, -9, 9);
   camera.position.z = THREE.MathUtils.clamp(camera.position.z, -8.5, 9);
-  camera.position.y = 1.6;
+  if (!isPreviewing) {
+    camera.position.y = 2.6;
+  }
 
   // Album popups - using working reference logic
   // For mobile: check if we're in gallery mode by looking for mobile controls being visible
@@ -2910,7 +2912,10 @@ function animate() {
     scene.children.forEach((child) => {
       if (child.userData.album) {
         albumCount++;
-        const distance = camera.position.distanceTo(child.position);
+        // Use horizontal distance only (ignore Y) so camera height doesn't affect detection
+        const dx = camera.position.x - child.position.x;
+        const dz = camera.position.z - child.position.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
         if (distance < 3 && distance < closestDistance) {
           closestDistance = distance;
           closestAlbum = child.userData.album;
@@ -3136,12 +3141,12 @@ function resetSceneForHomepage() {
   
   // Reset camera position if camera exists
   if (camera) {
-    camera.position.set(0, 1.6, -2);
+    camera.position.set(0, 2.6, -2);
     camera.rotation.set(0, 0, 0);
     if (isMobile) {
-      camera.lookAt(0, 1.6, -8);
+      camera.lookAt(0, 2.6, -8);
     } else {
-      camera.lookAt(0, 1.6, -8);
+      camera.lookAt(0, 2.6, -8);
     }
     camera.updateMatrixWorld();
   }
