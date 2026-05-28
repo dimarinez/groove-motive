@@ -7,6 +7,42 @@ import * as analytics from '../../lib/analytics.js';
 export default function ReleasesPage() {
   const releases = [
     {
+      id: 'GM012',
+      title: 'Feel The Beat',
+      artist: 'Steady Rock & Luke Andy',
+      cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/feelthebeatep.jpg',
+      previewUrl: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/Steady%20Rock%20%26%20Luke%20Andy%20-%20Feel%20The%20Beat%20%28Radio%20Edit%29%28FW%20MASTER%201%29.wav',
+      date: '2026',
+      description: 'Steady percussion and rolling club pressure from Steady Rock and Luke Andy.',
+      appleMusic: null,
+      spotify: null,
+      buyUrl: null
+    },
+    {
+      id: 'GM011',
+      title: 'Straight Caller',
+      artist: 'Cortes, Omari',
+      cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/straightcallercover.jpg',
+      previewUrl: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/Cortes%2C%20Omari%20-%20Straight%20Caller%20%28FW%20Master%29%20%5BRadio%5D.wav',
+      date: '2026',
+      description: 'A direct, groove-heavy cut built for late-night movement.',
+      appleMusic: null,
+      spotify: null,
+      buyUrl: null
+    },
+    {
+      id: 'GM010',
+      title: 'Rob The Goblin',
+      artist: 'Dateless',
+      cover: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/robthegobcover.jpg',
+      previewUrl: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/Dateless%20-%20Rob%20The%20Goblin%20Radio%20Master.wav',
+      date: '2026',
+      description: 'Dateless returns with a sharp, low-slung groove and playful club energy.',
+      appleMusic: null,
+      spotify: null,
+      buyUrl: null
+    },
+    {
       id: 'GM009',
       title: 'Teteo',
       artist: 'Franklyn Watts',
@@ -141,10 +177,11 @@ export default function ReleasesPage() {
                 key={release.id} 
                 className="release-card"
                 onClick={() => {
+                  if (!release.buyUrl) return;
                   analytics.trackPurchaseByTrack(release.title, release.artist, release.buyUrl, 'releases_page');
                   window.open(release.buyUrl, '_blank', 'noopener,noreferrer');
                 }}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: release.buyUrl ? 'pointer' : 'default' }}
               >
                 <div className="release-artwork">
                   <img src={release.cover} alt={`${release.title} by ${release.artist}`} />
@@ -161,18 +198,20 @@ export default function ReleasesPage() {
                   <p className="release-description">{release.description}</p>
                   
                   <div className="release-links">
-                    <a 
-                      href={release.buyUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="buy-link"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        analytics.trackPurchaseByTrack(release.title, release.artist, release.buyUrl, 'releases_page_buy_link');
-                      }}
-                    >
-                      Buy Now
-                    </a>
+                    {release.buyUrl && (
+                      <a 
+                        href={release.buyUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="buy-link"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          analytics.trackPurchaseByTrack(release.title, release.artist, release.buyUrl, 'releases_page_buy_link');
+                        }}
+                      >
+                        Buy Now
+                      </a>
+                    )}
                     <div className="streaming-links">
                       {release.appleMusic && (
                         <a
