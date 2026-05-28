@@ -5,6 +5,17 @@ import Footer from '../Footer';
 export default function EventsPage() {
   const events = [
     {
+      id: 3,
+      title: 'Grill Motive',
+      date: '6.6',
+      location: "Chris N Eddy's, Los Angeles, CA",
+      description: "Groove Motive returns to Los Angeles for a summer grillout and music gathering at Chris N Eddy's.",
+      image: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/grill-motive.avif',
+      link: 'https://partiful.com/e/NCEHBriZw0QrCZsFofHy?',
+      status: 'upcoming',
+      actionLabel: 'RSVP'
+    },
+    {
       id: 1,
       title: 'Groove Motive x Tikis',
       date: '6.28',
@@ -94,7 +105,7 @@ export default function EventsPage() {
                           rel="noopener noreferrer"
                           className="event-link primary"
                         >
-                          Get Tickets
+                          {event.actionLabel || 'Get Tickets'}
                         </a>
                       )}
                     </div>

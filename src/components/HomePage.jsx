@@ -2,9 +2,10 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Footer from './Footer';
-import beatportIcon from '../assets/beatport.svg';
 
 gsap.registerPlugin(ScrollTrigger);
+
+const latestReleaseCover = 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/feelthebeatep.jpg';
 
 // Track if the initial home animation has been played
 let hasPlayedInitialAnimation = false;
@@ -172,29 +173,27 @@ export default function HomePage({ onEnterListeningRoom }) {
         <div className="section-container">
           <h2 className="section-title">Latest Release:</h2>
           <div className="release-content">
-            <h3 className="release-title">Teteo by Franklyn Watts</h3>
+            <h3 className="release-title">Feel The Beat by Steady Rock & Luke Andy</h3>
 
             <div className="release-showcase">
               <div className="release-artwork">
                 <div className="artwork-container">
                   <img
-                    src="https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/teteocover.jpg"
-                    alt="Teteo by Franklyn Watts"
+                    src={latestReleaseCover}
+                    alt="Feel The Beat by Steady Rock and Luke Andy"
                     className="artwork-image"
                   />
                 </div>
               </div>
 
               <div className="release-platforms">
-                <a
-                  href="https://www.beatport.com/track/teteo/23976370"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={handleEnterClick}
                   className="platform-logo beatport"
                 >
-                  <img src={beatportIcon} alt="Beatport" />
-                  <span>Beatport</span>
-                </a>
+                  <span>Listen in the gallery</span>
+                </button>
               </div>
             </div>
           </div>

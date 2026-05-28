@@ -5,6 +5,7 @@ import AboutPage from './components/pages/AboutPage';
 import ReleasesPage from './components/pages/ReleasesPage';
 import EventsPage from './components/pages/EventsPage';
 import VideosPage from './components/pages/VideosPage';
+import OpenDecksPage from './components/pages/OpenDecksPage';
 import MouseFollower from './components/MouseFollower';
 import UI from './components/UI';
 import MobileControls from './components/MobileControls';
@@ -276,6 +277,8 @@ function App() {
         return <EventsPage />;
       case 'videos':
         return <VideosPage />;
+      case 'open-decks':
+        return <OpenDecksPage />;
       case 'listening-room':
         return null; // This shouldn't be reached since listening-room triggers isInGallery
       default:

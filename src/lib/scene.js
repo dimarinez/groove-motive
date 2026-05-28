@@ -5,7 +5,36 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import gsap from "gsap";
 import * as analytics from './analytics.js';
 
+const newReleaseAssetBase = "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates";
+const feelTheBeatCover = `${newReleaseAssetBase}/feelthebeatep.jpg`;
+const straightCallerCover = `${newReleaseAssetBase}/straightcallercover.jpg`;
+const robTheGoblinCover = `${newReleaseAssetBase}/robthegobcover.jpg`;
+const feelTheBeatPreview = `${newReleaseAssetBase}/Steady%20Rock%20%26%20Luke%20Andy%20-%20Feel%20The%20Beat%20%28Radio%20Edit%29%28FW%20MASTER%201%29.wav`;
+const straightCallerPreview = `${newReleaseAssetBase}/Cortes%2C%20Omari%20-%20Straight%20Caller%20%28FW%20Master%29%20%5BRadio%5D.wav`;
+const robTheGoblinPreview = `${newReleaseAssetBase}/Dateless%20-%20Rob%20The%20Goblin%20Radio%20Master.wav`;
+
 const albums = [
+  {
+    title: "Steady Rock & Luke Andy",
+    trackName: "Feel The Beat",
+    cover: feelTheBeatCover,
+    previewUrl: feelTheBeatPreview,
+    buyUrl: "",
+  },
+  {
+    title: "Cortes, Omari",
+    trackName: "Straight Caller",
+    cover: straightCallerCover,
+    previewUrl: straightCallerPreview,
+    buyUrl: "",
+  },
+  {
+    title: "Dateless",
+    trackName: "Rob The Goblin",
+    cover: robTheGoblinCover,
+    previewUrl: robTheGoblinPreview,
+    buyUrl: "",
+  },
   {
     title: "Luke Andy x Sophiegrophy",
     trackName: "My Side",
@@ -540,7 +569,7 @@ function setupMobileControlListeners() {
     if (mobileBuyButton) {
       mobileBuyButton.addEventListener("touchend", (e) => {
         e.preventDefault();
-        if (currentAlbum) {
+        if (currentAlbum?.buyUrl) {
           // Mobile Safari requires navigation to happen immediately in the touch event
           window.location.href = currentAlbum.buyUrl;
         } else {
@@ -1075,7 +1104,7 @@ function initScene() {
   // All assets: logo texture, record player, basic scene, couch, plants, album covers, pillar plants
   // Reset loading state
   assetsLoaded = 0;
-  totalAssets = 17; // logo + record player + basic scene + couch + 4 plants + 9 albums + 4 pillar plants
+  totalAssets = 22; // logo + record player + basic scene + couch + 2 plants + 12 albums + 4 pillar plants
   
   
   // Hide orientation status and values on all devices
@@ -2149,20 +2178,23 @@ function findVinylMesh(object) {
 }
 
 function createAlbumMesh(album, index) {
-  // First 4 artworks on back wall, next 3 on right wall, remaining on left wall
+  // Center each wall around five evenly spaced artwork slots.
+  const artworkSpacing = 3.4;
+  const wallSlots = 5;
+  const centeredSlotOffset = ((wallSlots - 1) * artworkSpacing) / 2;
   let position;
   let wallType = 'back'; // track which wall for rotation
-  if (index < 4) {
-    // Back wall: evenly spaced, 4 units from left edge
-    position = [-6 + index * 4, 1.8, -9.8];
+  if (index < wallSlots) {
+    // Back wall: latest releases centered across the wall.
+    position = [-centeredSlotOffset + index * artworkSpacing, 1.8, -9.8];
     wallType = 'back';
-  } else if (index < 7) {
-    // Right wall: continue with same 4-unit spacing, starting 4 units from back wall
-    position = [9.8, 1.8, -6 + (index - 4) * 4];
+  } else if (index < wallSlots * 2) {
+    // Right wall: next five centered along wall depth.
+    position = [9.8, 1.8, -centeredSlotOffset + (index - wallSlots) * artworkSpacing];
     wallType = 'right';
   } else {
-    // Left wall: for new releases, starting from back
-    position = [-9.8, 1.8, -6 + (index - 7) * 4];
+    // Left wall: remaining catalog uses the same centered slot system.
+    position = [-9.8, 1.8, -centeredSlotOffset + (index - wallSlots * 2) * artworkSpacing];
     wallType = 'left';
   }
   
@@ -2278,9 +2310,9 @@ function createFramedAlbum(position, texture, album, index) {
   frameGroup.position.set(position[0], position[1], position[2]);
 
   // Rotate frames on side walls to face inward
-  if (index >= 4 && index < 7) {
+  if (index >= 5 && index < 10) {
     frameGroup.rotation.y = -Math.PI / 2; // Right wall: face left into the room
-  } else if (index >= 7) {
+  } else if (index >= 10) {
     frameGroup.rotation.y = Math.PI / 2; // Left wall: face right into the room
   }
   
@@ -2645,7 +2677,7 @@ function onKeyDown(event) {
       }
       break;
     case "KeyB":
-      if (currentAlbum) {
+      if (currentAlbum?.buyUrl) {
         // Track buy button click with detailed info
         analytics.trackPurchaseByTrack(currentAlbum.trackName, currentAlbum.title, currentAlbum.buyUrl);
         
