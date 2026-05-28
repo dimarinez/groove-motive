@@ -49,6 +49,14 @@
   letter-spacing: -0.02em;
 }
 
+.page-subtitle {
+  max-width: 620px;
+  margin: 1rem auto 0;
+  color: rgba(26, 26, 26, 0.68);
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
 
 /* About Page */
 .about-content {

@@ -6,11 +6,13 @@ import * as analytics from '../../lib/analytics.js';
 const artists = [
   {
     name: 'Steady Rock',
-    photoUrl: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/Steady%20Rock.jpg'
+    photoUrl: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/Steady%20Rock.jpg',
+    instagram: 'https://www.instagram.com/iamsteadyrock/'
   },
   {
     name: 'Professor X',
-    photoUrl: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/Professor%20X.jpg'
+    photoUrl: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/Professor%20X.jpg',
+    instagram: 'https://www.instagram.com/soyprofessorx/'
   },
   {
     name: 'Luke Andy',

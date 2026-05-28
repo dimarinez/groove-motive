@@ -108,6 +108,9 @@ export default function OpenDecksPage() {
         <div className="page-container">
           <div className="page-header">
             <h1 className="page-title">Open Decks</h1>
+            <p className="page-subtitle open-decks-subtitle">
+              A chance for upcoming DJs to showcase their talents at our event.
+            </p>
           </div>
 
           <div className="open-decks-content">
