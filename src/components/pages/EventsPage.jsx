@@ -5,6 +5,17 @@ import Footer from '../Footer';
 export default function EventsPage() {
   const events = [
     {
+      id: 4,
+      title: 'Ardalan, Luke Andy, & MAYYA (open air)',
+      date: '8.22',
+      location: '1438 W. Cortland St, Chicago, IL',
+      description: 'Groove Motive and relikx present an open air night with Ardalan, Luke Andy, and MAYYA. 8:30pm–2am.',
+      image: '/ardalan-flyer.webp',
+      link: 'https://ra.co/events/2505700',
+      status: 'upcoming',
+      actionLabel: 'Get Tickets'
+    },
+    {
       id: 3,
       title: 'Grill Motive',
       date: '6.6',

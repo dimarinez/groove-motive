@@ -376,7 +376,7 @@ body {
 .hero-section {
   min-height: 100vh;
   position: relative;
-  background: #1a1a1a;
+  background: rgba(26, 26, 26, 0.9);
   overflow: hidden;
   padding: 100px 2rem 2rem 2rem;
   display: flex;
@@ -592,7 +592,8 @@ body {
 /* Latest Release Section */
 .latest-release-section {
   padding: 6rem 0 8rem 0;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(0.5px);
 }
 
 .section-container {

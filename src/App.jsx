@@ -12,6 +12,7 @@ import MobileControls from './components/MobileControls';
 import HamburgerMenu from './components/HamburgerMenu';
 import InstructionsGroup from './components/InstructionsGroup';
 import PageLoader from './components/PageLoader';
+import FloatingShapesBackground from './components/FloatingShapesBackground';
 import { initScene, animate, animatePreview, enterGallery, resetSceneForHomepage } from './lib/scene';
 import { resetHomeAnimationState } from './components/HomePage';
 import gsap from 'gsap';
@@ -289,6 +290,7 @@ function App() {
   return (
     <>
       {currentView === 'home' && <PageLoader isLoading={isLoading} />}
+      <FloatingShapesBackground isActive={!isInGallery} />
       <MouseFollower />
       <Navigation onNavigate={handleNavigation} currentView={currentView} />
       
