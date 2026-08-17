@@ -12,7 +12,6 @@ import MobileControls from './components/MobileControls';
 import HamburgerMenu from './components/HamburgerMenu';
 import InstructionsGroup from './components/InstructionsGroup';
 import PageLoader from './components/PageLoader';
-import FloatingShapesBackground from './components/FloatingShapesBackground';
 import { initScene, animate, animatePreview, enterGallery, resetSceneForHomepage } from './lib/scene';
 import { resetHomeAnimationState } from './components/HomePage';
 import gsap from 'gsap';
@@ -26,6 +25,10 @@ function App() {
   });
   const [isInGallery, setIsInGallery] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    document.body.style.backgroundColor = currentView === 'home' ? '#1a1a1a' : '#ffffff';
+  }, [currentView]);
 
   // Handle browser back/forward buttons
   useEffect(() => {
@@ -290,7 +293,6 @@ function App() {
   return (
     <>
       {currentView === 'home' && <PageLoader isLoading={isLoading} />}
-      <FloatingShapesBackground isActive={!isInGallery} />
       <MouseFollower />
       <Navigation onNavigate={handleNavigation} currentView={currentView} />
       

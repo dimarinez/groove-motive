@@ -76,11 +76,13 @@ export default function EventsPage() {
   }, []);
 
   return (
-    <div className="page events-page">
+    <div className="page events-page" data-nav-theme="light">
       <div className="page-content">
         <div className="page-container">
           <div className="page-header">
+            <span className="page-kicker">03 · In real life</span>
             <h1 className="page-title">Events</h1>
+            <p className="page-subtitle">Intimate rooms, open air sessions, and nights centered on the music.</p>
           </div>
 
           <div className="events-list">
@@ -131,7 +133,7 @@ export default function EventsPage() {
             ))}
           </div>
 
-          <div className="events-cta">
+          <div className="events-cta" data-nav-theme="dark">
             <h2>Stay Updated</h2>
             <p>Follow us on social media to be the first to know about upcoming events and exclusive showcases.</p>
             <div className="social-links">

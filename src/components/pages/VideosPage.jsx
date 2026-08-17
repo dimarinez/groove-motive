@@ -71,11 +71,13 @@ export default function VideosPage() {
   }, []);
 
   return (
-    <div className="page videos-page">
+    <div className="page videos-page" data-nav-theme="light">
       <div className="page-content">
         <div className="page-container">
           <div className="page-header">
+            <span className="page-kicker">04 · Watch &amp; listen</span>
             <h1 className="page-title">Videos</h1>
+            <p className="page-subtitle">Full sets, visualizers, and stories from inside Groove Motive.</p>
           </div>
 
 
@@ -112,7 +114,11 @@ export default function VideosPage() {
                         <path d="M8 5v14l11-7z"/>
                       </svg>
                     </div>
-                    <div className="video-duration">{video.duration}</div>
+                  </div>
+                  <div className="video-duration">{video.duration}</div>
+                  <div className="video-hover-ui" aria-hidden="true">
+                    <span>Watch video</span>
+                    <span>↗</span>
                   </div>
                 </div>
                 
@@ -141,7 +147,7 @@ export default function VideosPage() {
             ))}
           </div>
 
-          <div className="videos-cta">
+          <div className="videos-cta" data-nav-theme="dark">
             <h2>Subscribe for More</h2>
             <p>Stay connected with our latest visual content and behind-the-scenes footage.</p>
             <a 

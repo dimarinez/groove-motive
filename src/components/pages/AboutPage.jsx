@@ -234,11 +234,13 @@ export default function AboutPage() {
   }, []);
 
   return (
-    <div className="page about-page">
+    <div className="page about-page" data-nav-theme="light">
       <div className="page-content">
         <div className="page-container">
           <div className="page-header">
+            <span className="page-kicker">01 · Studio &amp; label</span>
             <h1 className="page-title">About</h1>
+            <p className="page-subtitle">Independent by design. Built for artists, movement, and the dance floor.</p>
           </div>
 
           {/* Our Story Section */}

@@ -5,6 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import './styles/main.css';
 import './styles/homepage.css';
 import './styles/pages.css';
+import './styles/facelift.css';
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);

@@ -164,18 +164,20 @@ export default function ReleasesPage() {
   }, []);
 
   return (
-    <div className="page releases-page">
+    <div className="page releases-page" data-nav-theme="light">
       <div className="page-content">
         <div className="page-container">
           <div className="page-header">
+            <span className="page-kicker">02 · The catalog</span>
             <h1 className="page-title">Releases</h1>
+            <p className="page-subtitle">Forward-thinking electronic music from the Groove Motive family.</p>
           </div>
 
           <div className="releases-grid">
             {releases.map((release) => (
               <div 
                 key={release.id} 
-                className="release-card"
+                className={`release-card ${release.buyUrl ? 'is-actionable' : 'is-preview-only'}`}
                 onClick={() => {
                   if (!release.buyUrl) return;
                   analytics.trackPurchaseByTrack(release.title, release.artist, release.buyUrl, 'releases_page');
@@ -186,6 +188,10 @@ export default function ReleasesPage() {
                 <div className="release-artwork">
                   <img src={release.cover} alt={`${release.title} by ${release.artist}`} />
                   <div className="release-overlay"></div>
+                  <div className="release-hover-ui" aria-hidden="true">
+                    <span>{release.buyUrl ? 'Open release' : 'New release'}</span>
+                    <span>{release.buyUrl ? '↗' : '●'}</span>
+                  </div>
                 </div>
                 
                 <div className="release-info">

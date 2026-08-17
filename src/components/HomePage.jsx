@@ -99,7 +99,7 @@ export default function HomePage({ onEnterListeningRoom }) {
         rotationX: 0,
         rotation: 0,
         scale: 1,
-        transform: 'translateX(-50%)'
+        transform: 'none'
       });
       gsap.set('body', { backgroundColor: '#1a1a1a' });
     }
@@ -145,36 +145,38 @@ export default function HomePage({ onEnterListeningRoom }) {
   return (
     <div className="homepage">
         {/* Hero Section - Full 3D Preview */}
-      <section className="hero-section" ref={heroRef}>
+      <section className="hero-section" ref={heroRef} data-nav-theme="dark">
         <div className="hero-content">
           <h1 className="hero-title" onClick={handleEnterClick}>
             <span className="title-line">Enter the</span>
             <span className="title-line listening-room-text">Listening Room</span>
-            <span className="arrow">→</span>
           </h1>
+          <button type="button" className="hero-enter-link" onClick={handleEnterClick}>
+            <span>Explore the 3D music gallery</span>
+            <span className="arrow" aria-hidden="true">↗</span>
+          </button>
         </div>
         
         <div className="hero-3d-preview" onClick={handleEnterClick}>
+          <div className="gallery-frame-meta">
+            <span><i aria-hidden="true"></i> Interactive 3D archive</span>
+            <span>Click + drag to explore</span>
+          </div>
           <div className="preview-container scene-ready">
             <canvas id="hero-gallery-canvas"></canvas>
-            
-            
-            <div className="preview-overlay">
-              <div className="preview-hint">
-                <span>Click to enter</span>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
       {/* Latest Release Section */}
-      <section className="latest-release-section" ref={latestReleaseRef}>
+      <section className="latest-release-section" ref={latestReleaseRef} data-nav-theme="light">
         <div className="section-container">
-          <h2 className="section-title">Latest Release:</h2>
+          <div className="section-heading-row">
+            <span className="section-kicker">New on the label</span>
+            <span className="section-index">GM012 · 2026</span>
+          </div>
+          <h2 className="section-title">Latest<br />Release</h2>
           <div className="release-content">
-            <h3 className="release-title">Feel The Beat by Steady Rock & Luke Andy</h3>
-
             <div className="release-showcase">
               <div className="release-artwork">
                 <div className="artwork-container">
@@ -187,12 +189,16 @@ export default function HomePage({ onEnterListeningRoom }) {
               </div>
 
               <div className="release-platforms">
+                <p className="latest-release-label">GM012 / New release</p>
+                <h3 className="release-title">Feel The Beat</h3>
+                <p className="latest-release-artist">Steady Rock &amp; Luke Andy</p>
                 <button
                   type="button"
                   onClick={handleEnterClick}
                   className="platform-logo beatport"
                 >
                   <span>Listen in the gallery</span>
+                  <span aria-hidden="true">↗</span>
                 </button>
               </div>
             </div>
