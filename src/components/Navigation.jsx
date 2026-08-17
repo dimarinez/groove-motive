@@ -12,7 +12,7 @@ export default function Navigation({ onNavigate, currentView = 'home' }) {
     { id: 'releases', label: 'Releases', href: '#releases' },
     { id: 'events', label: 'Events', href: '#events' },
     { id: 'videos', label: 'Videos', href: '#videos' },
-    { id: 'open-decks', label: 'Open Decks', href: '#open-decks' }
+    // { id: 'open-decks', label: 'Open Decks', href: '#open-decks' }
   ];
 
   useEffect(() => {

@@ -10,7 +10,7 @@ export default function EventsPage() {
       date: '8.22',
       location: '1438 W. Cortland St, Chicago, IL',
       description: 'Groove Motive and relikx present an open air night with Ardalan, Luke Andy, and MAYYA. 8:30pm–2am.',
-      image: '/ardalan-flyer.webp',
+      image: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/532d791b559c08cd5488892cce272fb01056e058.webp',
       link: 'https://ra.co/events/2505700',
       status: 'upcoming',
       actionLabel: 'Get Tickets'
@@ -23,8 +23,7 @@ export default function EventsPage() {
       description: "Groove Motive returns to Los Angeles for a summer grillout and music gathering at Chris N Eddy's.",
       image: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/grill-motive.avif',
       link: 'https://partiful.com/e/NCEHBriZw0QrCZsFofHy?',
-      status: 'upcoming',
-      actionLabel: 'RSVP'
+      status: 'past'
     },
     {
       id: 1,
