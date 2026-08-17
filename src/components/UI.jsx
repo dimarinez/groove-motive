@@ -2,18 +2,22 @@ export default function UI() {
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   
   return (
-    <div id="ui">
+    <div id="ui" role="status" aria-live="polite">
+      <div className="gallery-ui-status">
+        <span className="gallery-ui-status-dot" aria-hidden="true"></span>
+        Selected release
+      </div>
       <div id="album-title"></div>
-      <div className="instructions">
+      <div className="instructions" aria-label="Release controls">
         {isMobile ? (
           <>
-            Tap <strong>G</strong> button to play preview<br />
-            Tap <strong>B</strong> button to buy album
+            <span><strong>G</strong> Preview</span>
+            <span><strong>B</strong> Buy track</span>
           </>
         ) : (
           <>
-            Press <strong>G</strong> to play preview<br />
-            Press <strong>B</strong> to buy album
+            <span><strong>G</strong> Preview</span>
+            <span><strong>B</strong> Buy track</span>
           </>
         )}
       </div>

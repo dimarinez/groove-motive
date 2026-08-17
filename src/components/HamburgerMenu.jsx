@@ -11,9 +11,8 @@ export default function HamburgerMenu() {
         onClick={handleExit}
         aria-label="Exit Gallery"
       >
-        <span className="hamburger-line"></span>
-        <span className="hamburger-line"></span>
-        <span className="hamburger-line"></span>
+        <span className="hamburger-label">Exit</span>
+        <span className="hamburger-close" aria-hidden="true">×</span>
       </button>
     </div>
   );

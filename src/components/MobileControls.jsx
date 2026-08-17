@@ -6,18 +6,18 @@ export default function MobileControls() {
     <div id="mobile-controls" style={{ display: 'none' }}>
       <div className="mobile-movement-controls">
         <div>
-          <button className="mobile-button" id="move-up">↑</button>
+          <button className="mobile-button" id="move-up" aria-label="Move forward">↑</button>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="mobile-button" id="move-left">←</button>
-          <button className="mobile-button" id="move-right">→</button>
+        <div className="mobile-movement-row">
+          <button className="mobile-button" id="move-left" aria-label="Move left">←</button>
+          <button className="mobile-button" id="move-right" aria-label="Move right">→</button>
         </div>
-        <button className="mobile-button" id="move-down">↓</button>
+        <button className="mobile-button" id="move-down" aria-label="Move backward">↓</button>
       </div>
       <div className="mobile-action-controls">
-        <button className="mobile-action-button" id="mobile-preview">G</button>
-        <button className="mobile-action-button" id="mobile-pause">P</button>
-        <button className="mobile-action-button" id="mobile-buy">B</button>
+        <button className="mobile-action-button" id="mobile-preview" aria-label="Play or stop preview"><span>G</span><small>Play</small></button>
+        <button className="mobile-action-button" id="mobile-pause" aria-label="Pause or resume preview"><span>P</span><small>Pause</small></button>
+        <button className="mobile-action-button" id="mobile-buy" aria-label="Buy track"><span>B</span><small>Buy</small></button>
       </div>
     </div>
   );

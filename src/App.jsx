@@ -261,9 +261,7 @@ function App() {
         <UI />
         <MobileControls />
         <InstructionsGroup />
-        <div className="hamburger-menu">
-          <HamburgerMenu />
-        </div>
+        <HamburgerMenu />
       </>
     );
   }

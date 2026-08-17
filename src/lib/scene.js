@@ -149,6 +149,9 @@ let artworkInstruction = null;
 let previewAnimationId = null;
 let mainAnimationId = null;
 
+const previewControlsMarkup = (pauseAction = "pause") =>
+  `Press <span class="gallery-key">G</span> to stop <i aria-hidden="true"></i> <span class="gallery-key">P</span> to ${pauseAction}`;
+
 // Asset loading tracking
 let assetsLoaded = 0;
 let totalAssets = 0;
@@ -412,38 +415,18 @@ function createPortraitWarning() {
   
   portraitWarning = document.createElement("div");
   portraitWarning.id = "portrait-warning";
-  portraitWarning.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.95);
-    color: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-    font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif;
-    text-align: center;
-    padding: 20px;
-    box-sizing: border-box;
-  `;
+  portraitWarning.setAttribute("role", "dialog");
+  portraitWarning.setAttribute("aria-modal", "true");
+  portraitWarning.setAttribute("aria-labelledby", "portrait-warning-title");
   
   portraitWarning.innerHTML = `
-    <div style="font-size: 48px; margin-bottom: 20px;">📱</div>
-    <h2 style="font-size: 24px; margin-bottom: 15px; font-weight: 600;">Portrait Mode Required</h2>
-    <p style="font-size: 18px; line-height: 1.5; max-width: 300px; margin-bottom: 20px;">
-      Please rotate your device to portrait orientation for the best gallery experience.
-    </p>
-    <div style="font-size: 36px; animation: pulse 2s infinite;">↻</div>
-    <style>
-      @keyframes pulse {
-        0%, 100% { opacity: 0.6; transform: scale(1); }
-        50% { opacity: 1; transform: scale(1.1); }
-      }
-    </style>
+    <div class="portrait-warning-card">
+      <div class="gallery-modal-kicker"><span></span>Display check</div>
+      <div class="portrait-device" aria-hidden="true"><span></span></div>
+      <h2 id="portrait-warning-title">Turn it<br>upright.</h2>
+      <p>The listening room is designed for portrait orientation on mobile. Rotate your device to continue.</p>
+      <div class="portrait-rotate" aria-hidden="true">↻</div>
+    </div>
   `;
   
   document.body.appendChild(portraitWarning);
@@ -554,13 +537,11 @@ function setupMobileControlListeners() {
               console.warn("Could not resume audio:", error);
             });
             // Update instruction text
-            previewInstruction.innerHTML = 
-              'Press <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">G</span> to stop • <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">P</span> to pause';
+            previewInstruction.innerHTML = previewControlsMarkup("pause");
           } else {
             audio.pause();
             // Update instruction text
-            previewInstruction.innerHTML = 
-              'Press <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">G</span> to stop • <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">P</span> to resume';
+            previewInstruction.innerHTML = previewControlsMarkup("resume");
           }
         }
       });
@@ -602,110 +583,43 @@ function showWelcomeInstructions() {
   
   const instructionalPopup = document.createElement("div");
   instructionalPopup.id = "welcome-instructions";
-  instructionalPopup.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.95);
-    color: white;
-    padding: ${isMobileDevice ? '20px' : '40px'};
-    border-radius: 20px;
-    font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif;
-    text-align: center;
-    z-index: 10000;
-    width: ${isMobileDevice ? '85vw' : 'auto'};
-    max-width: ${isMobileDevice ? '400px' : '90vw'};
-    max-height: ${isMobileDevice ? '85vh' : '90vh'};
-    overflow: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(20px);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    box-sizing: border-box;
-  `;
+  instructionalPopup.className = isMobileDevice ? "gallery-welcome is-mobile" : "gallery-welcome";
+  instructionalPopup.setAttribute("role", "dialog");
+  instructionalPopup.setAttribute("aria-modal", "true");
+  instructionalPopup.setAttribute("aria-labelledby", "welcome-instructions-title");
   
   instructionalPopup.innerHTML = `
-    <div style="margin-bottom: ${isMobileDevice ? '20px' : '30px'};">
-      <h2 style="font-size: ${isMobileDevice ? '20px' : '28px'}; margin-bottom: ${isMobileDevice ? '15px' : '20px'}; color: #fff; font-weight: 600;">
-        Welcome to the Listening Room
-      </h2>
-      <p style="font-size: ${isMobileDevice ? '16px' : '18px'}; line-height: 1.6; margin-bottom: ${isMobileDevice ? '20px' : '25px'}; color: rgba(255,255,255,0.9);">
-        Explore the gallery and approach the framed artwork to discover music releases.
-      </p>
+    <div class="gallery-welcome__intro">
+      <div class="gallery-modal-kicker"><span></span>Interactive 3D archive</div>
+      <h2 id="welcome-instructions-title">Enter the<br>listening room.</h2>
+      <p>Move through the space and approach the framed artwork to discover releases.</p>
     </div>
-    
-    <div style="margin-bottom: ${isMobileDevice ? '20px' : '30px'};">
-      <h3 style="font-size: ${isMobileDevice ? '18px' : '20px'}; margin-bottom: ${isMobileDevice ? '12px' : '15px'}; color: #fff;">How to Navigate:</h3>
+    <div class="gallery-welcome__guide">
+      <h3>Controls / ${isMobileDevice ? 'Touch' : 'Desktop'}</h3>
+      <div class="gallery-control-list">
       ${isMobileDevice ? `
-        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
-          • Use the directional arrows at the bottom to move around
-        </p>
-        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
-          • Tilt and rotate your device to look around
-        </p>
-        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.9); background: rgba(255, 193, 7, 0.2); padding: 8px 10px; border-radius: 6px; border-left: 3px solid #ffc107;">
-          📱 <strong>Enable device tilting for camera control</strong><br>
-          Click "Allow Orientation" below to use your device's tilt sensors
-        </p>
-        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
-          • Get close to framed artwork to see album details
-        </p>
-        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
-          • Tap the <strong>G</strong> button to play music
-        </p>
-        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
-          • Tap the <strong>P</strong> to pause during preview
-        </p>
-        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
-          • Tap the <strong>B</strong> button to purchase tracks
-        </p>
-        <p style="font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.8);">
-          • Tap the <strong>Menu</strong> button to exit the gallery
-        </p>
+        <p><b>01</b><span><strong>Move</strong>Use the directional controls</span></p>
+        <p><b>02</b><span><strong>Look</strong>Tilt and rotate your device</span></p>
+        <p><b>03</b><span><strong>Listen</strong>Use G to play and P to pause</span></p>
+        <p><b>04</b><span><strong>Collect</strong>Use B to purchase a track</span></p>
       ` : `
-        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
-          • Use <strong>Arrow Keys</strong> or <strong>WASD</strong> to move around
-        </p>
-        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
-          • Move your <strong>mouse</strong> to look around
-        </p>
-        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
-          • Press <strong>G</strong> to preview music when near artwork
-        </p>
-        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
-          • Press <strong>P</strong> to pause during preview
-        </p>
-        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
-          • Press <strong>B</strong> to buy the track
-        </p>
-        <p style="font-size: 16px; margin-bottom: 10px; color: rgba(255,255,255,0.8);">
-          • Press <strong>Escape</strong> to exit the gallery
-        </p>
+        <p><b>01</b><span><strong>Move</strong>Arrow keys or WASD</span></p>
+        <p><b>02</b><span><strong>Look</strong>Move your mouse</span></p>
+        <p><b>03</b><span><strong>Listen</strong>G to play, P to pause</span></p>
+        <p><b>04</b><span><strong>Collect</strong>B to buy, Escape to exit</span></p>
       `}
+      </div>
+      ${isMobileDevice ? `
+        <p class="gallery-motion-note"><span aria-hidden="true">↻</span><strong>Motion access required</strong>Enable orientation to look around by tilting your device.</p>
+      ` : ''}
     </div>
-    
-    <button id="close-instructions" style="
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      padding: ${isMobileDevice ? '12px 24px' : '15px 30px'};
-      border-radius: 30px;
-      font-size: ${isMobileDevice ? '14px' : '16px'};
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-family: inherit;
-      display: block;
-      margin: ${isMobileDevice ? '20px auto 0' : '0 auto'};
-      width: ${isMobileDevice ? 'auto' : 'auto'};
-      min-width: ${isMobileDevice ? '140px' : '160px'};
-      text-align: center;
-    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 25px rgba(102, 126, 234, 0.4)'" 
-       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"
-       ontouchstart="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.3)'"
-       ontouchend="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-      ${isMobileDevice ? 'Allow Orientation' : 'Start Exploring'}
-    </button>
+    <div class="gallery-welcome__footer">
+      <span>Sound on recommended</span>
+      <button id="close-instructions">
+        <span>${isMobileDevice ? 'Enable motion & enter' : 'Start exploring'}</span>
+        <span aria-hidden="true">↗</span>
+      </button>
+    </div>
   `;
   
   document.body.appendChild(instructionalPopup);
@@ -916,10 +830,8 @@ function initScene() {
   if (!previewInstruction) {
     previewInstruction = document.createElement("div");
     previewInstruction.id = "preview-instruction";
-    previewInstruction.style.cssText =
-      'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0, 0, 0, 0.9); padding: 20px 30px; border-radius: 12px; font-size: 18px; font-weight: 600; text-align: center; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.2); z-index: 1000; display: none; font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: 0.5px; white-space: nowrap; max-width: 90vw; overflow: hidden;';
-    previewInstruction.innerHTML =
-      'Press <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">G</span> to stop • <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">P</span> to pause';
+    previewInstruction.className = "gallery-toast gallery-toast--preview";
+    previewInstruction.innerHTML = previewControlsMarkup("pause");
     document.body.appendChild(previewInstruction);
   }
 
@@ -927,19 +839,8 @@ function initScene() {
   if (!artworkInstruction) {
     artworkInstruction = document.createElement("div");
     artworkInstruction.id = "artwork-instruction";
-    artworkInstruction.style.cssText =
-      'position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; background: rgba(0, 0, 0, 0.8); padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; text-align: center; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.15); z-index: 1000; font-family: "Gotham", -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: 0.3px; max-width: 85vw; line-height: 1.4; display: none;';
-    
-    // Add mobile-specific styles
-    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (isMobileDevice) {
-      artworkInstruction.style.fontSize = '13px';
-      artworkInstruction.style.padding = '10px 16px';
-      artworkInstruction.style.bottom = '15px';
-      artworkInstruction.style.maxWidth = '90vw';
-    }
-    artworkInstruction.innerHTML =
-      'Approach artwork to preview and buy music';
+    artworkInstruction.className = "gallery-toast gallery-toast--approach";
+    artworkInstruction.innerHTML = '<span aria-hidden="true"></span> Approach artwork to preview and buy music';
     document.body.appendChild(artworkInstruction);
   }
 
@@ -1880,18 +1781,7 @@ function enterGallery() {
         if (mainContent) {
           const loadingMessage = document.createElement("div");
           loadingMessage.innerHTML = "Initializing 3D scene, please wait...";
-          loadingMessage.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            background: rgba(0,0,0,0.8);
-            padding: 20px;
-            border-radius: 8px;
-            font-family: 'Gotham', sans-serif;
-            z-index: 9999;
-          `;
+          loadingMessage.className = "gallery-initializing";
           document.body.appendChild(loadingMessage);
           
           // Remove loading message and return to homepage
@@ -2666,13 +2556,11 @@ function onKeyDown(event) {
             console.warn("Could not resume audio:", error);
           });
           // Update instruction text
-          previewInstruction.innerHTML = 
-            'Press <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">G</span> to stop • <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">P</span> to pause';
+          previewInstruction.innerHTML = previewControlsMarkup("pause");
         } else {
           audio.pause();
           // Update instruction text
-          previewInstruction.innerHTML = 
-            'Press <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">G</span> to stop • <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700; white-space: nowrap;">P</span> to resume';
+          previewInstruction.innerHTML = previewControlsMarkup("resume");
         }
       }
       break;
