@@ -67,11 +67,6 @@ const artists = [
     instagram: 'https://www.instagram.com/bossdoms/'
   },
   {
-    name: 'Rob Pearson',
-    photo: 'RobPearson.jpg',
-    instagram: 'https://www.instagram.com/djrobpearson/'
-  },
-  {
     name: 'Carvalho (BR)',
     photo: 'Carvalho(BR).JPG',
     instagram: 'https://www.instagram.com/carvalhodj/'
