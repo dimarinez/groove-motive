@@ -2872,3 +2872,13 @@ body.gallery-entered canvas {
     animation: none !important;
   }
 }
+
+@media (max-width: 768px) {
+  .gallery-welcome__footer {
+    padding-left: 0;
+  }
+
+  .latest-release-section .platform-logo {
+    margin-top: 2rem;
+  }
+}

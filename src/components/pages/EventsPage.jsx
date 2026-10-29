@@ -5,6 +5,30 @@ import Footer from '../Footer';
 export default function EventsPage() {
   const events = [
     {
+      id: 6,
+      title: 'Groove Motive Showcase at The Barbary',
+      date: '11.7',
+      location: 'The Barbary, 951 Frankford Ave, Philadelphia, PA',
+      description: 'Luke Andy, Marco Consonni, and Alos in Room 1, plus Lifted with Mayank, Staysis, and Newiz in Room 2. November 7, 2026 · 10pm–2am.',
+      image: '/events/groove-motive-barbary-november-2026.jpg',
+      link: 'https://tixr.com/e/212421',
+      endsAt: '2026-11-08T02:00:00-05:00',
+      status: 'upcoming',
+      actionLabel: 'Get Tickets'
+    },
+    {
+      id: 5,
+      title: 'Groove Motive at The Spotlight',
+      date: '11.15',
+      location: 'The Spotlight, Los Angeles, CA',
+      description: 'Ragie Ban, Luke Andy, and Steady Rock at The Spotlight. November 15, 2026 · 4pm–9pm · 21+.',
+      image: '/events/groove-motive-spotlight-november-2026.jpg',
+      link: 'https://link.dice.fm/Qbcc4bc7018c',
+      endsAt: '2026-11-15T21:00:00-08:00',
+      status: 'upcoming',
+      actionLabel: 'Get Tickets'
+    },
+    {
       id: 4,
       title: 'Ardalan, Luke Andy, & MAYYA (open air)',
       date: '8.22',
@@ -12,8 +36,7 @@ export default function EventsPage() {
       description: 'Groove Motive and relikx present an open air night with Ardalan, Luke Andy, and MAYYA. 8:30pm–2am.',
       image: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/532d791b559c08cd5488892cce272fb01056e058.webp',
       link: 'https://ra.co/events/2505700',
-      status: 'upcoming',
-      actionLabel: 'Get Tickets'
+      status: 'past'
     },
     {
       id: 3,
@@ -48,7 +71,10 @@ export default function EventsPage() {
   ];
 
   // Sort events: upcoming first, then past events
-  const sortedEvents = events.sort((a, b) => {
+  const sortedEvents = events.map(event => ({
+    ...event,
+    status: event.endsAt && Date.now() >= Date.parse(event.endsAt) ? 'past' : event.status
+  })).sort((a, b) => {
     const statusOrder = { 'upcoming': 1, 'past': 2 };
     return statusOrder[a.status] - statusOrder[b.status];
   });
@@ -107,7 +133,7 @@ export default function EventsPage() {
                           rel="noopener noreferrer"
                           className="event-link"
                         >
-                          Watch Recap
+                          {event.link.includes('youtube.com') ? 'Watch Recap' : 'View Event'}
                         </a>
                       )}
                       {event.status === 'upcoming' && (

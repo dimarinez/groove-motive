@@ -1,80 +1,9 @@
+import { artists } from '../../data/artists.js';
 import { useEffect } from 'react';
 import { gsap } from 'gsap';
 import Footer from '../Footer';
 import * as analytics from '../../lib/analytics.js';
 
-const artists = [
-  {
-    name: 'Steady Rock',
-    photoUrl: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/Steady%20Rock.jpg',
-    instagram: 'https://www.instagram.com/iamsteadyrock/'
-  },
-  {
-    name: 'Professor X',
-    photoUrl: 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/Professor%20X.jpg',
-    instagram: 'https://www.instagram.com/soyprofessorx/'
-  },
-  {
-    name: 'Luke Andy',
-    photo: 'LukeAndy.jpg',
-    instagram: 'https://www.instagram.com/lukeandymusic/'
-  },
-  {
-    name: 'Ragie Ban',
-    photo: 'RagieBan.jpg',
-    instagram: 'https://www.instagram.com/ragieban/'
-  },
-  {
-    name: 'Sophiegrophy',
-    photo: 'Sophiegrophy.jpg',
-    instagram: 'https://www.instagram.com/sophiegrophy/'
-  },
-  {
-    name: 'Kirik',
-    photo: 'Kirik.jpg',
-    instagram: 'https://www.instagram.com/kirillkirik/'
-  },
-  {
-    name: 'Dateless',
-    photo: 'Dateless.jpg',
-    instagram: 'https://www.instagram.com/datelessmusic/'
-  },
-  {
-    name: 'BRN',
-    photo: 'BRN.jpg',
-    instagram: 'https://www.instagram.com/livebrn/'
-  },
-  {
-    name: 'Allendes',
-    photo: 'FranciscoAllendes.jpg',
-    instagram: 'https://www.instagram.com/allendes/'
-  },
-  {
-    name: 'Havoc & Lawn',
-    photo: 'Havoc&Lawn.webp',
-    instagram: 'https://www.instagram.com/havocandlawn/'
-  },
-  {
-    name: 'Lonely',
-    photo: 'Lonely.jpg',
-    instagram: 'https://www.instagram.com/lonely.ofc/'
-  },
-  {
-    name: 'Boss Doms',
-    photo: 'BossDoms.jpg',
-    instagram: 'https://www.instagram.com/bossdoms/'
-  },
-  {
-    name: 'Carvalho (BR)',
-    photo: 'Carvalho(BR).JPG',
-    instagram: 'https://www.instagram.com/carvalhodj/'
-  },
-  {
-    name: 'John Luzz',
-    photo: 'JohnLuzz.png',
-    instagram: 'https://www.instagram.com/johnluzzz/'
-  }
-];
 
 export default function ArtistsPage() {
   useEffect(() => {

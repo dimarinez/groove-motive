@@ -1,0 +1,7 @@
+.asset-sync.local/
+.env
+.env.*
+.git/
+
+# Separate Etsy project
+etsy-store/

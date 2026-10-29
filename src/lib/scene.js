@@ -1,3 +1,4 @@
+import { releases } from '../data/releases.js';
 import * as THREE from "three";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -5,118 +6,13 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import gsap from "gsap";
 import * as analytics from './analytics.js';
 
-const newReleaseAssetBase = "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates";
-const feelTheBeatCover = `${newReleaseAssetBase}/feelthebeatep.jpg`;
-const straightCallerCover = `${newReleaseAssetBase}/straightcallercover.jpg`;
-const robTheGoblinCover = `${newReleaseAssetBase}/robthegobcover.jpg`;
-const feelTheBeatPreview = `${newReleaseAssetBase}/Steady%20Rock%20%26%20Luke%20Andy%20-%20Feel%20The%20Beat%20%28Radio%20Edit%29%28FW%20MASTER%201%29.wav`;
-const straightCallerPreview = `${newReleaseAssetBase}/Cortes%2C%20Omari%20-%20Straight%20Caller%20%28FW%20Master%29%20%5BRadio%5D.wav`;
-const robTheGoblinPreview = `${newReleaseAssetBase}/Dateless%20-%20Rob%20The%20Goblin%20Radio%20Master.wav`;
-
-const albums = [
-  {
-    title: "Steady Rock & Luke Andy",
-    trackName: "Feel The Beat",
-    cover: feelTheBeatCover,
-    previewUrl: feelTheBeatPreview,
-    buyUrl: "",
-  },
-  {
-    title: "Cortes, Omari",
-    trackName: "Straight Caller",
-    cover: straightCallerCover,
-    previewUrl: straightCallerPreview,
-    buyUrl: "",
-  },
-  {
-    title: "Dateless",
-    trackName: "Rob The Goblin",
-    cover: robTheGoblinCover,
-    previewUrl: robTheGoblinPreview,
-    buyUrl: "",
-  },
-  {
-    title: "Luke Andy x Sophiegrophy",
-    trackName: "My Side",
-    cover:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM001%20Cover%20Art.jpg",
-    previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Luke%20Andy%20%26%20Sophiegrophy%20-%20My%20Side%20%28Radio%20Edit%29%5BGroove%20Motive%5D.mp3",
-    buyUrl: "https://www.beatport.com/track/my-side/20167500",
-  },
-  {
-    title: "KiRiK",
-    trackName: "Truth",
-    cover:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM002.jpg",
-    previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/KiRiK%20-%20Truth_Groove%20Motive%20%5BRadio%20Master%5D.mp3",
-    buyUrl: "https://www.beatport.com/track/truth/20398456",
-  },
-  {
-    title: "Dateless",
-    trackName: "Like Me",
-    cover:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM003.jpg",
-    previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Dateless%20-%20Like%20Me_Groove%20Motive.mp3",
-    buyUrl: "https://www.beatport.com/track/like-me/20633536",
-  },
-  {
-    title: "BRN",
-    trackName: "Machines",
-    cover:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM004_Machines.jpg",
-    previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/BRN%20-%20Machines%20%28Radio%29%28FW%20MASTER%201%29.mp3",
-    buyUrl: "https://www.beatport.com/track/machines/20752666",
-  },
-  {
-    title: "Allendes, Havoc & Lawn",
-    trackName: "Caveman",
-    cover:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM005_Caveman.jpg",
-    previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Allendes%2C%20Havoc%20%26%20Lawn%20-%20Caveman%20Shit%20%28FW%20Master%29%20%5BRADIO%5D.wav",
-    buyUrl: "https://www.beatport.com/track/caveman/21281331",
-  },
-  {
-    title: "Lonely & Boss Doms",
-    trackName: "Life Lines",
-    cover:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM006_LifeLinesEP.jpg",
-    previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Lonely%20%26%20Boss%20Doms%20-%20Life%20Lines%20%28FW%20Master%204%29%20%5BRadio%20v2%5D.wav",
-    buyUrl: "https://www.beatport.com/track/unvrs/21676838",
-  },
-  {
-    title: "John Luz BR",
-    trackName: "Maguá",
-    cover:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM007_Magua.jpg",
-    previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/John%20Luz%20BR%20-%20Magu%C3%A1%20%28Radio%20Master%29.wav",
-    buyUrl: "https://www.beatport.com/track/magua/22412243",
-  },
-  {
-    title: "AJK (US)",
-    trackName: "My Body",
-    cover:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/GM008Cover.jpg",
-    previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/AJK%20%28US%29%20-%20My%20Body%20%5Bstreaming%20Master%5D.mp3",
-    buyUrl: "https://www.beatport.com/track/my-body/23597585",
-  },
-  {
-    title: "Franklyn Watts",
-    trackName: "Teteo",
-    cover:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/teteocover.jpg",
-    previewUrl:
-      "https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/Franklyn%20Watts%20-%20Teteo%20%28Radio%20Edit%29.mp3",
-    buyUrl: "https://www.beatport.com/track/teteo/23976370",
-  },
-];
+const albums = releases.map(release => ({
+  title: release.artist,
+  trackName: release.title,
+  cover: release.cover,
+  previewUrl: release.previewUrl,
+  buyUrl: release.buyUrl || '',
+}));
 
 let scene, camera, renderer, controls;
 let moveForward = false,
@@ -1005,7 +901,7 @@ function initScene() {
   // All assets: logo texture, record player, basic scene, couch, plants, album covers, pillar plants
   // Reset loading state
   assetsLoaded = 0;
-  totalAssets = 22; // logo + record player + basic scene + couch + 2 plants + 12 albums + 4 pillar plants
+  totalAssets = 10 + albums.length; // Shared scene assets plus one frame per release.
   
   
   // Hide orientation status and values on all devices
@@ -2068,9 +1964,9 @@ function findVinylMesh(object) {
 }
 
 function createAlbumMesh(album, index) {
-  // Center each wall around five evenly spaced artwork slots.
-  const artworkSpacing = 3.4;
-  const wallSlots = 5;
+  // Fit the full catalogue across three walls, keeping frames inside the room.
+  const wallSlots = Math.max(5, Math.ceil(albums.length / 3));
+  const artworkSpacing = Math.min(3.4, 16.2 / (wallSlots - 1));
   const centeredSlotOffset = ((wallSlots - 1) * artworkSpacing) / 2;
   let position;
   let wallType = 'back'; // track which wall for rotation
@@ -2079,7 +1975,7 @@ function createAlbumMesh(album, index) {
     position = [-centeredSlotOffset + index * artworkSpacing, 1.8, -9.8];
     wallType = 'back';
   } else if (index < wallSlots * 2) {
-    // Right wall: next five centered along wall depth.
+    // Right wall: the next group along the wall depth.
     position = [9.8, 1.8, -centeredSlotOffset + (index - wallSlots) * artworkSpacing];
     wallType = 'right';
   } else {
@@ -2188,21 +2084,21 @@ function createAlbumMesh(album, index) {
     (error) => {
       console.error(`Error loading local GLB frame for ${album.title}:`, error);
       // Fallback to custom frame
-      createFramedAlbum(position, texture, album, index);
+      createFramedAlbum(position, texture, album, wallType);
       onAssetLoaded(); // Album frame loaded (fallback)
     }
   );
 }
 
-function createFramedAlbum(position, texture, album, index) {
+function createFramedAlbum(position, texture, album, wallType) {
   // Create a group to hold frame and artwork
   const frameGroup = new THREE.Group();
   frameGroup.position.set(position[0], position[1], position[2]);
 
   // Rotate frames on side walls to face inward
-  if (index >= 5 && index < 10) {
+  if (wallType === 'right') {
     frameGroup.rotation.y = -Math.PI / 2; // Right wall: face left into the room
-  } else if (index >= 10) {
+  } else if (wallType === 'left') {
     frameGroup.rotation.y = Math.PI / 2; // Left wall: face right into the room
   }
   

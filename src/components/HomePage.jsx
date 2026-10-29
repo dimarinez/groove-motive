@@ -1,3 +1,4 @@
+import { latestRelease } from '../data/releases.js';
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -5,7 +6,6 @@ import Footer from './Footer';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const latestReleaseCover = 'https://5ndhpj66kbzege6f.public.blob.vercel-storage.com/gm-new%20updates/feelthebeatep.jpg';
 
 // Track if the initial home animation has been played
 let hasPlayedInitialAnimation = false;
@@ -173,7 +173,7 @@ export default function HomePage({ onEnterListeningRoom }) {
         <div className="section-container">
           <div className="section-heading-row">
             <span className="section-kicker">New on the label</span>
-            <span className="section-index">GM012 · 2026</span>
+            <span className="section-index">{latestRelease.id} · {latestRelease.date}</span>
           </div>
           <h2 className="section-title">Latest<br />Release</h2>
           <div className="release-content">
@@ -181,25 +181,22 @@ export default function HomePage({ onEnterListeningRoom }) {
               <div className="release-artwork">
                 <div className="artwork-container">
                   <img
-                    src={latestReleaseCover}
-                    alt="Feel The Beat by Steady Rock and Luke Andy"
+                    src={latestRelease.cover}
+                    alt={`${latestRelease.title} by ${latestRelease.artist}`}
                     className="artwork-image"
                   />
                 </div>
               </div>
 
               <div className="release-platforms">
-                <p className="latest-release-label">GM012 / New release</p>
-                <h3 className="release-title">Feel The Beat</h3>
-                <p className="latest-release-artist">Steady Rock &amp; Luke Andy</p>
-                <button
-                  type="button"
-                  onClick={handleEnterClick}
-                  className="platform-logo beatport"
-                >
-                  <span>Listen in the gallery</span>
-                  <span aria-hidden="true">↗</span>
-                </button>
+                <p className="latest-release-label">{latestRelease.id} / New release</p>
+                <h3 className="release-title">{latestRelease.title}</h3>
+                <p className="latest-release-artist">{latestRelease.artist}</p>
+                {latestRelease.buyUrl && (
+                  <a href={latestRelease.buyUrl} target="_blank" rel="noopener noreferrer" className="platform-logo beatport">
+                    <span>View on Beatport</span><span aria-hidden="true">↗</span>
+                  </a>
+                )}
               </div>
             </div>
           </div>
