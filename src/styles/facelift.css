@@ -2882,3 +2882,9 @@ body.gallery-entered canvas {
     margin-top: 2rem;
   }
 }
+
+/* Keep the full label name visible together at every screen size. */
+.nav-records { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.24em; line-height: 1; text-transform: uppercase; color: inherit; }
+.footer-records { display: block; margin-top: 0.8em; font-size: 0.19em; letter-spacing: 0.18em; line-height: 1; text-transform: uppercase; }
+.nav-dark-bg .nav-records { color: #fff; }
+.nav-light-bg .nav-records { color: #1a1a1a; }

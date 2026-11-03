@@ -119,6 +119,7 @@ export default function Navigation({ onNavigate, currentView = 'home' }) {
               alt="Groove Motive" 
               className="nav-logo-img"
             />
+            <span className="nav-records">Records</span>
             <span className="nav-logo-meta">Independent label · Los Angeles</span>
           </button>
 

@@ -36,7 +36,7 @@ export default function ReleasesPage() {
           <div className="page-header">
             <span className="page-kicker">02 · The catalog</span>
             <h1 className="page-title">Releases</h1>
-            <p className="page-subtitle">Forward-thinking electronic music from the Groove Motive family.</p>
+            <p className="page-subtitle">Forward-thinking electronic music from Groove Motive Records.</p>
           </div>
 
           <div className="releases-grid">

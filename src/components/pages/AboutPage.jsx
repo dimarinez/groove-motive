@@ -182,7 +182,7 @@ export default function AboutPage() {
             <div className="about-text">
               <h2>Our Vision</h2>
               <p>
-                Groove Motive was launched in 2025 by Luke Andy as a label and creative platform dedicated to authenticity and innovation in electronic music. It started with a vision to create a home for emerging and experimental artists, to push boundaries and connect with their audience in a new way.
+                Groove Motive Records was launched in 2025 by Luke Andy as a label and creative platform dedicated to authenticity and innovation in electronic music. It started with a vision to create a home for emerging and experimental artists, to push boundaries and connect with their audience in a new way.
               </p>
               
               <blockquote className="founder-quote">
@@ -211,7 +211,7 @@ export default function AboutPage() {
               </p>
               
               <p className="about-paragraph">
-                At any Groove Motive event, you can expect that the music comes first and the energy is real. Whether it's a single release or a live set, everything we do is about supporting artists and creating something worth showing up for.
+                At any Groove Motive Records event, you can expect that the music comes first and the energy is real. Whether it's a single release or a live set, everything we do is about supporting artists and creating something worth showing up for.
               </p>
             </div>
           </div>

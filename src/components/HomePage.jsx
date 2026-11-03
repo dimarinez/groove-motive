@@ -172,7 +172,7 @@ export default function HomePage({ onEnterListeningRoom }) {
       <section className="latest-release-section" ref={latestReleaseRef} data-nav-theme="light">
         <div className="section-container">
           <div className="section-heading-row">
-            <span className="section-kicker">New on the label</span>
+            <span className="section-kicker">New on Groove Motive Records</span>
             <span className="section-index">{latestRelease.id} · {latestRelease.date}</span>
           </div>
           <h2 className="section-title">Latest<br />Release</h2>
@@ -189,7 +189,7 @@ export default function HomePage({ onEnterListeningRoom }) {
               </div>
 
               <div className="release-platforms">
-                <p className="latest-release-label">{latestRelease.id} / New release</p>
+                <p className="latest-release-label">Groove Motive Records / {latestRelease.id} / New release</p>
                 <h3 className="release-title">{latestRelease.title}</h3>
                 <p className="latest-release-artist">{latestRelease.artist}</p>
                 {latestRelease.buyUrl && (

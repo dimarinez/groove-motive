@@ -77,7 +77,7 @@ export default function VideosPage() {
           <div className="page-header">
             <span className="page-kicker">04 · Watch &amp; listen</span>
             <h1 className="page-title">Videos</h1>
-            <p className="page-subtitle">Full sets, visualizers, and stories from inside Groove Motive.</p>
+            <p className="page-subtitle">Full sets, visualizers, and stories from inside Groove Motive Records.</p>
           </div>
 
 
