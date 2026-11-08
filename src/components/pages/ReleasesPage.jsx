@@ -67,7 +67,7 @@ export default function ReleasesPage() {
                   </div>
                   <h3 className="release-title">{release.title}</h3>
                   <p className="release-artist">{release.artist}</p>
-                  <p className="release-description">{release.description}</p>
+                  <p className="release-description">{release.title} by {release.artist} on Groove Motive Records™.</p>
                   
                   <div className="release-links">
                     {release.buyUrl && (
